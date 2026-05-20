@@ -53,12 +53,12 @@
 **Output:** Admin bisa manage operations via HP
 
 ### Tasks
-- [ ] 4.1 Admin auth — login page, session check, redirect guard
-- [ ] 4.2 Admin Dashboard (`admin/index.html`) — summary cards: orders hari ini, revenue, outlet count
-- [ ] 4.3 Admin Orders page (`admin/orders.html`) — realtime list, status workflow 1-tap, sound notif, filter per outlet (outlet_staff filter)
-- [ ] 4.4 Admin Menu CRUD (`admin/menu.html`) — create/edit/toggle menu items, variants, options
-- [ ] 4.5 Admin Outlets CRUD (`admin/outlets.html`) — super_admin only, create/edit/toggle outlets, outlet_menu_overrides
-- [ ] 4.6 `assets/js/admin.js` — shared admin utilities, auth check, realtime helpers
+- [x] 4.1 Admin auth — login page, session check, redirect guard
+- [x] 4.2 Admin Dashboard (`admin/index.html`) — summary cards: orders hari ini, revenue, outlet count
+- [x] 4.3 Admin Orders page (`admin/orders.html`) — realtime list, status workflow 1-tap, sound notif, filter per outlet (outlet_staff filter)
+- [x] 4.4 Admin Menu CRUD (`admin/menu.html`) — create/edit/toggle menu items, variants, options
+- [x] 4.5 Admin Outlets CRUD (`admin/outlets.html`) — super_admin only, create/edit/toggle outlets, outlet_menu_overrides
+- [x] 4.6 `assets/js/admin.js` — shared admin utilities, auth check, realtime helpers
 
 ---
 
