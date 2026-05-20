@@ -282,9 +282,21 @@ function openItemForm(itemId) {
                 placeholder="Deskripsi singkat">${item?.description || ''}</textarea>
     </div>
     <div class="form-group">
-      <label class="form-label">URL Foto (opsional)</label>
-      <input id="iPhoto" class="form-input" value="${item?.photo_url || ''}"
-             placeholder="https://…" />
+      <label class="form-label">Foto Menu (opsional)</label>
+      <div id="photoPreviewWrap" style="margin-bottom:8px;${item?.photo_url ? '' : 'display:none'}">
+        <img id="photoPreview" src="${item?.photo_url || ''}"
+             style="width:100%;max-height:160px;object-fit:cover;border-radius:10px;border:1px solid var(--line2)" />
+      </div>
+      <input type="hidden" id="iPhoto" value="${item?.photo_url || ''}" />
+      <div style="display:flex;gap:8px;align-items:center">
+        <label class="action-btn action-secondary" style="font-size:12px;padding:8px 14px;cursor:pointer;margin:0">
+          📷 ${item?.photo_url ? 'Ganti Foto' : 'Upload Foto'}
+          <input type="file" id="iPhotoFile" accept="image/*" style="display:none"
+                 onchange="uploadMenuPhoto(this)" />
+        </label>
+        <span id="photoUploadStatus" style="font-size:12px;color:var(--muted)"></span>
+        ${item?.photo_url ? `<button type="button" class="action-btn" style="font-size:12px;padding:8px 10px;background:#fff0f0;color:var(--brand);border:none" onclick="clearMenuPhoto()">Hapus</button>` : ''}
+      </div>
     </div>
     <div class="form-group">
       <label class="form-label">Urutan Tampil</label>
@@ -304,6 +316,54 @@ function openItemForm(itemId) {
            onclick="saveItem(${item ? `'${item.id}'` : 'null'})">
      ${isNew ? 'Tambah Menu' : 'Simpan Perubahan'}
    </button>`);
+}
+
+// ─── Upload foto menu ke Supabase Storage ────────────────────────────────────
+async function uploadMenuPhoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const statusEl = document.getElementById('photoUploadStatus');
+  statusEl.textContent = 'Mengupload…';
+
+  // Validasi ukuran max 2MB
+  if (file.size > 2 * 1024 * 1024) {
+    statusEl.style.color = 'var(--brand)';
+    statusEl.textContent = '❌ Ukuran maks 2MB';
+    input.value = '';
+    return;
+  }
+
+  const ext  = file.name.split('.').pop().toLowerCase();
+  const path = `menu/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+
+  const { error } = await window.db.storage
+    .from('menu-photos')
+    .upload(path, file, { upsert: false, contentType: file.type });
+
+  if (error) {
+    statusEl.style.color = 'var(--brand)';
+    statusEl.textContent = '❌ ' + error.message;
+    return;
+  }
+
+  const { data: urlData } = window.db.storage.from('menu-photos').getPublicUrl(path);
+  const publicUrl = urlData.publicUrl;
+
+  document.getElementById('iPhoto').value = publicUrl;
+  document.getElementById('photoPreview').src = publicUrl;
+  document.getElementById('photoPreviewWrap').style.display = '';
+  statusEl.style.color = 'var(--green)';
+  statusEl.textContent = '✅ Foto berhasil diupload';
+}
+
+function clearMenuPhoto() {
+  document.getElementById('iPhoto').value = '';
+  document.getElementById('photoPreview').src = '';
+  document.getElementById('photoPreviewWrap').style.display = 'none';
+  document.getElementById('photoUploadStatus').textContent = '';
+  const fileInput = document.getElementById('iPhotoFile');
+  if (fileInput) fileInput.value = '';
 }
 
 async function saveItem(itemId) {
