@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>SUKA Shawarma — Pilih Outlet</title>
+<meta name="description" content="Pesan shawarma online, pickup di outlet terdekat. Tanpa antre, bayar QRIS." />
+<link rel="stylesheet" href="assets/css/style.css" />
+<link rel="manifest" href="manifest.json" />
+</head>
+<body>
+<div class="phone">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-logo">
+      🌯 SUKA Shawarma
+    </div>
+    <button class="topbar-ic" id="btnRefresh" title="Refresh" onclick="loadOutlets()">↻</button>
+  </div>
+
+  <!-- Hero -->
+  <div class="home-hero">
+    <h1>Pesan Pickup Online</h1>
+    <p>Pilih outlet, pesan, bayar QRIS — langsung ambil tanpa antre.</p>
+    <div class="gps-status" id="gpsStatus">
+      <span>📍</span> <span id="gpsText">Mendeteksi lokasi…</span>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <div class="search-wrap" style="border-bottom:1px solid var(--line);">
+    <input id="searchInput" type="text" placeholder="Cari nama outlet atau area…"
+           autocomplete="off" oninput="renderOutlets()" />
+  </div>
+
+  <!-- City filter chips -->
+  <div class="chips" id="cityChips"></div>
+
+  <!-- Outlet list -->
+  <div class="section-title" style="padding-bottom:4px" id="listTitle">Outlet</div>
+  <div id="outletList">
+    <!-- skeleton sementara data dimuat -->
+    <div class="outlet-list" id="skeletonList"></div>
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<script src="assets/js/supabase.js"></script>
+<script src="assets/js/utils.js"></script>
+<script>
+// ─── State ────────────────────────────────────────────────────────────────────
+let allOutlets   = [];
+let userLat      = null;
+let userLng      = null;
+let activeKota   = 'Semua';
+let gpsGranted   = false;
+
+// ─── Skeleton placeholders ────────────────────────────────────────────────────
+function showSkeletons(n = 4) {
+  const list = document.getElementById('skeletonList');
+  list.innerHTML = Array.from({length: n}, () => `
+    <div class="skeleton-card">
+      <div class="skeleton skeleton-photo"></div>
+      <div class="skeleton-lines">
+        <div class="skeleton skeleton-line"></div>
+        <div class="skeleton skeleton-line short"></div>
+        <div class="skeleton skeleton-line shorter"></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ─── Load outlets dari Supabase ───────────────────────────────────────────────
+async function loadOutlets() {
+  document.getElementById('outletList').innerHTML =
+    '<div class="outlet-list" id="skeletonList"></div>';
+  showSkeletons(5);
+
+  const { data, error } = await window.db
+    .from('outlets')
+    .select('id,slug,name,address,lat,lng,type,open_hour,close_hour,is_active')
+    .order('name');
+
+  if (error) {
+    document.getElementById('outletList').innerHTML = `
+      <div class="error-box">
+        <p>Gagal memuat daftar outlet. Periksa koneksi internet.</p>
+        <button class="btn-retry" onclick="loadOutlets()">Coba Lagi</button>
+      </div>`;
+    return;
+  }
+
+  allOutlets = data || [];
+  buildCityChips();
+  renderOutlets();
+}
+
+// ─── GPS auto-detect ──────────────────────────────────────────────────────────
+function requestGPS() {
+  const statusEl = document.getElementById('gpsText');
+  if (!navigator.geolocation) {
+    statusEl.textContent = 'GPS tidak didukung browser ini';
+    renderOutlets();
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      userLat   = pos.coords.latitude;
+      userLng   = pos.coords.longitude;
+      gpsGranted = true;
+      statusEl.textContent = 'Menampilkan outlet terdekat';
+      renderOutlets();
+    },
+    () => {
+      statusEl.textContent = 'Izin lokasi ditolak — urut alfabetis';
+      renderOutlets();
+    },
+    { timeout: 6000 }
+  );
+}
+
+// ─── City chips ───────────────────────────────────────────────────────────────
+function buildCityChips() {
+  const kotas = ['Semua', ...new Set(allOutlets.map(o => extractKota(o.address)).sort())];
+  const el = document.getElementById('cityChips');
+  el.innerHTML = kotas.map(k =>
+    `<div class="chip ${k === activeKota ? 'active' : ''}" onclick="setKota('${k}')">${k}</div>`
+  ).join('');
+}
+
+function setKota(k) {
+  activeKota = k;
+  buildCityChips();
+  renderOutlets();
+}
+
+// ─── Render outlet list ────────────────────────────────────────────────────────
+function renderOutlets() {
+  const q     = document.getElementById('searchInput').value.toLowerCase().trim();
+  let items   = allOutlets.filter(o => o.is_active);
+
+  // filter kota
+  if (activeKota !== 'Semua') {
+    items = items.filter(o => extractKota(o.address) === activeKota);
+  }
+  // filter search
+  if (q) {
+    items = items.filter(o =>
+      o.name.toLowerCase().includes(q) ||
+      o.address.toLowerCase().includes(q)
+    );
+  }
+  // sort: GPS terdekat atau alfabetis
+  if (gpsGranted && userLat !== null) {
+    items.sort((a, b) => {
+      const dA = (a.lat && a.lng) ? haversineKm(userLat, userLng, a.lat, a.lng) : 9999;
+      const dB = (b.lat && b.lng) ? haversineKm(userLat, userLng, b.lat, b.lng) : 9999;
+      return dA - dB;
+    });
+  }
+
+  const title = document.getElementById('listTitle');
+  title.textContent = items.length + ' Outlet' + (activeKota !== 'Semua' ? ' di ' + activeKota : '');
+
+  if (!items.length) {
+    document.getElementById('outletList').innerHTML = `
+      <div class="empty">
+        <div class="empty-icon">🔍</div>
+        <div class="empty-title">Tidak ditemukan</div>
+        <div class="empty-desc">Coba kata kunci lain atau pilih kota berbeda.</div>
+      </div>`;
+    return;
+  }
+
+  const html = `<div class="outlet-list">` + items.map(o => {
+    const open = isOutletOpen(o.open_hour, o.close_hour);
+    const dist = (gpsGranted && userLat !== null && o.lat && o.lng)
+      ? formatDistance(haversineKm(userLat, userLng, o.lat, o.lng))
+      : null;
+    return `
+      <a class="outlet-card ${!open ? 'closed' : ''}" href="menu.html?outlet=${o.slug}" onclick="return onOutletClick(event,'${o.slug}',${open})">
+        <div class="outlet-logo">🌯</div>
+        <div class="outlet-info">
+          <div class="outlet-name">${o.name}</div>
+          <div class="outlet-addr">📍 ${o.address}</div>
+          <div class="outlet-meta">
+            ${open
+              ? `<span class="badge-open">● Buka</span>`
+              : `<span class="badge-closed">● Tutup</span>`}
+            ${o.open_hour ? `<span class="badge-dist">${formatHour(o.open_hour)}–${formatHour(o.close_hour)}</span>` : ''}
+            <span class="badge ${o.type === 'owned' ? 'badge-owned' : 'badge-partner'}">${o.type === 'owned' ? 'Chain' : 'Mitra'}</span>
+            ${dist ? `<span class="badge-dist">· ${dist}</span>` : ''}
+          </div>
+        </div>
+        <div class="outlet-arrow">›</div>
+      </a>`;
+  }).join('') + `</div>`;
+
+  document.getElementById('outletList').innerHTML = html;
+}
+
+// Outlet tutup → konfirmasi sebelum lanjut
+function onOutletClick(e, slug, isOpen) {
+  if (isOpen) return true; // lanjut normal
+  e.preventDefault();
+  if (confirm('Outlet ini sedang tutup. Tetap mau lihat menu?')) {
+    window.location.href = 'menu.html?outlet=' + slug;
+  }
+  return false;
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+showSkeletons(5);
+loadOutlets();
+requestGPS();
+</script>
+</body>
+</html>
