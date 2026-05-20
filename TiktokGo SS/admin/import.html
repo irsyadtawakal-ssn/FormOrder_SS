@@ -94,10 +94,11 @@
 
   <!-- Bottom nav -->
   <nav class="admin-nav">
-    <a href="index.html"><span>🏠</span><span>Dashboard</span></a>
-    <a href="orders.html"><span>📋</span><span>Pesanan</span></a>
-    <a href="menu.html"><span>🌯</span><span>Menu</span></a>
-    <a href="outlets.html"><span>📍</span><span>Outlet</span></a>
+    <a href="/admin/index.html"><span>🏠</span><span>Dashboard</span></a>
+    <a href="/admin/orders.html"><span>📋</span><span>Pesanan</span></a>
+    <a href="/admin/menu.html"><span>🌯</span><span>Menu</span></a>
+    <a href="/admin/outlets.html" class="admin-only"><span>📍</span><span>Outlet</span></a>
+    <a href="/admin/settings.html" class="admin-only"><span>⚙️</span><span>Pengaturan</span></a>
   </nav>
 
 </div>
@@ -216,7 +217,11 @@ function parseCSV(type) {
 
 function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 
+// simpan data parsed supaya tidak perlu inline JSON di onclick
+const _pendingRows = {};
+
 function renderPreview(type, headers, rows) {
+  _pendingRows[type] = rows;
   const el = document.getElementById('preview' + capitalize(type));
 
   const thHtml = headers.map(h => `<th style="white-space:nowrap">${h}</th>`).join('');
@@ -237,7 +242,7 @@ function renderPreview(type, headers, rows) {
       </table>
     </div>
     <button class="btn-add-big" style="width:100%"
-            onclick="applyImport('${type}', ${JSON.stringify(rows).replace(/</g,'\\u003c').replace(/>/g,'\\u003e')})">
+            onclick="applyImport('${type}', _pendingRows['${type}'])">
       ✅ Apply ${rows.length} Baris ke Database
     </button>
   `;

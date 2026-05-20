@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>SUKA Shawarma — Pilih Outlet</title>
-<meta name="description" content="Pesan shawarma online, pickup di outlet terdekat. Tanpa antre, bayar QRIS." />
+<title>SUKA Shawarma — Pesan Online</title>
+<meta name="description" content="Pesan shawarma online, pickup di outlet terdekat. Bayar saat pickup." />
 <link rel="stylesheet" href="assets/css/style.css" />
 <link rel="manifest" href="manifest.json" />
 </head>
@@ -13,37 +13,132 @@
 
   <!-- Topbar -->
   <div class="topbar">
-    <div class="topbar-logo">
-      🌯 SUKA Shawarma
+    <div class="topbar-logo">🌯 SUKA Shawarma</div>
+    <button class="topbar-ic" id="btnCart" onclick="openCartSheet()" style="display:none">🛒</button>
+  </div>
+
+  <!-- Outlet selector -->
+  <div class="outlet-sel-wrap">
+    <div class="outlet-sel" id="outletSel" onclick="toggleOutletDropdown()">
+      <div class="outlet-sel-left">
+        <span class="outlet-sel-icon">📍</span>
+        <div>
+          <div class="outlet-sel-label">Pickup di</div>
+          <div class="outlet-sel-name" id="outletSelName">Memuat…</div>
+        </div>
+      </div>
+      <span class="outlet-sel-arrow" id="outletSelArrow">▾</span>
     </div>
-    <button class="topbar-ic" id="btnRefresh" title="Refresh" onclick="loadOutlets()">↻</button>
-  </div>
-
-  <!-- Hero -->
-  <div class="home-hero">
-    <h1>Pesan Pickup Online</h1>
-    <p>Pilih outlet, pesan, bayar QRIS — langsung ambil tanpa antre.</p>
-    <div class="gps-status" id="gpsStatus">
-      <span>📍</span> <span id="gpsText">Mendeteksi lokasi…</span>
+    <!-- Dropdown list outlet -->
+    <div class="outlet-dropdown" id="outletDropdown" style="display:none">
+      <div style="padding:8px 10px;border-bottom:1px solid var(--line)">
+        <input id="outletSearch" type="text" placeholder="Cari outlet…"
+               autocomplete="off"
+               style="width:100%;padding:8px 12px;border:1.5px solid var(--line2);border-radius:8px;font-size:13px;outline:none;font-family:var(--font)"
+               oninput="filterOutletDropdown(this.value)"
+               onclick="event.stopPropagation()" />
+      </div>
+      <div class="outlet-dropdown-inner" id="outletDropdownList">
+        <div style="padding:14px;text-align:center;color:var(--muted);font-size:13px">Memuat outlet…</div>
+      </div>
     </div>
   </div>
 
-  <!-- Search -->
-  <div class="search-wrap" style="border-bottom:1px solid var(--line);">
-    <input id="searchInput" type="text" placeholder="Cari nama outlet atau area…"
-           autocomplete="off" oninput="renderOutlets()" />
+  <!-- Search menu -->
+  <div class="search-wrap" id="searchWrap" style="display:none; border-bottom:1px solid var(--line);">
+    <input id="searchInput" type="text" placeholder="Cari menu…"
+           autocomplete="off" oninput="onSearch()" />
   </div>
 
-  <!-- City filter chips -->
-  <div class="chips" id="cityChips"></div>
+  <!-- Category tabs -->
+  <div class="tabs" id="tabs" style="display:none"></div>
 
-  <!-- Outlet list -->
-  <div class="section-title" style="padding-bottom:4px" id="listTitle">Outlet</div>
-  <div id="outletList">
-    <!-- skeleton sementara data dimuat -->
-    <div class="outlet-list" id="skeletonList"></div>
+  <!-- Menu items -->
+  <div id="menuContent"></div>
+
+  <!-- Cart bar -->
+  <div class="cart-bar hidden" id="cartBar" onclick="openCartSheet()">
+    <div class="cart-bar-left">
+      <div class="cart-count" id="cartCount">0</div>
+      <div>
+        <div class="cart-label" id="cartLabel">0 item</div>
+        <div class="cart-total" id="cartTotal">Rp 0</div>
+      </div>
+    </div>
+    <div class="cart-cta">Pesan →</div>
   </div>
 
+</div><!-- .phone -->
+
+<!-- Scrim -->
+<div class="scrim" id="scrim" onclick="closeAllSheets()"></div>
+
+<!-- ─── Bottom sheet: item detail ─────────────────────────────────────────── -->
+<div class="sheet" id="itemSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <h2 class="sheet-title" id="sheetItemName">—</h2>
+    <button class="sheet-close" onclick="closeAllSheets()">×</button>
+  </div>
+  <div class="sheet-body" id="sheetItemBody"></div>
+  <div class="sheet-footer">
+    <button class="btn-add-big" onclick="addToCart()">
+      <span>Tambah ke Keranjang</span>
+      <span id="sheetItemPrice">Rp 0</span>
+    </button>
+  </div>
+</div>
+
+<!-- ─── Bottom sheet: cart & checkout form ────────────────────────────────── -->
+<div class="sheet" id="cartSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <h2 class="sheet-title">Keranjang</h2>
+    <button class="sheet-close" onclick="closeAllSheets()">×</button>
+  </div>
+  <div class="sheet-body">
+    <div class="stepper">
+      <div class="step on"></div>
+      <div class="step on"></div>
+      <div class="step"></div>
+    </div>
+    <div id="cartItems"></div>
+    <div class="field">
+      <label>Nama Pemesan <span style="color:var(--brand)">*</span></label>
+      <input id="fName" type="text" placeholder="Contoh: Budi Santoso" autocomplete="name" />
+      <div class="err-msg">Nama wajib diisi</div>
+    </div>
+    <div class="field">
+      <label>Nomor WhatsApp <span style="color:var(--brand)">*</span></label>
+      <input id="fWA" type="tel" placeholder="08xx xxxx xxxx" inputmode="numeric" autocomplete="tel" />
+      <div class="hint">Format: 08xxx atau 628xxx</div>
+      <div class="err-msg">Nomor WA tidak valid</div>
+    </div>
+    <div class="field">
+      <label>Waktu Ambil <span style="color:var(--brand)">*</span></label>
+      <input id="fTime" type="text" placeholder="Contoh: 30 menit lagi / jam 14:00" />
+      <div class="err-msg">Waktu ambil wajib diisi</div>
+    </div>
+    <div class="field">
+      <label>Catatan Tambahan</label>
+      <textarea id="fNote" class="notes" placeholder="Opsional — tuliskan permintaan khusus"></textarea>
+    </div>
+    <div class="hint-banner">
+      💡 Pesanan langsung tercatat. Selesaikan pembayaran di kasir outlet saat pickup.
+    </div>
+  </div>
+  <div class="sheet-footer">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:13px;color:var(--muted)">
+      <span>Subtotal</span><span id="checkoutSubtotal">Rp 0</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:12px;color:var(--muted)">
+      <span>Biaya layanan (0.7%)</span><span id="checkoutFee">Rp 0</span>
+    </div>
+    <button class="btn-add-big" id="btnPay" onclick="submitOrder()">
+      <span>Bayar Sekarang</span>
+      <span id="checkoutTotal">Rp 0</span>
+    </button>
+  </div>
 </div>
 
 <!-- Toast -->
@@ -56,170 +151,529 @@
 <script src="assets/js/utils.js"></script>
 <script>
 // ─── State ────────────────────────────────────────────────────────────────────
-let allOutlets   = [];
-let userLat      = null;
-let userLng      = null;
-let activeKota   = 'Semua';
-let gpsGranted   = false;
+const DEFAULT_OUTLET = 'kitchen';
 
-// ─── Skeleton placeholders ────────────────────────────────────────────────────
-function showSkeletons(n = 4) {
-  const list = document.getElementById('skeletonList');
-  list.innerHTML = Array.from({length: n}, () => `
-    <div class="skeleton-card">
-      <div class="skeleton skeleton-photo"></div>
-      <div class="skeleton-lines">
-        <div class="skeleton skeleton-line"></div>
-        <div class="skeleton skeleton-line short"></div>
-        <div class="skeleton skeleton-line shorter"></div>
-      </div>
+let outletSlug   = getParam('outlet') || DEFAULT_OUTLET;
+let outlet       = null;
+let allOutlets   = [];
+let menuData     = [];
+let activeCategory = 'Semua';
+let cart         = [];
+
+let currentItem     = null;
+let currentVariants = [];
+let currentSel      = {};
+let currentQty      = 1;
+
+const SERVICE_FEE_RATE = 0.007;
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+(async function init() {
+  cart = getCart(outletSlug);
+  updateCartBar();
+
+  // Muat outlet list dan menu secara paralel
+  const [outletsRes] = await Promise.all([
+    window.db.from('outlets').select('id,slug,name,address,open_hour,close_hour,is_active').eq('is_active', true).order('name'),
+    loadMenu()
+  ]);
+
+  allOutlets = outletsRes.data || [];
+  renderOutletDropdown();
+})();
+
+// ─── Outlet dropdown ──────────────────────────────────────────────────────────
+function renderOutletDropdown() {
+  renderOutletDropdownItems(allOutlets);
+}
+
+function renderOutletDropdownItems(outlets) {
+  const list = document.getElementById('outletDropdownList');
+  if (!outlets.length) {
+    list.innerHTML = `<div style="padding:14px;text-align:center;color:var(--muted);font-size:13px">Outlet tidak ditemukan</div>`;
+    return;
+  }
+  list.innerHTML = outlets.map(o => {
+    const open = isOutletOpen(o.open_hour, o.close_hour);
+    const active = o.slug === outletSlug;
+    return `
+      <div class="outlet-drop-item ${active ? 'active' : ''}" onclick="selectOutlet('${o.slug}')">
+        <div class="outlet-drop-name">${o.name.replace(/^Mitra\s+/i, '')}</div>
+        <div class="outlet-drop-meta">
+          <span style="color:${open ? 'var(--green)' : 'var(--faint)'}">● ${open ? 'Buka' : 'Tutup'}</span>
+          ${o.open_hour ? ` · ${formatHour(o.open_hour)}–${formatHour(o.close_hour)}` : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function toggleOutletDropdown() {
+  const dd = document.getElementById('outletDropdown');
+  const arrow = document.getElementById('outletSelArrow');
+  const open = dd.style.display === 'none' || dd.style.display === '';
+  dd.style.display = open ? 'block' : 'none';
+  arrow.textContent = open ? '▴' : '▾';
+  if (open) {
+    renderOutletDropdown();
+    setTimeout(() => document.getElementById('outletSearch')?.focus(), 50);
+  } else {
+    const s = document.getElementById('outletSearch');
+    if (s) s.value = '';
+  }
+}
+
+function filterOutletDropdown(q) {
+  const term = q.toLowerCase().trim();
+  const filtered = term
+    ? allOutlets.filter(o => o.name.replace(/^Mitra\s+/i, '').toLowerCase().includes(term))
+    : allOutlets;
+  renderOutletDropdownItems(filtered);
+}
+
+function closeOutletDropdown() {
+  document.getElementById('outletDropdown').style.display = 'none';
+  document.getElementById('outletSelArrow').textContent = '▾';
+}
+
+async function selectOutlet(slug) {
+  if (slug === outletSlug) { closeOutletDropdown(); return; }
+
+  // Reset cart kalau ganti outlet
+  outletSlug = slug;
+  cart = getCart(outletSlug);
+  updateCartBar();
+  closeOutletDropdown();
+
+  // Update URL tanpa reload
+  const url = new URL(window.location.href);
+  url.searchParams.set('outlet', slug);
+  window.history.replaceState({}, '', url);
+
+  // Reset menu state
+  activeCategory = 'Semua';
+  document.getElementById('menuContent').innerHTML = '';
+  document.getElementById('tabs').style.display = 'none';
+  document.getElementById('searchWrap').style.display = 'none';
+  document.getElementById('btnCart').style.display = 'none';
+
+  await loadMenu();
+}
+
+// ─── Load menu ────────────────────────────────────────────────────────────────
+async function loadMenu() {
+  showMenuSkeleton();
+
+  // Ambil outlet dulu untuk dapat ID-nya
+  const { data: outletData, error: outletErr } = await window.db
+    .from('outlets')
+    .select('id,slug,name,address,open_hour,close_hour,type,is_active')
+    .eq('slug', outletSlug)
+    .single();
+
+  if (outletErr || !outletData) {
+    document.getElementById('menuContent').innerHTML = `<div class="error-box"><p>Outlet tidak ditemukan.</p></div>`;
+    return;
+  }
+
+  outlet = outletData;
+  document.title = outlet.name + ' — SUKA Shawarma';
+
+  // Update selector label
+  document.getElementById('outletSelName').textContent = outlet.name;
+
+  // Muat semua data menu paralel
+  const [catRes, itemRes, varRes, optRes, overrideRes] = await Promise.all([
+    window.db.from('categories').select('*').eq('is_active', true).order('sort_order'),
+    window.db.from('menu_items').select('*').eq('is_active', true).order('sort_order'),
+    window.db.from('menu_variants').select('*').order('sort_order'),
+    window.db.from('menu_variant_options').select('*').order('sort_order'),
+    window.db.from('outlet_menu_overrides').select('*').eq('outlet_id', outlet.id)
+  ]);
+
+  if (catRes.error || itemRes.error) {
+    document.getElementById('menuContent').innerHTML = `<div class="error-box"><p>Gagal memuat menu. Coba lagi.</p></div>`;
+    return;
+  }
+
+  const categories = catRes.data || [];
+  const items      = itemRes.data || [];
+  const variants   = varRes.data || [];
+  const options    = optRes.data || [];
+  const overrides  = overrideRes.data || [];
+
+  const overrideMap = {};
+  overrides.forEach(o => { overrideMap[o.menu_item_id] = o; });
+
+  const optsByVariant = {};
+  options.forEach(o => { (optsByVariant[o.variant_id] = optsByVariant[o.variant_id] || []).push(o); });
+
+  const varsByItem = {};
+  variants.forEach(v => {
+    (varsByItem[v.menu_item_id] = varsByItem[v.menu_item_id] || []).push({ ...v, options: optsByVariant[v.id] || [] });
+  });
+
+  const catMap = {};
+  categories.forEach(c => { catMap[c.id] = { ...c, items: [] }; });
+
+  items.forEach(item => {
+    const ov = overrideMap[item.id];
+    const enriched = {
+      ...item,
+      effectivePrice: ov?.price_override ?? item.base_price,
+      compare_price:  item.compare_price ?? null,
+      isAvailable:    ov ? ov.is_available : true,
+      variants:       varsByItem[item.id] || []
+    };
+    if (catMap[item.category_id]) catMap[item.category_id].items.push(enriched);
+  });
+
+  menuData = categories.map(c => catMap[c.id]).filter(c => c && c.items.length > 0);
+
+  document.getElementById('searchWrap').style.display = 'block';
+  document.getElementById('tabs').style.display = 'flex';
+  document.getElementById('btnCart').style.display = '';
+
+  renderTabs();
+  renderMenu();
+}
+
+function showMenuSkeleton() {
+  document.getElementById('menuContent').innerHTML = `
+    <div class="outlet-list" style="margin-top:12px">
+      ${Array.from({length: 4}, () => `
+        <div class="skeleton-card">
+          <div class="skeleton skeleton-photo"></div>
+          <div class="skeleton-lines">
+            <div class="skeleton skeleton-line"></div>
+            <div class="skeleton skeleton-line short"></div>
+            <div class="skeleton skeleton-line shorter"></div>
+          </div>
+        </div>`).join('')}
+    </div>`;
+}
+
+// ─── Render tabs ──────────────────────────────────────────────────────────────
+function renderTabs() {
+  const allCats = ['Semua', '⭐ Best Seller', ...menuData.map(c => c.name)];
+  document.getElementById('tabs').innerHTML = allCats.map(c =>
+    `<div class="tab ${c === activeCategory ? 'active' : ''}" onclick="setCategory('${c.replace(/'/g, "\\'")}')">${c}</div>`
+  ).join('');
+}
+
+function setCategory(c) {
+  activeCategory = c;
+  renderTabs();
+  renderMenu();
+  const el = document.getElementById('section-' + encodeURIComponent(c));
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ─── Render menu items ─────────────────────────────────────────────────────────
+function onSearch() { renderMenu(); }
+
+function renderMenu() {
+  const q = document.getElementById('searchInput').value.toLowerCase().trim();
+
+  let sections = menuData.map(cat => ({
+    ...cat,
+    items: cat.items.filter(item => {
+      if (activeCategory === '⭐ Best Seller' && !item.is_best_seller) return false;
+      if (activeCategory !== 'Semua' && activeCategory !== '⭐ Best Seller' && cat.name !== activeCategory) return false;
+      if (q && !item.name.toLowerCase().includes(q) && !(item.description || '').toLowerCase().includes(q)) return false;
+      return true;
+    })
+  })).filter(cat => cat.items.length > 0);
+
+  if (!sections.length) {
+    document.getElementById('menuContent').innerHTML = `
+      <div class="empty">
+        <div class="empty-icon">🍽️</div>
+        <div class="empty-title">Menu tidak ditemukan</div>
+        <div class="empty-desc">Coba kata kunci lain.</div>
+      </div>`;
+    return;
+  }
+
+  document.getElementById('menuContent').innerHTML = sections.map(cat => `
+    <div class="deal-section" id="section-${encodeURIComponent(cat.name)}">
+      <div class="deal-section-title">${cat.name}</div>
+      ${cat.items.map(item => {
+        const hasDiscount = item.compare_price && item.compare_price > item.effectivePrice;
+        const discountPct = hasDiscount
+          ? Math.round((item.compare_price - item.effectivePrice) / item.compare_price * 100)
+          : 0;
+        const clickFn = item.isAvailable ? `openItemSheet('${item.id}')` : '';
+        return `
+        <div class="deal-card ${!item.isAvailable ? 'unavailable' : ''}" onclick="${clickFn}">
+          <div class="deal-img-wrap">
+            <div class="deal-img">
+              ${item.photo_url ? `<img src="${item.photo_url}" alt="${item.name}" loading="lazy" />` : '🌯'}
+            </div>
+            ${item.is_best_seller ? `<span class="deal-img-badge">BEST SELLER</span>` : ''}
+            ${!item.isAvailable ? `<span class="deal-img-badge sold-out">HABIS</span>` : ''}
+            ${hasDiscount ? `<span class="deal-img-badge" style="top:auto;bottom:5px;left:5px;background:#ff6b00">-${discountPct}%</span>` : ''}
+          </div>
+          <div class="deal-body">
+            <div class="deal-name">${item.name}</div>
+            ${item.description ? `<div class="deal-desc">${item.description}</div>` : ''}
+            <div class="deal-price-row">
+              <div>
+                <div class="deal-price">${formatRupiah(item.effectivePrice)}</div>
+                ${hasDiscount ? `<div class="deal-price-meta">
+                  <span class="deal-compare">${formatRupiah(item.compare_price)}</span>
+                  <span class="deal-discount">-${discountPct}%</span>
+                </div>` : ''}
+              </div>
+              ${item.isAvailable
+                ? `<button class="deal-add-btn" onclick="event.stopPropagation();openItemSheet('${item.id}')">+</button>`
+                : ''}
+            </div>
+          </div>
+        </div>`;
+      }).join('')}
     </div>
   `).join('');
 }
 
-// ─── Load outlets dari Supabase ───────────────────────────────────────────────
-async function loadOutlets() {
-  document.getElementById('outletList').innerHTML =
-    '<div class="outlet-list" id="skeletonList"></div>';
-  showSkeletons(5);
+// ─── Item sheet ───────────────────────────────────────────────────────────────
+function openItemSheet(itemId) {
+  for (const cat of menuData) {
+    const found = cat.items.find(i => i.id === itemId);
+    if (found) { currentItem = found; break; }
+  }
+  if (!currentItem) return;
 
-  const { data, error } = await window.db
-    .from('outlets')
-    .select('id,slug,name,address,lat,lng,type,open_hour,close_hour,is_active')
-    .order('name');
+  currentVariants = currentItem.variants;
+  currentQty      = 1;
+  currentSel      = {};
+  currentVariants.forEach(v => {
+    if (!v.is_multi) {
+      const def = v.options.find(o => o.is_default) || v.options[0];
+      currentSel[v.id] = def ? def.name : null;
+    } else {
+      currentSel[v.id] = [];
+    }
+  });
 
-  if (error) {
-    document.getElementById('outletList').innerHTML = `
-      <div class="error-box">
-        <p>Gagal memuat daftar outlet. Periksa koneksi internet.</p>
-        <button class="btn-retry" onclick="loadOutlets()">Coba Lagi</button>
+  document.getElementById('sheetItemName').textContent = currentItem.name;
+  renderItemSheet();
+  showSheet('itemSheet');
+}
+
+function renderItemSheet() {
+  let html = `
+    <div class="item-hero">
+      ${currentItem.photo_url ? `<img src="${currentItem.photo_url}" alt="${currentItem.name}" />` : '🌯'}
+    </div>
+    ${currentItem.description ? `<p style="color:var(--muted);font-size:14px;margin:0 0 18px">${currentItem.description}</p>` : ''}`;
+
+  currentVariants.forEach(v => {
+    html += `<div class="variant-group">
+      <div class="variant-label">
+        ${v.label}
+        ${v.is_required ? '<span class="variant-req">Wajib</span>' : '<span class="variant-opt-label">Opsional</span>'}
       </div>`;
-    return;
-  }
-
-  allOutlets = data || [];
-  buildCityChips();
-  renderOutlets();
-}
-
-// ─── GPS auto-detect ──────────────────────────────────────────────────────────
-function requestGPS() {
-  const statusEl = document.getElementById('gpsText');
-  if (!navigator.geolocation) {
-    statusEl.textContent = 'GPS tidak didukung browser ini';
-    renderOutlets();
-    return;
-  }
-  navigator.geolocation.getCurrentPosition(
-    pos => {
-      userLat   = pos.coords.latitude;
-      userLng   = pos.coords.longitude;
-      gpsGranted = true;
-      statusEl.textContent = 'Menampilkan outlet terdekat';
-      renderOutlets();
-    },
-    () => {
-      statusEl.textContent = 'Izin lokasi ditolak — urut alfabetis';
-      renderOutlets();
-    },
-    { timeout: 6000 }
-  );
-}
-
-// ─── City chips ───────────────────────────────────────────────────────────────
-function buildCityChips() {
-  const kotas = ['Semua', ...new Set(allOutlets.map(o => extractKota(o.address)).sort())];
-  const el = document.getElementById('cityChips');
-  el.innerHTML = kotas.map(k =>
-    `<div class="chip ${k === activeKota ? 'active' : ''}" onclick="setKota('${k}')">${k}</div>`
-  ).join('');
-}
-
-function setKota(k) {
-  activeKota = k;
-  buildCityChips();
-  renderOutlets();
-}
-
-// ─── Render outlet list ────────────────────────────────────────────────────────
-function renderOutlets() {
-  const q     = document.getElementById('searchInput').value.toLowerCase().trim();
-  let items   = allOutlets.filter(o => o.is_active);
-
-  // filter kota
-  if (activeKota !== 'Semua') {
-    items = items.filter(o => extractKota(o.address) === activeKota);
-  }
-  // filter search
-  if (q) {
-    items = items.filter(o =>
-      o.name.toLowerCase().includes(q) ||
-      o.address.toLowerCase().includes(q)
-    );
-  }
-  // sort: GPS terdekat atau alfabetis
-  if (gpsGranted && userLat !== null) {
-    items.sort((a, b) => {
-      const dA = (a.lat && a.lng) ? haversineKm(userLat, userLng, a.lat, a.lng) : 9999;
-      const dB = (b.lat && b.lng) ? haversineKm(userLat, userLng, b.lat, b.lng) : 9999;
-      return dA - dB;
+    v.options.forEach(o => {
+      const checked = v.is_multi ? currentSel[v.id].includes(o.name) : currentSel[v.id] === o.name;
+      html += `
+        <label class="opt" onclick="event.stopPropagation();selectOpt('${v.id}',${v.is_multi},'${o.name.replace(/'/g, "\\'")}')">
+          <span class="opt-left">
+            <input type="${v.is_multi ? 'checkbox' : 'radio'}" name="v${v.id}" ${checked ? 'checked' : ''} />
+            ${o.name}
+          </span>
+          <span class="opt-price">${o.price_modifier > 0 ? '+ ' + formatRupiah(o.price_modifier) : ''}</span>
+        </label>`;
     });
-  }
+    html += `</div>`;
+  });
 
-  const title = document.getElementById('listTitle');
-  title.textContent = items.length + ' Outlet' + (activeKota !== 'Semua' ? ' di ' + activeKota : '');
+  html += `
+    <div class="variant-group">
+      <div class="variant-label">Catatan untuk dapur <span class="variant-opt-label">Opsional</span></div>
+      <textarea class="notes field" id="itemNote" placeholder="Contoh: tanpa bawang, tidak pedas…" style="margin:0"></textarea>
+    </div>
+    <div class="variant-group">
+      <div class="variant-label">Jumlah</div>
+      <div class="qty-row">
+        <button class="qty-btn" onclick="changeQty(-1)">−</button>
+        <span id="qtyDisplay">${currentQty}</span>
+        <button class="qty-btn plus" onclick="changeQty(1)">+</button>
+      </div>
+    </div>`;
 
-  if (!items.length) {
-    document.getElementById('outletList').innerHTML = `
-      <div class="empty">
-        <div class="empty-icon">🔍</div>
-        <div class="empty-title">Tidak ditemukan</div>
-        <div class="empty-desc">Coba kata kunci lain atau pilih kota berbeda.</div>
-      </div>`;
-    return;
-  }
-
-  const html = `<div class="outlet-list">` + items.map(o => {
-    const open = isOutletOpen(o.open_hour, o.close_hour);
-    const dist = (gpsGranted && userLat !== null && o.lat && o.lng)
-      ? formatDistance(haversineKm(userLat, userLng, o.lat, o.lng))
-      : null;
-    return `
-      <a class="outlet-card ${!open ? 'closed' : ''}" href="menu.html?outlet=${o.slug}" onclick="return onOutletClick(event,'${o.slug}',${open})">
-        <div class="outlet-logo">🌯</div>
-        <div class="outlet-info">
-          <div class="outlet-name">${o.name}</div>
-          <div class="outlet-addr">📍 ${o.address}</div>
-          <div class="outlet-meta">
-            ${open
-              ? `<span class="badge-open">● Buka</span>`
-              : `<span class="badge-closed">● Tutup</span>`}
-            ${o.open_hour ? `<span class="badge-dist">${formatHour(o.open_hour)}–${formatHour(o.close_hour)}</span>` : ''}
-            <span class="badge ${o.type === 'owned' ? 'badge-owned' : 'badge-partner'}">${o.type === 'owned' ? 'Chain' : 'Mitra'}</span>
-            ${dist ? `<span class="badge-dist">· ${dist}</span>` : ''}
-          </div>
-        </div>
-        <div class="outlet-arrow">›</div>
-      </a>`;
-  }).join('') + `</div>`;
-
-  document.getElementById('outletList').innerHTML = html;
+  document.getElementById('sheetItemBody').innerHTML = html;
+  updateSheetPrice();
 }
 
-// Outlet tutup → konfirmasi sebelum lanjut
-function onOutletClick(e, slug, isOpen) {
-  if (isOpen) return true; // lanjut normal
-  e.preventDefault();
-  if (confirm('Outlet ini sedang tutup. Tetap mau lihat menu?')) {
-    window.location.href = 'menu.html?outlet=' + slug;
+function selectOpt(variantId, isMulti, name) {
+  if (isMulti) {
+    const arr = currentSel[variantId];
+    const idx = arr.indexOf(name);
+    if (idx >= 0) arr.splice(idx, 1); else arr.push(name);
+  } else {
+    currentSel[variantId] = name;
   }
-  return false;
+  renderItemSheet();
 }
 
-// ─── Init ─────────────────────────────────────────────────────────────────────
-showSkeletons(5);
-loadOutlets();
-requestGPS();
+function changeQty(delta) {
+  currentQty = Math.max(1, currentQty + delta);
+  const el = document.getElementById('qtyDisplay');
+  if (el) el.textContent = currentQty;
+  updateSheetPrice();
+}
+
+function calcUnitPrice() {
+  let p = currentItem.effectivePrice;
+  currentVariants.forEach(v => {
+    if (v.is_multi) {
+      currentSel[v.id].forEach(name => {
+        const opt = v.options.find(o => o.name === name);
+        if (opt) p += opt.price_modifier;
+      });
+    } else if (currentSel[v.id]) {
+      const opt = v.options.find(o => o.name === currentSel[v.id]);
+      if (opt) p += opt.price_modifier;
+    }
+  });
+  return p;
+}
+
+function updateSheetPrice() {
+  const el = document.getElementById('sheetItemPrice');
+  if (el) el.textContent = formatRupiah(calcUnitPrice() * currentQty);
+}
+
+function validateSelections() {
+  for (const v of currentVariants) {
+    if (v.is_required && !v.is_multi && !currentSel[v.id]) return false;
+    if (v.is_required && v.is_multi && currentSel[v.id].length === 0) return false;
+  }
+  return true;
+}
+
+function addToCart() {
+  if (!validateSelections()) { showToast('Pilih semua opsi yang wajib terlebih dahulu'); return; }
+  const note      = (document.getElementById('itemNote') || {}).value || '';
+  const unitPrice = calcUnitPrice();
+  const selections = JSON.parse(JSON.stringify(currentSel));
+
+  const optionIds = [];
+  currentVariants.forEach(v => {
+    if (v.is_multi) {
+      (currentSel[v.id] || []).forEach(name => {
+        const opt = v.options.find(o => o.name === name);
+        if (opt) optionIds.push(opt.id);
+      });
+    } else if (currentSel[v.id]) {
+      const opt = v.options.find(o => o.name === currentSel[v.id]);
+      if (opt) optionIds.push(opt.id);
+    }
+  });
+
+  cart.push({ menuItemId: currentItem.id, name: currentItem.name, unitPrice, qty: currentQty, selections, optionIds, note });
+  setCart(outletSlug, cart);
+  updateCartBar();
+  closeAllSheets();
+  showToast('✓ ' + currentItem.name + ' ditambahkan');
+}
+
+// ─── Cart bar ─────────────────────────────────────────────────────────────────
+function updateCartBar() {
+  const count = getCartCount(cart);
+  const total = getCartTotal(cart);
+  document.getElementById('cartCount').textContent = count;
+  document.getElementById('cartLabel').textContent  = count + ' item';
+  document.getElementById('cartTotal').textContent  = formatRupiah(total);
+  document.getElementById('cartBar').classList.toggle('hidden', count === 0);
+}
+
+// ─── Cart sheet ───────────────────────────────────────────────────────────────
+function openCartSheet() {
+  if (!cart.length) { showToast('Keranjang masih kosong'); return; }
+  renderCartSheet();
+  showSheet('cartSheet');
+}
+
+function renderCartSheet() {
+  const subtotal = getCartTotal(cart);
+  const fee      = Math.ceil(subtotal * SERVICE_FEE_RATE);
+  const total    = subtotal + fee;
+
+  let html = '<div class="summary-box">';
+  cart.forEach((item, idx) => {
+    const sel = summarizeSelections(item.selections);
+    html += `<div class="summary-row">
+      <span class="n">
+        <b>${item.qty}× ${item.name}</b>
+        ${sel ? `<br/><span style="color:var(--muted);font-size:12px">${sel}</span>` : ''}
+        ${item.note ? `<br/><span style="color:var(--muted);font-size:12px">📝 ${item.note}</span>` : ''}
+      </span>
+      <span style="text-align:right;white-space:nowrap">
+        ${formatRupiah(item.unitPrice * item.qty)}
+        <br/><span class="del" onclick="removeCartItem(${idx})">Hapus</span>
+      </span>
+    </div>`;
+  });
+  html += `<div class="summary-row total"><span>Subtotal</span><span>${formatRupiah(subtotal)}</span></div>`;
+  html += '</div>';
+
+  document.getElementById('cartItems').innerHTML = html;
+  document.getElementById('checkoutSubtotal').textContent = formatRupiah(subtotal);
+  document.getElementById('checkoutFee').textContent      = formatRupiah(fee);
+  document.getElementById('checkoutTotal').textContent    = formatRupiah(total);
+}
+
+function removeCartItem(idx) {
+  cart.splice(idx, 1);
+  setCart(outletSlug, cart);
+  updateCartBar();
+  if (!cart.length) { closeAllSheets(); return; }
+  renderCartSheet();
+}
+
+// ─── Submit order ─────────────────────────────────────────────────────────────
+function submitOrder() {
+  let valid = true;
+  [
+    { id: 'fName', validate: v => v.trim().length >= 2 },
+    { id: 'fWA',   validate: v => validateWA(v) },
+    { id: 'fTime', validate: v => v.trim().length >= 2 },
+  ].forEach(f => {
+    const input = document.getElementById(f.id);
+    const wrap  = input.closest('.field');
+    if (!f.validate(input.value)) { wrap.classList.add('has-error'); valid = false; }
+    else wrap.classList.remove('has-error');
+  });
+  if (!valid) { showToast('Lengkapi data yang diperlukan'); return; }
+
+  const checkoutData = {
+    outletSlug,
+    outletId:      outlet.id,
+    outletName:    outlet.name,
+    outletAddress: outlet.address,
+    customerName:  document.getElementById('fName').value.trim(),
+    customerWA:    normalizeWA(document.getElementById('fWA').value),
+    pickupTime:    document.getElementById('fTime').value.trim(),
+    notes:         document.getElementById('fNote').value.trim(),
+    cart
+  };
+  sessionStorage.setItem('suka_checkout', JSON.stringify(checkoutData));
+  window.location.href = 'checkout.html';
+}
+
+// ─── Sheet helpers ────────────────────────────────────────────────────────────
+function showSheet(id) {
+  document.getElementById('scrim').classList.add('show');
+  document.getElementById(id).classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeAllSheets() {
+  ['itemSheet','cartSheet'].forEach(id => document.getElementById(id).classList.remove('show'));
+  document.getElementById('scrim').classList.remove('show');
+  document.body.style.overflow = '';
+}
 </script>
 </body>
 </html>

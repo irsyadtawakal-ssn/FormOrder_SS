@@ -164,12 +164,15 @@ function renderStatus(o) {
       break;
 
     case 'paid':
+      const isManual = o.payment_method === 'manual';
       heroHtml = `
         <div class="status-hero">
           <div class="status-icon">✅</div>
-          <div class="status-title">Pembayaran Berhasil!</div>
-          <div class="status-sub">Pesanan diterima — menunggu konfirmasi outlet</div>
-          <span class="status-chip status-paid">DIBAYAR</span>
+          <div class="status-title">${isManual ? 'Pesanan Diterima!' : 'Pembayaran Berhasil!'}</div>
+          <div class="status-sub">${isManual
+            ? 'Bayar saat pickup — outlet sedang konfirmasi pesananmu'
+            : 'Pesanan diterima — menunggu konfirmasi outlet'}</div>
+          <span class="status-chip status-paid">${isManual ? 'DIKONFIRMASI' : 'DIBAYAR'}</span>
         </div>`;
       break;
 

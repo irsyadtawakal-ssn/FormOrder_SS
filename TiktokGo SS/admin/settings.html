@@ -25,10 +25,11 @@
 
   <!-- Bottom nav -->
   <nav class="admin-nav">
-    <a href="index.html"><span>🏠</span><span>Dashboard</span></a>
-    <a href="orders.html"><span>📋</span><span>Pesanan</span></a>
-    <a href="menu.html"><span>🌯</span><span>Menu</span></a>
-    <a href="outlets.html"><span>📍</span><span>Outlet</span></a>
+    <a href="/admin/index.html"><span>🏠</span><span>Dashboard</span></a>
+    <a href="/admin/orders.html"><span>📋</span><span>Pesanan</span></a>
+    <a href="/admin/menu.html"><span>🌯</span><span>Menu</span></a>
+    <a href="/admin/outlets.html" class="admin-only"><span>📍</span><span>Outlet</span></a>
+    <a href="/admin/settings.html" class="admin-only"><span>⚙️</span><span>Pengaturan</span></a>
   </nav>
 
 </div>
@@ -114,7 +115,7 @@ function renderPage() {
       <div style="font-size:13px;color:var(--muted);margin-bottom:12px">
         Import data dalam jumlah besar via CSV
       </div>
-      <a href="import.html" class="btn-outline" style="display:block;text-align:center;margin-bottom:0">
+      <a href="/admin/import.html" class="btn-outline" style="display:block;text-align:center;margin-bottom:0">
         Buka Halaman Import →
       </a>
     </div>
@@ -125,7 +126,7 @@ function renderPage() {
       <div style="font-size:13px;color:var(--muted);margin-bottom:12px">
         Buat dan kelola akun outlet staff
       </div>
-      <a href="users.html" class="btn-outline" style="display:block;text-align:center;margin-bottom:0">
+      <a href="/admin/users.html" class="btn-outline" style="display:block;text-align:center;margin-bottom:0">
         Kelola Pengguna →
       </a>
     </div>

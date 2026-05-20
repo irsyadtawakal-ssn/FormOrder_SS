@@ -1,0 +1,20 @@
+name,slug,address,lat,lng,phone_wa,open_hour,close_hour,type
+SUKA Shawarma Kitchen,kitchen,"Jl. Bukit Nirwana Raya No.3, Mulyaharja, Bogor Selatan, Kota Bogor 16135",-6.6108,106.7985,,09:00,21:00,owned
+SUKA Shawarma Empang,empang,"Jl. Pahlawan No.10A, Empang, Bogor Selatan, Kota Bogor 16132",-6.6153,106.7950,,09:00,21:00,owned
+SUKA Shawarma Paledang,paledang,"Jl. Paledang No.18, Bogor Tengah, Kota Bogor 16122",-6.5975,106.7886,,09:00,21:00,owned
+SUKA Shawarma Cimanggu,cimanggu,"Jl. Bukit Cimanggu City Raya No.3A, Cibadak, Tanah Sereal, Kota Bogor 16165",-6.5573,106.7714,,09:00,21:00,owned
+SUKA Shawarma Depok Sukmajaya,depok-sukmajaya,"Jl. K.H.M. Yusuf Raya, Mekar Jaya, Sukmajaya, Kota Depok 16411",-6.3940,106.8330,,09:00,21:00,owned
+SUKA Shawarma Jagakarsa,jagakarsa,"Jl. Raya Jagakarsa No.159, Jagakarsa, Kota Jakarta Selatan 12620",-6.3394,106.8312,,09:00,21:00,owned
+SUKA Shawarma Beji,beji,"Jl. H. Asmawi No.44, Beji, Kota Depok 16421",-6.3784,106.8233,,09:00,21:00,owned
+SUKA Shawarma Sawangan,sawangan,"Jl. Raya Parung Bingung No.49, Rangkapan Jaya Baru, Pancoran Mas, Kota Depok 16434",-6.4494,106.7750,,09:00,21:00,owned
+SUKA Shawarma Pajajaran,pajajaran,"Jl. Raya Pajajaran No.21, Sukasari, Bogor Timur, Kota Bogor 16142",-6.5902,106.8058,,09:00,21:00,owned
+SUKA Shawarma Jatiwaringin,jatiwaringin,"Jl. Raya Jatiwaringin No.51, Jatiwaringin, Pondok Gede, Kota Bekasi 17411",-6.2756,106.9564,,09:00,21:00,owned
+SUKA Shawarma Cirendeu,cirendeu,"Jl. Raya Cirendeu, Pisangan, Ciputat Timur, Kota Tangerang Selatan 15412",-6.3277,106.7570,,09:00,21:00,owned
+SUKA Shawarma Jatiasih,jatiasih,"Jl. Raya Mess AL No.10, Jatisari, Jatiasih, Kota Bekasi 17426",-6.3079,106.9824,,09:00,21:00,owned
+SUKA Shawarma Dramaga,dramaga,"Jl. Raya Dramaga No.15, Margajaya, Bogor Barat, Kota Bogor 16116",-6.5568,106.7267,,09:00,21:00,owned
+Mitra SUKA Shawarma Cibinong,cibinong,"Jl. Raya Sukahati No.35, Sukahati, Cibinong, Kabupaten Bogor 16913",-6.4741,106.8518,,09:00,21:00,partner
+Mitra SUKA Shawarma Citayam,citayam,"Jl. Raya Sukahati No.35, Sukahati, Cibinong, Kabupaten Bogor 16913",-6.4741,106.8518,,09:00,21:00,partner
+Mitra SUKA Shawarma Tebet,tebet,"Jl. Tebet Timur Dalam Raya No.60E, Tebet Timur, Tebet, Kota Jakarta Selatan 12820",-6.2339,106.8484,,09:00,21:00,partner
+Mitra SUKA Shawarma Ciseeng,ciseeng,"Jl. H. Mawi No.17, Parigi Mekar, Ciseeng, Kabupaten Bogor 16120",-6.4889,106.6832,,09:00,21:00,partner
+Mitra SUKA Shawarma Pekayon,pekayon,"Jl. Pulo Ribung No.1, Pekayon Jaya, Bekasi Selatan, Kota Bekasi 17147",-6.2883,106.9778,,09:00,21:00,partner
+Mitra SUKA Shawarma Kalisari,kalisari,"Jl. Kalisari No.13, Kalisari, Pasar Rebo, Kota Jakarta Timur 13790",-6.3170,106.8736,,09:00,21:00,partner

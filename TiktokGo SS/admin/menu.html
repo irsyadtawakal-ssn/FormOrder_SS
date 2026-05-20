@@ -35,10 +35,11 @@
 
   <!-- Bottom nav -->
   <nav class="admin-nav">
-    <a href="index.html"><span>🏠</span><span>Dashboard</span></a>
-    <a href="orders.html"><span>📋</span><span>Pesanan</span></a>
-    <a href="menu.html"><span>🌯</span><span>Menu</span></a>
-    <a href="outlets.html" class="admin-only"><span>📍</span><span>Outlet</span></a>
+    <a href="/admin/index.html"><span>🏠</span><span>Dashboard</span></a>
+    <a href="/admin/orders.html"><span>📋</span><span>Pesanan</span></a>
+    <a href="/admin/menu.html"><span>🌯</span><span>Menu</span></a>
+    <a href="/admin/outlets.html" class="admin-only"><span>📍</span><span>Outlet</span></a>
+    <a href="/admin/settings.html" class="admin-only"><span>⚙️</span><span>Pengaturan</span></a>
   </nav>
 
 </div>
@@ -52,9 +53,11 @@
 <script src="../assets/js/admin.js"></script>
 <script>
 // ─── State ────────────────────────────────────────────────────────────────────
-let allItems    = [];
-let categories  = [];
-let currentCat  = '';
+let allItems     = [];
+let categories   = [];
+let overrideMap  = {};  // { menu_item_id: { id, is_available } } — untuk outlet_staff
+let outletData   = null;
+let currentCat   = '';
 let isSuperAdmin = false;
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
@@ -62,16 +65,28 @@ let isSuperAdmin = false;
   const u = await requireAuth();
   if (!u) return;
   isSuperAdmin = u.role === 'super_admin';
+
+  if (!isSuperAdmin) {
+    // Tampilkan banner outlet yang sedang dikelola staff
+    const { data: od } = await window.db
+      .from('outlets').select('id,name').eq('id', u.outlet_id).single();
+    outletData = od;
+    if (od) {
+      const banner = document.createElement('div');
+      banner.className = 'hint-banner';
+      banner.style.cssText = 'margin:8px 12px 0;border-radius:10px';
+      banner.innerHTML = `📍 Mengatur ketersediaan menu untuk <b>${od.name}</b>`;
+      document.getElementById('catTabs').before(banner);
+    }
+  }
+
   await Promise.all([loadCategories(), loadItems()]);
 })();
 
 // ─── Data loaders ─────────────────────────────────────────────────────────────
 async function loadCategories() {
   const { data } = await window.db
-    .from('categories')
-    .select('*')
-    .order('sort_order')
-    .order('name');
+    .from('categories').select('*').order('sort_order').order('name');
   categories = data || [];
 
   const tabs = document.getElementById('catTabs');
@@ -86,14 +101,31 @@ async function loadCategories() {
 }
 
 async function loadItems() {
-  const { data } = await window.db
-    .from('menu_items')
-    .select(`*, categories(name),
-             menu_variants(id, label, is_required, is_multi, sort_order,
-               menu_variant_options(id, name, price_modifier, is_default, sort_order))`)
-    .order('sort_order')
-    .order('name');
-  allItems = data || [];
+  const queries = [
+    window.db.from('menu_items')
+      .select(`*, categories(name),
+               menu_variants(id, label, is_required, is_multi, sort_order,
+                 menu_variant_options(id, name, price_modifier, is_default, sort_order))`)
+      .order('sort_order').order('name'),
+  ];
+
+  // Outlet staff: muat overrides untuk outletnya
+  if (!isSuperAdmin && outletData) {
+    queries.push(
+      window.db.from('outlet_menu_overrides')
+        .select('id, menu_item_id, is_available')
+        .eq('outlet_id', outletData.id)
+    );
+  }
+
+  const [itemRes, overrideRes] = await Promise.all(queries);
+  allItems = itemRes.data || [];
+
+  overrideMap = {};
+  if (overrideRes) {
+    (overrideRes.data || []).forEach(o => { overrideMap[o.menu_item_id] = o; });
+  }
+
   applyFilter();
 }
 
@@ -130,10 +162,14 @@ function renderList(items) {
 }
 
 function menuRow(item) {
-  const catName  = (item.categories || {}).name || '—';
-  const varCount = (item.menu_variants || []).length;
+  const catName   = (item.categories || {}).name || '—';
+  const varCount  = (item.menu_variants || []).length;
+  const override  = overrideMap[item.id];
+  // outlet_staff: tersedia kecuali override eksplisit false
+  const isAvail   = override ? override.is_available : true;
+  const rowOpacity = isSuperAdmin ? (item.is_active ? 1 : 0.55) : (isAvail ? 1 : 0.55);
 
-  return `<div class="admin-order-row" style="opacity:${item.is_active ? 1 : 0.55}">
+  return `<div class="admin-order-row" style="opacity:${rowOpacity}">
     <div style="display:flex;gap:10px;align-items:flex-start">
       <div style="width:56px;height:56px;border-radius:10px;flex-shrink:0;overflow:hidden;
                   background:linear-gradient(135deg,#fde2c4,#ffb088);
@@ -147,24 +183,35 @@ function menuRow(item) {
         <div style="font-size:12px;color:var(--muted)">${catName}${varCount ? ` · ${varCount} varian` : ''}</div>
         <div style="font-weight:700;color:var(--brand);font-size:13px;margin-top:2px">${formatRupiah(item.base_price)}</div>
         ${item.is_best_seller ? `<span style="font-size:10px;background:var(--brand-bg);color:var(--brand);padding:2px 7px;border-radius:999px;font-weight:700">⭐ Best Seller</span>` : ''}
+        ${!isSuperAdmin ? `<div style="font-size:11px;margin-top:4px;color:${isAvail ? 'var(--green)' : 'var(--faint)'}">
+          ${isAvail ? '● Tersedia' : '● Tidak tersedia'}
+        </div>` : ''}
       </div>
       <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;flex-shrink:0">
-        <label class="toggle-wrap admin-only">
-          <input type="checkbox" ${item.is_active ? 'checked' : ''} onchange="toggleItem('${item.id}',this.checked)" />
-          <span class="toggle-slider"></span>
-        </label>
-        <button class="action-btn action-secondary admin-only"
-                style="font-size:11px;padding:4px 10px"
-                onclick="openItemForm('${item.id}')">Edit</button>
-        <button class="action-btn action-secondary"
-                style="font-size:11px;padding:4px 10px"
-                onclick="openVariantManager('${item.id}')">Varian</button>
+        ${isSuperAdmin ? `
+          <label class="toggle-wrap">
+            <input type="checkbox" ${item.is_active ? 'checked' : ''} onchange="toggleItem('${item.id}',this.checked)" />
+            <span class="toggle-slider"></span>
+          </label>
+          <button class="action-btn action-secondary"
+                  style="font-size:11px;padding:4px 10px"
+                  onclick="openItemForm('${item.id}')">Edit</button>
+          <button class="action-btn action-secondary"
+                  style="font-size:11px;padding:4px 10px"
+                  onclick="openVariantManager('${item.id}')">Varian</button>
+        ` : `
+          <label class="toggle-wrap">
+            <input type="checkbox" ${isAvail ? 'checked' : ''} onchange="toggleAvailability('${item.id}',this.checked)" />
+            <span class="toggle-slider"></span>
+          </label>
+          <div style="font-size:10px;color:var(--muted);text-align:center">Tersedia</div>
+        `}
       </div>
     </div>
   </div>`;
 }
 
-// ─── Toggle aktif ─────────────────────────────────────────────────────────────
+// ─── Toggle aktif (super_admin — ubah is_active di menu_items) ────────────────
 async function toggleItem(itemId, active) {
   const { error } = await window.db
     .from('menu_items').update({ is_active: active }).eq('id', itemId);
@@ -172,6 +219,28 @@ async function toggleItem(itemId, active) {
   const idx = allItems.findIndex(i => i.id === itemId);
   if (idx >= 0) allItems[idx].is_active = active;
   adminToast(active ? '✅ Menu diaktifkan' : '⏸ Menu dinonaktifkan');
+  applyFilter();
+}
+
+// ─── Toggle ketersediaan (outlet_staff — upsert outlet_menu_overrides) ────────
+async function toggleAvailability(itemId, available) {
+  if (!outletData) return;
+  const { error } = await window.db
+    .from('outlet_menu_overrides')
+    .upsert(
+      { outlet_id: outletData.id, menu_item_id: itemId, is_available: available },
+      { onConflict: 'outlet_id,menu_item_id' }
+    );
+  if (error) { adminToast('❌ ' + error.message); return; }
+
+  // Update local map
+  if (overrideMap[itemId]) {
+    overrideMap[itemId].is_available = available;
+  } else {
+    overrideMap[itemId] = { menu_item_id: itemId, is_available: available };
+  }
+
+  adminToast(available ? '✅ Menu tersedia' : '⏸ Menu tidak tersedia');
   applyFilter();
 }
 
@@ -188,10 +257,17 @@ function openItemForm(itemId) {
       <label class="form-label">Nama Menu</label>
       <input id="iName" class="form-input" value="${item?.name || ''}" placeholder="Nama menu" />
     </div>
-    <div class="form-group">
-      <label class="form-label">Harga Dasar (Rp)</label>
-      <input id="iPrice" class="form-input" type="number" min="0" step="500"
-             value="${item?.base_price || ''}" placeholder="0" />
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="form-group">
+        <label class="form-label">Harga Jual (Rp)</label>
+        <input id="iPrice" class="form-input" type="number" min="0" step="500"
+               value="${item?.base_price || ''}" placeholder="0" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Harga Coret (Rp)</label>
+        <input id="iCompare" class="form-input" type="number" min="0" step="500"
+               value="${item?.compare_price || ''}" placeholder="Kosong = no diskon" />
+      </div>
     </div>
     <div class="form-group">
       <label class="form-label">Kategori</label>
@@ -231,20 +307,22 @@ function openItemForm(itemId) {
 }
 
 async function saveItem(itemId) {
-  const name  = document.getElementById('iName').value.trim();
-  const price = parseFloat(document.getElementById('iPrice').value);
-  const catId = document.getElementById('iCat').value || null;
-  const desc  = document.getElementById('iDesc').value.trim() || null;
-  const photo = document.getElementById('iPhoto').value.trim() || null;
-  const sort  = parseInt(document.getElementById('iSort').value) || 0;
-  const active = document.getElementById('iActive').checked;
-  const best   = document.getElementById('iBest').checked;
+  const name    = document.getElementById('iName').value.trim();
+  const price   = parseFloat(document.getElementById('iPrice').value);
+  const compare = parseFloat(document.getElementById('iCompare').value) || null;
+  const catId   = document.getElementById('iCat').value || null;
+  const desc    = document.getElementById('iDesc').value.trim() || null;
+  const photo   = document.getElementById('iPhoto').value.trim() || null;
+  const sort    = parseInt(document.getElementById('iSort').value) || 0;
+  const active  = document.getElementById('iActive').checked;
+  const best    = document.getElementById('iBest').checked;
 
-  if (!name)       { adminToast('❌ Nama wajib diisi'); return; }
-  if (isNaN(price) || price < 0) { adminToast('❌ Harga tidak valid'); return; }
+  if (!name)                        { adminToast('❌ Nama wajib diisi'); return; }
+  if (isNaN(price) || price < 0)    { adminToast('❌ Harga tidak valid'); return; }
+  if (compare !== null && compare <= price) { adminToast('❌ Harga coret harus lebih besar dari harga jual'); return; }
 
   const payload = {
-    name, base_price: price, category_id: catId,
+    name, base_price: price, compare_price: compare, category_id: catId,
     description: desc, photo_url: photo,
     sort_order: sort, is_active: active, is_best_seller: best,
   };

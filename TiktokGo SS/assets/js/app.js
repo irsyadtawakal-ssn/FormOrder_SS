@@ -46,6 +46,30 @@ async function submitCheckout(checkoutData) {
   });
 }
 
+// ─── Submit manual order — tanpa payment gateway ─────────────────────────────
+// Mengembalikan: { order_number, order_id, total, subtotal, service_fee }
+
+async function submitManualOrder(checkoutData) {
+  const { outletSlug, cart, customerName, customerWA, pickupTime, notes } = checkoutData;
+
+  const items = cart.map(item => ({
+    menu_item_id: item.menuItemId,
+    qty:          item.qty,
+    option_ids:   Array.isArray(item.optionIds) ? item.optionIds : [],
+    selections:   item.selections || {},
+    note:         item.note || null,
+  }));
+
+  return await callEdgeFunction('create-manual-order', {
+    outlet_slug:   outletSlug,
+    items,
+    customer_name: customerName,
+    customer_wa:   customerWA,
+    pickup_time:   pickupTime,
+    notes:         notes || null,
+  });
+}
+
 // ─── Cek status order — panggil check-tripay-status ──────────────────────────
 // Mengembalikan: { success, status, synced }
 

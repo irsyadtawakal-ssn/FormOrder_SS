@@ -1,0 +1,17 @@
+name,category_name,description,base_price,is_best_seller
+Original Ayam Sedang,Original Shawarma Ayam,Shawarma ayam ukuran sedang dengan bumbu rempah khas SUKA,27000,false
+Original Ayam Besar,Original Shawarma Ayam,Shawarma ayam ukuran besar — lebih banyak lebih puas,32000,true
+Original Ayam Jumbo,Original Shawarma Ayam,Shawarma ayam ukuran jumbo untuk porsi ekstra,37000,false
+Original Sapi Sedang,Original Shawarma Sapi,Shawarma daging sapi pilihan ukuran sedang,30000,false
+Original Sapi Besar,Original Shawarma Sapi,Shawarma daging sapi pilihan ukuran besar,35000,true
+Original Sapi Jumbo,Original Shawarma Sapi,Shawarma daging sapi pilihan ukuran jumbo,45000,false
+Original Mix Besar,Original Shawarma Mix,Perpaduan ayam dan sapi dalam satu wrap ukuran besar,40000,false
+Original Mix Jumbo,Original Shawarma Mix,Perpaduan ayam dan sapi dalam satu wrap ukuran jumbo,50000,false
+Suka Chicken,Suka Suka,Shawarma ayam spesial dengan saus SUKA signature,32000,true
+Suka Beef,Suka Suka,Shawarma sapi spesial dengan saus SUKA signature,35000,false
+Suka Fried Chicken,Suka Suka,Shawarma ayam goreng crispy dengan saus SUKA signature,33000,false
+Suka Samyang,Suka Suka,Shawarma pedas level Samyang — buat yang suka tantangan,33000,false
+Shawarmie Ayam,Shawarmie,Shawarma ayam disajikan dengan mie — perpaduan unik,27000,false
+Shawarmie Sapi,Shawarmie,Shawarma sapi disajikan dengan mie — perpaduan unik,30000,false
+Extra Keju,Topping,Tambahan keju leleh,7000,false
+Extra Kentang,Topping,Tambahan kentang goreng,9000,false
