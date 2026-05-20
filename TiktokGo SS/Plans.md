@@ -67,12 +67,12 @@
 **Output:** Admin bisa onboard 19 outlet sekaligus
 
 ### Tasks
-- [ ] 5.1 Admin Users page (`admin/users.html`) — super_admin only, create/edit outlet_staff accounts
-- [ ] 5.2 Admin Settings page (`admin/settings.html`) — service_fee_percent toggle, notification templates editor, app_settings CRUD
-- [ ] 5.3 CSV bulk import — outlets (nama, alamat, koordinat, WA, jam, type)
-- [ ] 5.4 CSV bulk import — menu items + variants + options
-- [ ] 5.5 CSV bulk import — outlet_menu_overrides (harga + stok per outlet)
-- [ ] 5.6 Upload & preview storage (`csv-imports` bucket) sebelum apply
+- [x] 5.1 Admin Users page (`admin/users.html`) — super_admin only, create/edit outlet_staff accounts
+- [x] 5.2 Admin Settings page (`admin/settings.html`) — service_fee_percent toggle, notification templates editor, app_settings CRUD
+- [x] 5.3 CSV bulk import — outlets (nama, alamat, koordinat, WA, jam, type)
+- [x] 5.4 CSV bulk import — menu items + variants + options
+- [x] 5.5 CSV bulk import — outlet_menu_overrides (harga + stok per outlet)
+- [x] 5.6 Upload & preview storage (`csv-imports` bucket) sebelum apply
 
 ---
 

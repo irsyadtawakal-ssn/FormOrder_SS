@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Pengguna — SUKA Admin</title>
+<link rel="stylesheet" href="../assets/css/style.css" />
+</head>
+<body>
+<div class="phone">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <span class="topbar-title">👤 Pengguna</span>
+    <button class="topbar-action" onclick="openUserForm(null)">+ Tambah</button>
+  </div>
+
+  <!-- Daftar user -->
+  <div id="userList" style="padding:8px 12px">
+    <div class="skeleton-card"><div class="skeleton-lines">
+      <div class="skeleton skeleton-line"></div>
+      <div class="skeleton skeleton-line short"></div>
+    </div></div>
+  </div>
+
+  <!-- Bottom nav -->
+  <nav class="admin-nav">
+    <a href="index.html"><span>🏠</span><span>Dashboard</span></a>
+    <a href="orders.html"><span>📋</span><span>Pesanan</span></a>
+    <a href="menu.html"><span>🌯</span><span>Menu</span></a>
+    <a href="outlets.html"><span>📍</span><span>Outlet</span></a>
+  </nav>
+
+</div>
+<div class="toast" id="toast"></div>
+<div id="adminModal" class="admin-modal-overlay" style="display:none"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="../config.js"></script>
+<script src="../assets/js/supabase.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/admin.js"></script>
+<script>
+let allUsers   = [];
+let allOutlets = [];
+
+(async function init() {
+  const u = await requireSuperAdmin();
+  if (!u) return;
+  await Promise.all([loadUsers(), loadOutlets()]);
+})();
+
+async function loadUsers() {
+  const { data } = await window.db
+    .from('admin_users')
+    .select('id, email, full_name, role, outlet_id, is_active')
+    .order('full_name');
+  allUsers = data || [];
+  renderUsers();
+}
+
+async function loadOutlets() {
+  const { data } = await window.db
+    .from('outlets').select('id, name').eq('is_active', true).order('name');
+  allOutlets = data || [];
+}
+
+function outletName(outletId) {
+  if (!outletId) return '—';
+  return (allOutlets.find(o => o.id === outletId) || {}).name || '—';
+}
+
+function renderUsers() {
+  const el = document.getElementById('userList');
+  if (allUsers.length === 0) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">👤</div><div class="empty-title">Belum ada pengguna</div></div>`;
+    return;
+  }
+  el.innerHTML = allUsers.map(userRow).join('') + '<div style="height:80px"></div>';
+}
+
+function userRow(u) {
+  const roleLabel = u.role === 'super_admin' ? '🛡️ Super Admin' : '🏪 Staff Outlet';
+  const roleColor = u.role === 'super_admin' ? 'var(--brand)' : 'var(--blue)';
+
+  return `<div class="admin-order-row" style="opacity:${u.is_active ? 1 : 0.55}">
+    <div style="display:flex;gap:10px;align-items:flex-start">
+      <div style="width:40px;height:40px;border-radius:50%;background:var(--line);
+                  display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">
+        👤
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:14px">${u.full_name}</div>
+        <div style="font-size:12px;color:var(--muted)">${u.email}</div>
+        <div style="margin-top:3px">
+          <span style="font-size:11px;color:${roleColor};font-weight:600">${roleLabel}</span>
+          ${u.role === 'outlet_staff' ? `<span style="font-size:11px;color:var(--muted);margin-left:6px">· ${outletName(u.outlet_id)}</span>` : ''}
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;flex-shrink:0">
+        <label class="toggle-wrap" title="${u.is_active ? 'Aktif' : 'Nonaktif'}">
+          <input type="checkbox" ${u.is_active ? 'checked' : ''}
+                 onchange="toggleUser('${u.id}',this.checked)" />
+          <span class="toggle-slider"></span>
+        </label>
+        <button class="action-btn action-secondary"
+                style="font-size:11px;padding:4px 10px"
+                onclick="openEditUser('${u.id}')">Edit</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ─── Toggle aktif ─────────────────────────────────────────────────────────────
+async function toggleUser(userId, active) {
+  const { error } = await window.db
+    .from('admin_users').update({ is_active: active }).eq('id', userId);
+  if (error) { adminToast('❌ ' + error.message); return; }
+  const idx = allUsers.findIndex(u => u.id === userId);
+  if (idx >= 0) allUsers[idx].is_active = active;
+  adminToast(active ? '✅ Akun diaktifkan' : '⏸ Akun dinonaktifkan');
+  renderUsers();
+}
+
+// ─── Form tambah user baru ────────────────────────────────────────────────────
+function openUserForm(dummy) {
+  const outletOpts = allOutlets.map(o =>
+    `<option value="${o.id}">${o.name}</option>`
+  ).join('');
+
+  openModal('+ Tambah Pengguna', `
+    <div class="form-group">
+      <label class="form-label">Nama Lengkap</label>
+      <input id="uName" class="form-input" placeholder="Budi Santoso" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input id="uEmail" class="form-input" type="email" placeholder="budi@sukshawarma.com" autocomplete="off" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Password (min 8 karakter)</label>
+      <input id="uPass" class="form-input" type="password" placeholder="••••••••" autocomplete="new-password" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Role</label>
+      <select id="uRole" class="form-input" onchange="toggleOutletField()">
+        <option value="outlet_staff">Staff Outlet</option>
+        <option value="super_admin">Super Admin</option>
+      </select>
+    </div>
+    <div class="form-group" id="outletFieldWrap">
+      <label class="form-label">Outlet</label>
+      <select id="uOutlet" class="form-input">
+        <option value="">— Pilih outlet —</option>
+        ${outletOpts}
+      </select>
+    </div>
+  `,
+  `<button class="btn-add-big" style="width:100%" onclick="createUser()">Buat Akun</button>`);
+}
+
+function toggleOutletField() {
+  const role = document.getElementById('uRole').value;
+  document.getElementById('outletFieldWrap').style.display =
+    role === 'outlet_staff' ? '' : 'none';
+}
+
+async function createUser() {
+  const name     = document.getElementById('uName').value.trim();
+  const email    = document.getElementById('uEmail').value.trim();
+  const password = document.getElementById('uPass').value;
+  const role     = document.getElementById('uRole').value;
+  const outletId = document.getElementById('uOutlet')?.value || null;
+
+  if (!name || !email || !password) { adminToast('❌ Semua field wajib diisi'); return; }
+  if (role === 'outlet_staff' && !outletId) { adminToast('❌ Pilih outlet untuk staff'); return; }
+  if (password.length < 8) { adminToast('❌ Password minimal 8 karakter'); return; }
+
+  const btn = document.querySelector('#adminModal .btn-add-big');
+  if (btn) { btn.disabled = true; btn.textContent = 'Membuat akun…'; }
+
+  try {
+    const { data, error } = await window.db.functions.invoke('create-admin-user', {
+      body: { email, password, full_name: name, role, outlet_id: outletId || null },
+    });
+
+    if (error || (data && !data.success)) {
+      throw new Error((data && data.error) || (error && error.message) || 'Gagal membuat akun');
+    }
+
+    adminToast('✅ Akun berhasil dibuat');
+    closeModal();
+    await loadUsers();
+  } catch (e) {
+    adminToast('❌ ' + e.message);
+    if (btn) { btn.disabled = false; btn.textContent = 'Buat Akun'; }
+  }
+}
+
+// ─── Edit user (hanya full_name, outlet_id, is_active — tidak reset password) ─
+function openEditUser(userId) {
+  const u = allUsers.find(x => x.id === userId);
+  if (!u) return;
+
+  const outletOpts = allOutlets.map(o =>
+    `<option value="${o.id}" ${u.outlet_id === o.id ? 'selected' : ''}>${o.name}</option>`
+  ).join('');
+
+  openModal('Edit Pengguna', `
+    <div class="form-group">
+      <label class="form-label">Nama Lengkap</label>
+      <input id="euName" class="form-input" value="${u.full_name}" />
+    </div>
+    <div style="padding:8px 0;font-size:13px;color:var(--muted)">
+      Email: <b>${u.email}</b> (tidak bisa diubah)
+    </div>
+    <div style="padding:4px 0;font-size:13px;color:var(--muted)">
+      Role: <b>${u.role === 'super_admin' ? 'Super Admin' : 'Staff Outlet'}</b> (tidak bisa diubah)
+    </div>
+    ${u.role === 'outlet_staff' ? `
+    <div class="form-group" style="margin-top:10px">
+      <label class="form-label">Outlet</label>
+      <select id="euOutlet" class="form-input">
+        <option value="">— Pilih outlet —</option>
+        ${outletOpts}
+      </select>
+    </div>` : ''}
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-top:10px">
+      <input id="euActive" type="checkbox" ${u.is_active ? 'checked' : ''} /> Akun aktif
+    </label>
+  `,
+  `<button class="btn-add-big" style="width:100%" onclick="saveEditUser('${u.id}','${u.role}')">Simpan</button>`);
+}
+
+async function saveEditUser(userId, role) {
+  const name   = document.getElementById('euName').value.trim();
+  const active = document.getElementById('euActive').checked;
+  const outlet = role === 'outlet_staff' ? (document.getElementById('euOutlet')?.value || null) : null;
+
+  if (!name) { adminToast('❌ Nama wajib diisi'); return; }
+
+  const patch = { full_name: name, is_active: active };
+  if (role === 'outlet_staff') patch.outlet_id = outlet;
+
+  const { error } = await window.db.from('admin_users').update(patch).eq('id', userId);
+  if (error) { adminToast('❌ ' + error.message); return; }
+
+  const idx = allUsers.findIndex(u => u.id === userId);
+  if (idx >= 0) allUsers[idx] = { ...allUsers[idx], ...patch };
+
+  adminToast('✅ Pengguna diperbarui');
+  closeModal();
+  renderUsers();
+}
+</script>
+</body>
+</html>

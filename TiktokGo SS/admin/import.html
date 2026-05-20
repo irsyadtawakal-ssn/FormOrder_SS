@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Import CSV — SUKA Admin</title>
+<link rel="stylesheet" href="../assets/css/style.css" />
+</head>
+<body>
+<div class="phone">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <button class="topbar-ic" onclick="history.back()">‹</button>
+    <span class="topbar-title">📥 Import CSV</span>
+    <span style="width:32px"></span>
+  </div>
+
+  <!-- Tab pilihan import -->
+  <div class="tabs" id="importTabs">
+    <button class="tab active" data-tab="outlets" onclick="setTab('outlets')">Outlet</button>
+    <button class="tab" data-tab="menu"    onclick="setTab('menu')">Menu</button>
+    <button class="tab" data-tab="overrides" onclick="setTab('overrides')">Harga Override</button>
+  </div>
+
+  <!-- ── Konten per tab ──────────────────────────────────────────────────────── -->
+  <div style="padding:12px">
+
+    <!-- TAB: Outlets -->
+    <div id="tab-outlets">
+      <div class="hint-banner" style="margin-bottom:12px">
+        💡 Import outlet baru sekaligus. Outlet yang sudah ada (slug sama) akan di-skip.
+      </div>
+
+      <div style="margin-bottom:10px">
+        <button class="action-btn action-secondary" style="font-size:12px;padding:8px 14px"
+                onclick="downloadTemplate('outlets')">⬇ Unduh Template CSV</button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Upload file CSV</label>
+        <input type="file" id="fileOutlets" accept=".csv" class="form-input"
+               style="padding:8px" onchange="parseCSV('outlets')" />
+      </div>
+
+      <div id="previewOutlets"></div>
+      <div id="resultOutlets"></div>
+    </div>
+
+    <!-- TAB: Menu -->
+    <div id="tab-menu" style="display:none">
+      <div class="hint-banner" style="margin-bottom:12px">
+        💡 Import menu items. Kolom: name, category_name, description, base_price, is_best_seller (true/false).
+        Varian ditambahkan manual via halaman Menu.
+      </div>
+
+      <div style="margin-bottom:10px">
+        <button class="action-btn action-secondary" style="font-size:12px;padding:8px 14px"
+                onclick="downloadTemplate('menu')">⬇ Unduh Template CSV</button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Upload file CSV</label>
+        <input type="file" id="fileMenu" accept=".csv" class="form-input"
+               style="padding:8px" onchange="parseCSV('menu')" />
+      </div>
+
+      <div id="previewMenu"></div>
+      <div id="resultMenu"></div>
+    </div>
+
+    <!-- TAB: Overrides -->
+    <div id="tab-overrides" style="display:none">
+      <div class="hint-banner" style="margin-bottom:12px">
+        💡 Override harga & ketersediaan per outlet. Kolom: outlet_slug, item_name, price_override (kosong = harga dasar), is_available (true/false).
+      </div>
+
+      <div style="margin-bottom:10px">
+        <button class="action-btn action-secondary" style="font-size:12px;padding:8px 14px"
+                onclick="downloadTemplate('overrides')">⬇ Unduh Template CSV</button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Upload file CSV</label>
+        <input type="file" id="fileOverrides" accept=".csv" class="form-input"
+               style="padding:8px" onchange="parseCSV('overrides')" />
+      </div>
+
+      <div id="previewOverrides"></div>
+      <div id="resultOverrides"></div>
+    </div>
+
+  </div><!-- /padding -->
+
+  <!-- Bottom nav -->
+  <nav class="admin-nav">
+    <a href="index.html"><span>🏠</span><span>Dashboard</span></a>
+    <a href="orders.html"><span>📋</span><span>Pesanan</span></a>
+    <a href="menu.html"><span>🌯</span><span>Menu</span></a>
+    <a href="outlets.html"><span>📍</span><span>Outlet</span></a>
+  </nav>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="../config.js"></script>
+<script src="../assets/js/supabase.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/admin.js"></script>
+<script>
+// ─── Tab navigation ───────────────────────────────────────────────────────────
+let currentTab = 'outlets';
+
+(async function init() {
+  await requireSuperAdmin();
+})();
+
+function setTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('#importTabs .tab').forEach(t =>
+    t.classList.toggle('active', t.dataset.tab === tab)
+  );
+  ['outlets','menu','overrides'].forEach(t => {
+    document.getElementById('tab-' + t).style.display = t === tab ? '' : 'none';
+  });
+}
+
+// ─── CSV Templates ────────────────────────────────────────────────────────────
+const CSV_TEMPLATES = {
+  outlets: {
+    filename: 'template-outlets.csv',
+    header:   'name,slug,address,lat,lng,phone_wa,open_hour,close_hour,type',
+    example:  'SUKA Shawarma Menteng,menteng,"Jl. Menteng Raya No.1, Jakarta",\-6.1944,106.8294,628123456789,09:00,21:00,owned\n' +
+              'SUKA Shawarma Kemang,kemang,"Jl. Kemang Raya No.5, Jakarta",\-6.2606,106.8133,628198765432,10:00,22:00,partner',
+  },
+  menu: {
+    filename: 'template-menu.csv',
+    header:   'name,category_name,description,base_price,is_best_seller',
+    example:  'Shawarma Ayam,Shawarma,"Shawarma ayam dengan bumbu rempah pilihan",25000,true\n' +
+              'Shawarma Sapi,Shawarma,"Shawarma sapi premium",30000,false\n' +
+              'Es Teh Manis,Minuman,"Teh manis dingin",5000,false',
+  },
+  overrides: {
+    filename: 'template-overrides.csv',
+    header:   'outlet_slug,item_name,price_override,is_available',
+    example:  'menteng,Shawarma Ayam,27000,true\n' +
+              'menteng,Shawarma Sapi,,false\n' +
+              'kemang,Shawarma Ayam,26000,true',
+  },
+};
+
+function downloadTemplate(type) {
+  const tmpl = CSV_TEMPLATES[type];
+  const content = tmpl.header + '\n' + tmpl.example;
+  const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = tmpl.filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ─── CSV Parser (tanpa library eksternal) ─────────────────────────────────────
+function parseCSVText(text) {
+  const lines  = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim().split('\n');
+  if (lines.length < 2) return { headers: [], rows: [] };
+
+  function parseLine(line) {
+    const result = [];
+    let cur = '';
+    let inQuote = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') {
+        if (inQuote && line[i + 1] === '"') { cur += '"'; i++; }
+        else inQuote = !inQuote;
+      } else if (ch === ',' && !inQuote) {
+        result.push(cur.trim()); cur = '';
+      } else {
+        cur += ch;
+      }
+    }
+    result.push(cur.trim());
+    return result;
+  }
+
+  const headers = parseLine(lines[0]).map(h => h.toLowerCase().replace(/\s+/g, '_'));
+  const rows    = lines.slice(1).filter(l => l.trim()).map(l => {
+    const vals = parseLine(l);
+    const obj  = {};
+    headers.forEach((h, i) => { obj[h] = (vals[i] ?? '').trim(); });
+    return obj;
+  });
+  return { headers, rows };
+}
+
+// ─── Parse + Preview ──────────────────────────────────────────────────────────
+function parseCSV(type) {
+  const input = document.getElementById('file' + capitalize(type));
+  const file  = input?.files?.[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    const { headers, rows } = parseCSVText(e.target.result);
+    if (rows.length === 0) {
+      document.getElementById('preview' + capitalize(type)).innerHTML =
+        `<div class="hint-banner" style="background:#fff0f0;color:var(--brand)">File kosong atau format tidak valid.</div>`;
+      return;
+    }
+    renderPreview(type, headers, rows);
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+function renderPreview(type, headers, rows) {
+  const el = document.getElementById('preview' + capitalize(type));
+
+  const thHtml = headers.map(h => `<th style="white-space:nowrap">${h}</th>`).join('');
+  const tdRows = rows.slice(0, 10).map(row =>
+    '<tr>' + headers.map(h => `<td style="font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${row[h] ?? ''}</td>`).join('') + '</tr>'
+  ).join('');
+
+  el.innerHTML = `
+    <div style="font-weight:600;font-size:13px;margin:12px 0 6px">
+      Preview: ${rows.length} baris ditemukan ${rows.length > 10 ? '(menampilkan 10 pertama)' : ''}
+    </div>
+    <div style="overflow-x:auto;margin-bottom:12px;border:1px solid var(--line2);border-radius:8px">
+      <table style="border-collapse:collapse;width:100%;font-size:12px">
+        <thead style="background:var(--bg)">
+          <tr>${thHtml}</tr>
+        </thead>
+        <tbody>${tdRows}</tbody>
+      </table>
+    </div>
+    <button class="btn-add-big" style="width:100%"
+            onclick="applyImport('${type}', ${JSON.stringify(rows).replace(/</g,'\\u003c').replace(/>/g,'\\u003e')})">
+      ✅ Apply ${rows.length} Baris ke Database
+    </button>
+  `;
+  document.getElementById('result' + capitalize(type)).innerHTML = '';
+}
+
+// ─── Apply import ─────────────────────────────────────────────────────────────
+async function applyImport(type, rows) {
+  const resultEl = document.getElementById('result' + capitalize(type));
+  resultEl.innerHTML = `<div style="text-align:center;padding:16px;color:var(--muted)"><div class="spinner" style="margin:0 auto 8px"></div>Mengimpor ${rows.length} baris…</div>`;
+
+  try {
+    let result;
+    if (type === 'outlets')   result = await importOutlets(rows);
+    if (type === 'menu')      result = await importMenu(rows);
+    if (type === 'overrides') result = await importOverrides(rows);
+
+    resultEl.innerHTML = `
+      <div style="background:var(--green-bg);border-radius:8px;padding:12px 14px;margin-top:8px">
+        <div style="font-weight:700;color:var(--green);margin-bottom:4px">✅ Import selesai</div>
+        ${result.inserted > 0 ? `<div style="font-size:13px">Ditambahkan: <b>${result.inserted}</b></div>` : ''}
+        ${result.updated  > 0 ? `<div style="font-size:13px">Diperbarui: <b>${result.updated}</b></div>` : ''}
+        ${result.skipped  > 0 ? `<div style="font-size:13px;color:var(--muted)">Di-skip: ${result.skipped}</div>` : ''}
+        ${result.errors   > 0 ? `<div style="font-size:13px;color:var(--brand)">Error: ${result.errors}</div>` : ''}
+      </div>`;
+  } catch (e) {
+    resultEl.innerHTML = `<div style="background:#fff0f0;border-radius:8px;padding:12px;margin-top:8px;color:var(--brand)">❌ ${e.message}</div>`;
+  }
+}
+
+// ─── Import: Outlets ──────────────────────────────────────────────────────────
+async function importOutlets(rows) {
+  // Ambil slug yang sudah ada untuk skip
+  const { data: existing } = await window.db.from('outlets').select('slug');
+  const existingSlugs = new Set((existing || []).map(o => o.slug));
+
+  const toInsert = [];
+  let skipped = 0;
+  let errors  = 0;
+
+  for (const row of rows) {
+    const slug = (row.slug || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    if (!slug || !row.name || !row.address) { errors++; continue; }
+    if (existingSlugs.has(slug)) { skipped++; continue; }
+
+    toInsert.push({
+      slug,
+      name:       row.name,
+      address:    row.address,
+      lat:        parseFloat(row.lat)  || null,
+      lng:        parseFloat(row.lng)  || null,
+      phone_wa:   row.phone_wa         || null,
+      open_hour:  row.open_hour        || null,
+      close_hour: row.close_hour       || null,
+      type:       ['owned','partner'].includes(row.type) ? row.type : 'owned',
+      is_active:  true,
+    });
+  }
+
+  if (toInsert.length === 0) return { inserted: 0, updated: 0, skipped, errors };
+
+  const { error } = await window.db.from('outlets').insert(toInsert);
+  if (error) throw new Error(error.message);
+
+  // Upload ringkasan ke csv-imports bucket (opsional, fail-open)
+  try {
+    const summary = JSON.stringify({ type: 'outlets', count: toInsert.length, at: new Date().toISOString() });
+    await window.db.storage.from('csv-imports')
+      .upload(`outlets/import-${Date.now()}.json`, new Blob([summary], { type: 'application/json' }));
+  } catch { /* bucket mungkin belum dibuat, lanjut saja */ }
+
+  return { inserted: toInsert.length, updated: 0, skipped, errors };
+}
+
+// ─── Import: Menu Items ───────────────────────────────────────────────────────
+async function importMenu(rows) {
+  // Ambil / buat categories
+  const { data: cats } = await window.db.from('categories').select('id, name');
+  const catMap = Object.fromEntries((cats || []).map(c => [c.name.toLowerCase(), c.id]));
+
+  // Kumpulkan kategori baru
+  const newCatNames = [...new Set(
+    rows.map(r => (r.category_name || '').trim()).filter(n => n && !catMap[n.toLowerCase()])
+  )];
+  if (newCatNames.length > 0) {
+    const { data: inserted } = await window.db
+      .from('categories')
+      .insert(newCatNames.map((name, i) => ({ name, sort_order: i, is_active: true })))
+      .select('id, name');
+    (inserted || []).forEach(c => { catMap[c.name.toLowerCase()] = c.id; });
+  }
+
+  // Ambil nama menu yang sudah ada untuk deteksi duplikat
+  const { data: existing } = await window.db.from('menu_items').select('name');
+  const existingNames = new Set((existing || []).map(i => i.name.toLowerCase()));
+
+  const toInsert = [];
+  let skipped = 0;
+  let errors  = 0;
+
+  for (const row of rows) {
+    const name  = (row.name || '').trim();
+    const price = parseFloat(row.base_price);
+    if (!name || isNaN(price)) { errors++; continue; }
+    if (existingNames.has(name.toLowerCase())) { skipped++; continue; }
+
+    const catId = catMap[(row.category_name || '').toLowerCase()] || null;
+    toInsert.push({
+      name,
+      category_id:    catId,
+      description:    row.description   || null,
+      base_price:     price,
+      is_best_seller: row.is_best_seller === 'true',
+      is_active:      true,
+      sort_order:     0,
+    });
+  }
+
+  if (toInsert.length === 0) return { inserted: 0, updated: 0, skipped, errors };
+
+  // Insert in batches of 50
+  let inserted = 0;
+  for (let i = 0; i < toInsert.length; i += 50) {
+    const batch = toInsert.slice(i, i + 50);
+    const { error } = await window.db.from('menu_items').insert(batch);
+    if (error) throw new Error(error.message);
+    inserted += batch.length;
+  }
+
+  try {
+    const summary = JSON.stringify({ type: 'menu', count: inserted, at: new Date().toISOString() });
+    await window.db.storage.from('csv-imports')
+      .upload(`menu/import-${Date.now()}.json`, new Blob([summary], { type: 'application/json' }));
+  } catch { /* fail-open */ }
+
+  return { inserted, updated: 0, skipped, errors };
+}
+
+// ─── Import: Outlet Menu Overrides ────────────────────────────────────────────
+async function importOverrides(rows) {
+  // Ambil lookup tables
+  const [outletRes, itemRes] = await Promise.all([
+    window.db.from('outlets').select('id, slug'),
+    window.db.from('menu_items').select('id, name'),
+  ]);
+
+  const outletMap = Object.fromEntries((outletRes.data || []).map(o => [o.slug, o.id]));
+  const itemMap   = Object.fromEntries((itemRes.data   || []).map(i => [i.name.toLowerCase(), i.id]));
+
+  const toUpsert = [];
+  let errors = 0;
+
+  for (const row of rows) {
+    const outletId = outletMap[row.outlet_slug];
+    const itemId   = itemMap[(row.item_name || '').toLowerCase()];
+    if (!outletId || !itemId) { errors++; continue; }
+
+    toUpsert.push({
+      outlet_id:      outletId,
+      menu_item_id:   itemId,
+      price_override: row.price_override ? parseFloat(row.price_override) : null,
+      is_available:   row.is_available !== 'false',
+    });
+  }
+
+  if (toUpsert.length === 0) return { inserted: 0, updated: toUpsert.length, skipped: 0, errors };
+
+  let upserted = 0;
+  for (let i = 0; i < toUpsert.length; i += 50) {
+    const batch = toUpsert.slice(i, i + 50);
+    const { error } = await window.db
+      .from('outlet_menu_overrides')
+      .upsert(batch, { onConflict: 'outlet_id,menu_item_id' });
+    if (error) throw new Error(error.message);
+    upserted += batch.length;
+  }
+
+  try {
+    const summary = JSON.stringify({ type: 'overrides', count: upserted, at: new Date().toISOString() });
+    await window.db.storage.from('csv-imports')
+      .upload(`overrides/import-${Date.now()}.json`, new Blob([summary], { type: 'application/json' }));
+  } catch { /* fail-open */ }
+
+  return { inserted: 0, updated: upserted, skipped: 0, errors };
+}
+</script>
+</body>
+</html>

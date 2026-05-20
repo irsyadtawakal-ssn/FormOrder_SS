@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Pengaturan — SUKA Admin</title>
+<link rel="stylesheet" href="../assets/css/style.css" />
+</head>
+<body>
+<div class="phone">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <span class="topbar-title">⚙️ Pengaturan</span>
+    <span style="width:32px"></span>
+  </div>
+
+  <!-- Konten -->
+  <div id="pageContent" style="padding:12px">
+    <div class="skeleton-card"><div class="skeleton-lines">
+      <div class="skeleton skeleton-line"></div>
+      <div class="skeleton skeleton-line short"></div>
+    </div></div>
+  </div>
+
+  <!-- Bottom nav -->
+  <nav class="admin-nav">
+    <a href="index.html"><span>🏠</span><span>Dashboard</span></a>
+    <a href="orders.html"><span>📋</span><span>Pesanan</span></a>
+    <a href="menu.html"><span>🌯</span><span>Menu</span></a>
+    <a href="outlets.html"><span>📍</span><span>Outlet</span></a>
+  </nav>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="../config.js"></script>
+<script src="../assets/js/supabase.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/admin.js"></script>
+<script>
+let settings   = {}; // key → { id, value, description }
+let templates  = []; // notification_templates rows
+
+(async function init() {
+  const u = await requireSuperAdmin();
+  if (!u) return;
+  await Promise.all([loadSettings(), loadTemplates()]);
+  renderPage();
+})();
+
+async function loadSettings() {
+  const { data } = await window.db
+    .from('app_settings')
+    .select('id, key, value, description');
+  (data || []).forEach(row => { settings[row.key] = row; });
+}
+
+async function loadTemplates() {
+  const { data } = await window.db
+    .from('notification_templates')
+    .select('*')
+    .order('event_type');
+  templates = data || [];
+}
+
+function val(key, fallback = '') {
+  return settings[key]?.value ?? fallback;
+}
+
+function renderPage() {
+  const pc = document.getElementById('pageContent');
+  pc.innerHTML = `
+
+    <!-- ── Biaya Layanan ──────────────────────────────────────── -->
+    <div class="info-card" style="margin-bottom:12px">
+      <div style="font-weight:700;font-size:14px;margin-bottom:12px">💰 Biaya Layanan</div>
+
+      <div class="form-group">
+        <label class="form-label">Service Fee (%)</label>
+        <input id="sFee" class="form-input" type="number" min="0" max="100" step="0.1"
+               value="${parseFloat(val('service_fee_percent', '0.7')).toFixed(1)}"
+               placeholder="0.7" />
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">
+          Contoh: 0.7 = 0.7% dari subtotal
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Waktu Kedaluwarsa QRIS (menit)</label>
+        <input id="sExpire" class="form-input" type="number" min="5" max="1440" step="5"
+               value="${parseInt(val('qris_expire_minutes', '15'))}"
+               placeholder="15" />
+      </div>
+
+      <div style="margin-top:4px">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px">
+          <input id="sPassthrough" type="checkbox"
+                 ${val('service_fee_passthrough', 'true') === 'true' ? 'checked' : ''} />
+          Biaya layanan ditanggung customer (direkomendasikan)
+        </label>
+      </div>
+
+      <button class="btn-add-big" style="width:100%;margin-top:16px"
+              onclick="saveSettings()">
+        Simpan Pengaturan
+      </button>
+    </div>
+
+    <!-- ── Bulk Import ──────────────────────────────────────────── -->
+    <div class="info-card" style="margin-bottom:12px">
+      <div style="font-weight:700;font-size:14px;margin-bottom:8px">📥 Bulk Import</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:12px">
+        Import data dalam jumlah besar via CSV
+      </div>
+      <a href="import.html" class="btn-outline" style="display:block;text-align:center;margin-bottom:0">
+        Buka Halaman Import →
+      </a>
+    </div>
+
+    <!-- ── Manajemen Pengguna ───────────────────────────────────── -->
+    <div class="info-card" style="margin-bottom:12px">
+      <div style="font-weight:700;font-size:14px;margin-bottom:8px">👤 Manajemen Pengguna</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:12px">
+        Buat dan kelola akun outlet staff
+      </div>
+      <a href="users.html" class="btn-outline" style="display:block;text-align:center;margin-bottom:0">
+        Kelola Pengguna →
+      </a>
+    </div>
+
+    <!-- ── Notification Templates ──────────────────────────────── -->
+    <div style="font-weight:700;font-size:14px;margin-bottom:8px;margin-top:4px">
+      📱 Template Notifikasi WhatsApp
+    </div>
+    ${templates.length === 0
+      ? `<div class="hint-banner">
+           Template belum ada. Jalankan seed SQL untuk menambahkan template default.
+         </div>`
+      : templates.map(tmplCard).join('')
+    }
+
+    <div style="height:80px"></div>
+  `;
+}
+
+function tmplCard(tmpl) {
+  const eventLabels = {
+    new_order_admin:   '🔔 Order Baru → Admin',
+    new_order_outlet:  '🔔 Order Baru → Outlet',
+    paid_customer:     '✅ Pembayaran Sukses → Customer',
+    ready_customer:    '🎉 Pesanan Siap → Customer',
+    cancelled_customer:'❌ Dibatalkan → Customer',
+  };
+  const label = eventLabels[tmpl.event_type] || tmpl.event_type;
+
+  return `<div class="info-card" style="margin-bottom:10px">
+    <div style="font-weight:600;font-size:13px;margin-bottom:8px">${label}</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:6px">
+      Variabel: {{order_number}}, {{customer_name}}, {{outlet_name}}, {{total}}, {{pickup_time}}
+    </div>
+    <textarea id="tmpl-${tmpl.id}" class="form-input" rows="4"
+              style="font-size:12px;font-family:monospace">${tmpl.body || ''}</textarea>
+    <button class="action-btn action-secondary" style="margin-top:8px;width:100%"
+            onclick="saveTemplate('${tmpl.id}')">Simpan Template</button>
+  </div>`;
+}
+
+// ─── Simpan app_settings ──────────────────────────────────────────────────────
+async function saveSettings() {
+  const fee        = parseFloat(document.getElementById('sFee').value);
+  const expire     = parseInt(document.getElementById('sExpire').value);
+  const passthrough = document.getElementById('sPassthrough').checked;
+
+  if (isNaN(fee) || fee < 0 || fee > 100) { adminToast('❌ Service fee tidak valid (0–100%)'); return; }
+  if (isNaN(expire) || expire < 5)         { adminToast('❌ Waktu minimal 5 menit'); return; }
+
+  const upserts = [
+    { key: 'service_fee_percent',    value: String(fee),           description: 'Persentase biaya layanan' },
+    { key: 'qris_expire_minutes',    value: String(expire),        description: 'Waktu kedaluwarsa QRIS dalam menit' },
+    { key: 'service_fee_passthrough',value: String(passthrough),   description: 'Biaya layanan ditanggung customer' },
+  ];
+
+  const { error } = await window.db
+    .from('app_settings')
+    .upsert(upserts, { onConflict: 'key' });
+
+  if (error) { adminToast('❌ ' + error.message); return; }
+  adminToast('✅ Pengaturan disimpan');
+}
+
+// ─── Simpan satu notification template ───────────────────────────────────────
+async function saveTemplate(templateId) {
+  const body = document.getElementById(`tmpl-${templateId}`)?.value?.trim();
+  if (!body) { adminToast('❌ Template tidak boleh kosong'); return; }
+
+  const { error } = await window.db
+    .from('notification_templates')
+    .update({ body })
+    .eq('id', templateId);
+
+  if (error) { adminToast('❌ ' + error.message); return; }
+  const idx = templates.findIndex(t => t.id === templateId);
+  if (idx >= 0) templates[idx].body = body;
+  adminToast('✅ Template disimpan');
+}
+</script>
+</body>
+</html>
