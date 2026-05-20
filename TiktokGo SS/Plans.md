@@ -30,9 +30,9 @@
 - [x] 2.1 Edge Function: `create-tripay-payment` — validate + server-side reprice + INSERT orders + call Tripay + return QRIS
 - [x] 2.2 Edge Function: `tripay-webhook` — verify HMAC + idempotency + amount check + UPDATE order status
 - [x] 2.3 Edge Function: `check-tripay-status` — fallback polling Tripay API
-- [ ] 2.4 Checkout page (`checkout.html`) — outlet confirm + order summary + form + service fee + bayar
-- [ ] 2.5 Order status page (`order.html`) — adaptive view per status + realtime subscribe + QR countdown
-- [ ] 2.6 `assets/js/app.js` — cart logic, checkout submit, payment redirect
+- [x] 2.4 Checkout page (`checkout.html`) — outlet confirm + order summary + form + service fee + bayar
+- [x] 2.5 Order status page (`order.html`) — adaptive view per status + realtime subscribe + QR countdown
+- [x] 2.6 `assets/js/app.js` — cart logic, checkout submit, payment redirect
 
 ---
 

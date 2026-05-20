@@ -484,6 +484,43 @@ img { display: block; max-width: 100%; }
 /* ─── Divider ─────────────────────────────────────────────────────────────────── */
 .divider { height: 8px; background: var(--bg); margin: 0; border-top: 1px solid var(--line); }
 
+/* ─── Loading overlay (dipakai checkout saat submit payment) ─────────────────── */
+.loading-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.6);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 200;
+}
+.loading-card {
+  background: var(--card); border-radius: var(--radius);
+  padding: 28px 32px; text-align: center; max-width: 260px;
+}
+.spinner {
+  width: 40px; height: 40px; border: 3px solid var(--line2);
+  border-top-color: var(--brand); border-radius: 50%;
+  animation: spin .8s linear infinite; margin: 0 auto 14px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-card p { margin: 0; font-size: 14px; font-weight: 600; color: var(--ink2); }
+
+/* ─── Order number display (halaman status, state ready) ─────────────────────── */
+.order-number-big {
+  font-size: 28px; font-weight: 800; letter-spacing: 1px;
+  color: var(--ink); text-align: center; padding: 12px 0;
+}
+.qr-canvas-wrap {
+  display: flex; justify-content: center; margin: 8px 0 12px;
+}
+.qr-canvas-wrap canvas, .qr-canvas-wrap img { border-radius: var(--radius-sm); }
+
+/* ─── Button secondary (outline) ─────────────────────────────────────────────── */
+.btn-outline {
+  width: 100%; background: transparent; color: var(--ink);
+  border: 1.5px solid var(--line2); border-radius: var(--radius-sm);
+  padding: 13px; font-weight: 600; font-size: 14px; cursor: pointer;
+  text-align: center; margin-bottom: 8px;
+}
+.btn-outline:active { background: var(--line); }
+
 /* ─── Responsive: pastikan tampilan tetap bagus di desktop ───────────────────── */
 @media (min-width: 500px) {
   body { padding: 12px 0; }

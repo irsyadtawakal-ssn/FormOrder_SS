@@ -474,7 +474,21 @@ function addToCart() {
   const unitPrice = calcUnitPrice();
   const selections = JSON.parse(JSON.stringify(currentSel));
 
-  cart.push({ menuItemId: currentItem.id, name: currentItem.name, unitPrice, qty: currentQty, selections, note });
+  // Kumpulkan option IDs untuk server-side repricing di Edge Function
+  const optionIds = [];
+  currentVariants.forEach(v => {
+    if (v.is_multi) {
+      (currentSel[v.id] || []).forEach(name => {
+        const opt = v.options.find(o => o.name === name);
+        if (opt) optionIds.push(opt.id);
+      });
+    } else if (currentSel[v.id]) {
+      const opt = v.options.find(o => o.name === currentSel[v.id]);
+      if (opt) optionIds.push(opt.id);
+    }
+  });
+
+  cart.push({ menuItemId: currentItem.id, name: currentItem.name, unitPrice, qty: currentQty, selections, optionIds, note });
   setCart(outletSlug, cart);
   updateCartBar();
   closeAllSheets();
