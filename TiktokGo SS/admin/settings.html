@@ -53,7 +53,7 @@ let templates  = []; // notification_templates rows
 async function loadSettings() {
   const { data } = await window.db
     .from('app_settings')
-    .select('id, key, value, description');
+    .select('key, value');
   (data || []).forEach(row => { settings[row.key] = row; });
 }
 
@@ -61,7 +61,7 @@ async function loadTemplates() {
   const { data } = await window.db
     .from('notification_templates')
     .select('*')
-    .order('event_type');
+    .order('key');
   templates = data || [];
 }
 
@@ -97,7 +97,7 @@ function renderPage() {
       <div style="margin-top:4px">
         <label style="display:flex;align-items:center;gap:8px;font-size:13px">
           <input id="sPassthrough" type="checkbox"
-                 ${val('service_fee_passthrough', 'true') === 'true' ? 'checked' : ''} />
+                 ${val('service_fee_passthrough', true) != false ? 'checked' : ''} />
           Biaya layanan ditanggung customer (direkomendasikan)
         </label>
       </div>
@@ -146,14 +146,14 @@ function renderPage() {
 }
 
 function tmplCard(tmpl) {
-  const eventLabels = {
-    new_order_admin:   '🔔 Order Baru → Admin',
-    new_order_outlet:  '🔔 Order Baru → Outlet',
-    paid_customer:     '✅ Pembayaran Sukses → Customer',
-    ready_customer:    '🎉 Pesanan Siap → Customer',
-    cancelled_customer:'❌ Dibatalkan → Customer',
+  const keyLabels = {
+    new_order_admin:    '🔔 Order Baru → Admin',
+    new_order_outlet:   '🔔 Order Baru → Outlet',
+    paid_customer:      '✅ Pembayaran Sukses → Customer',
+    ready_customer:     '🎉 Pesanan Siap → Customer',
+    cancelled_customer: '❌ Dibatalkan → Customer',
   };
-  const label = eventLabels[tmpl.event_type] || tmpl.event_type;
+  const label = keyLabels[tmpl.key] || tmpl.key;
 
   return `<div class="info-card" style="margin-bottom:10px">
     <div style="font-weight:600;font-size:13px;margin-bottom:8px">${label}</div>
@@ -161,7 +161,7 @@ function tmplCard(tmpl) {
       Variabel: {{order_number}}, {{customer_name}}, {{outlet_name}}, {{total}}, {{pickup_time}}
     </div>
     <textarea id="tmpl-${tmpl.id}" class="form-input" rows="4"
-              style="font-size:12px;font-family:monospace">${tmpl.body || ''}</textarea>
+              style="font-size:12px;font-family:monospace">${tmpl.body_template || ''}</textarea>
     <button class="action-btn action-secondary" style="margin-top:8px;width:100%"
             onclick="saveTemplate('${tmpl.id}')">Simpan Template</button>
   </div>`;
@@ -177,9 +177,9 @@ async function saveSettings() {
   if (isNaN(expire) || expire < 5)         { adminToast('❌ Waktu minimal 5 menit'); return; }
 
   const upserts = [
-    { key: 'service_fee_percent',    value: String(fee),           description: 'Persentase biaya layanan' },
-    { key: 'qris_expire_minutes',    value: String(expire),        description: 'Waktu kedaluwarsa QRIS dalam menit' },
-    { key: 'service_fee_passthrough',value: String(passthrough),   description: 'Biaya layanan ditanggung customer' },
+    { key: 'service_fee_percent',    value: fee,         updated_at: new Date().toISOString() },
+    { key: 'qris_expire_minutes',    value: expire,      updated_at: new Date().toISOString() },
+    { key: 'service_fee_passthrough',value: passthrough, updated_at: new Date().toISOString() },
   ];
 
   const { error } = await window.db
@@ -197,7 +197,7 @@ async function saveTemplate(templateId) {
 
   const { error } = await window.db
     .from('notification_templates')
-    .update({ body })
+    .update({ body_template: body })
     .eq('id', templateId);
 
   if (error) { adminToast('❌ ' + error.message); return; }
