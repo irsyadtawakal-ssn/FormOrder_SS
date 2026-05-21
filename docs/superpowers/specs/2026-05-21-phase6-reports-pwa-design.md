@@ -44,9 +44,9 @@
 
 ### Tabel Ranking Menu Items
 
-- Semua menu items diurutkan dari terbanyak dipesan (bukan top 10 — tampil semua)
+- Top 3 menu items terbanyak dipesan dalam periode
 - Kolom: Ranking (#), Nama Item, Total Dipesan (qty), Revenue Kontribusi, % dari total revenue
-- Baris #1 diberi highlight (badge "🥇" atau warna emas)
+- Tampil sebagai podium cards: 🥇 🥈 🥉
 - Filter outlet berlaku: staff lihat ranking outlet sendiri, admin bisa filter per outlet atau semua outlet digabung
 
 ### Export CSV
