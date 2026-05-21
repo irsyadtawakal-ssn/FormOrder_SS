@@ -22,12 +22,13 @@
 
   <!-- Filter status -->
   <div class="chips" id="filterChips" style="padding-bottom:8px">
-    <button class="chip active" data-status="active"   onclick="setFilter('active')">Aktif</button>
-    <button class="chip"        data-status="paid"     onclick="setFilter('paid')">Dibayar</button>
-    <button class="chip"        data-status="preparing" onclick="setFilter('preparing')">Disiapkan</button>
-    <button class="chip"        data-status="ready"    onclick="setFilter('ready')">Siap Ambil</button>
-    <button class="chip"        data-status="done"     onclick="setFilter('done')">Selesai</button>
-    <button class="chip"        data-status="all"      onclick="setFilter('all')">Semua</button>
+    <button class="chip active" data-status="active"               onclick="setFilter('active')">Aktif</button>
+    <button class="chip"        data-status="awaiting_verification" onclick="setFilter('awaiting_verification')">💳 Verifikasi</button>
+    <button class="chip"        data-status="paid"                 onclick="setFilter('paid')">Dibayar</button>
+    <button class="chip"        data-status="preparing"            onclick="setFilter('preparing')">Disiapkan</button>
+    <button class="chip"        data-status="ready"                onclick="setFilter('ready')">Siap Ambil</button>
+    <button class="chip"        data-status="done"                 onclick="setFilter('done')">Selesai</button>
+    <button class="chip"        data-status="all"                  onclick="setFilter('all')">Semua</button>
   </div>
 
   <!-- Outlet filter — hanya super_admin -->
@@ -69,7 +70,7 @@
 let allOrders     = [];
 let currentFilter = 'active';
 
-const ACTIVE_STATUSES = ['paid', 'preparing', 'ready'];
+const ACTIVE_STATUSES = ['pending_payment', 'awaiting_verification', 'paid', 'preparing', 'ready'];
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 (async function init() {
@@ -99,7 +100,7 @@ async function loadOrders() {
   let q = window.db
     .from('orders')
     .select(`id, order_number, customer_name, customer_wa, total, status,
-             created_at, pickup_time, notes, outlet_id,
+             created_at, pickup_time, notes, outlet_id, proof_url,
              outlets(name),
              order_items(item_name, quantity, unit_price, selections, note)`)
     .order('created_at', { ascending: false })
@@ -173,9 +174,14 @@ function orderCard(o) {
     ${o.pickup_time ? `<div style="font-size:12px;color:var(--ink2)">⏰ Ambil: ${o.pickup_time}</div>` : ''}
     ${o.notes ? `<div style="font-size:12px;color:var(--muted);margin-top:2px">📝 ${o.notes}</div>` : ''}
     <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
-      ${action ? `<button class="action-btn action-primary" onclick="doUpdateStatus('${o.id}','${action.next}')">${action.label}</button>` : ''}
-      <button class="action-btn action-secondary" onclick="showDetail('${o.id}')">Detail</button>
-      ${['paid','preparing','ready'].includes(o.status)
+      ${o.status === 'awaiting_verification' ? `
+        <button class="action-btn action-primary" onclick="doVerifyTransfer('${o.id}','approve')" style="background:var(--green,#22c55e)">✅ Verifikasi</button>
+        <button class="action-btn action-danger"  onclick="doVerifyTransfer('${o.id}','reject')">❌ Tolak</button>
+      ` : action ? `<button class="action-btn action-primary" onclick="doUpdateStatus('${o.id}','${action.next}')">${action.label}</button>` : ''}
+      <button class="action-btn action-secondary" onclick="showDetail('${o.id}')">
+        ${o.status === 'awaiting_verification' ? '🖼 Lihat Bukti' : 'Detail'}
+      </button>
+      ${['pending_payment','awaiting_verification','paid','preparing','ready'].includes(o.status)
         ? `<button class="action-btn action-danger" onclick="doCancel('${o.id}')">Batalkan</button>` : ''}
     </div>
   </div>`;
@@ -226,6 +232,39 @@ async function doCancel(orderId) {
   adminToast('✅ Pesanan dibatalkan');
 }
 
+async function doVerifyTransfer(orderId, action) {
+  const label = action === 'approve' ? 'Verifikasi' : 'Tolak';
+  if (!confirm(`${label} pembayaran pesanan ini?`)) return;
+
+  const { error } = await window.db.rpc('verify_transfer', {
+    p_order_id: orderId,
+    p_action:   action,
+  });
+
+  if (error) { adminToast('❌ ' + error.message); return; }
+
+  const idx = allOrders.findIndex(o => o.id === orderId);
+  if (idx >= 0) {
+    const newStatus = action === 'approve' ? 'paid' : 'pending_payment';
+    allOrders[idx] = { ...allOrders[idx], status: newStatus };
+    renderOrders();
+  }
+
+  adminToast(action === 'approve' ? '✅ Pembayaran diverifikasi' : '❌ Bukti transfer ditolak');
+
+  // Kirim WA ke customer jika diverifikasi
+  if (action === 'approve') {
+    fetch(`${window.SUKA_CONFIG.supabaseUrl}/functions/v1/send-wa-notifications`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${window.SUKA_CONFIG.supabaseAnonKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ order_id: orderId, event: 'transfer_verified' }),
+    }).catch(() => {});
+  }
+}
+
 function showDetail(orderId) {
   const o = allOrders.find(x => x.id === orderId);
   if (!o) return;
@@ -235,6 +274,19 @@ function showDetail(orderId) {
       <span class="label">${i.quantity}× ${i.item_name}</span>
       <span class="val" style="text-align:right">${formatRupiah(i.unit_price * i.quantity)}</span>
     </div>`).join('');
+
+  const proofHtml = o.proof_url ? `
+    <hr style="border:0;border-top:1px dashed var(--line2);margin:10px 0"/>
+    <div style="font-weight:600;font-size:13px;margin-bottom:8px">📸 Bukti Transfer</div>
+    <img src="${o.proof_url}" style="width:100%;border-radius:8px;max-height:250px;object-fit:cover" />
+    ${o.status === 'awaiting_verification' ? `
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="action-btn action-primary" style="flex:1;background:var(--green,#22c55e)"
+          onclick="closeModal();doVerifyTransfer('${o.id}','approve')">✅ Verifikasi</button>
+        <button class="action-btn action-danger" style="flex:1"
+          onclick="closeModal();doVerifyTransfer('${o.id}','reject')">❌ Tolak</button>
+      </div>` : ''}
+  ` : '';
 
   openModal(`📋 ${o.order_number}`, `
     <div class="info-row"><span class="label">Status</span><span class="val">${statusBadge(o.status)}</span></div>
@@ -253,6 +305,7 @@ function showDetail(orderId) {
       <span class="val" style="font-weight:800;color:var(--brand);font-size:16px">${formatRupiah(o.total)}</span>
     </div>
     ${o.notes ? `<div style="margin-top:8px;font-size:13px;color:var(--muted);background:var(--bg);padding:8px 10px;border-radius:8px">📝 ${o.notes}</div>` : ''}
+    ${proofHtml}
   `);
 }
 
@@ -278,7 +331,7 @@ async function handleRealtime(payload) {
     const { data } = await window.db
       .from('orders')
       .select(`id, order_number, customer_name, customer_wa, total, status,
-               created_at, pickup_time, notes, outlet_id,
+               created_at, pickup_time, notes, outlet_id, proof_url,
                outlets(name),
                order_items(item_name, quantity, unit_price, selections, note)`)
       .eq('id', payload.new.id)

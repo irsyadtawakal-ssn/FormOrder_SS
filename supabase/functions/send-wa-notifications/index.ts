@@ -133,6 +133,28 @@ Deno.serve(async (req: Request) => {
         `Hubungi outlet untuk info lebih lanjut.`;
       results.customer = await kirimWA(FONNTE_TOKEN, order.customer_wa, msgCancel);
     }
+
+  } else if (event === "transfer_submitted") {
+    // Notif ke admin + outlet saat customer upload bukti transfer
+    const msgProof = `💳 *BUKTI TRANSFER MASUK — ${outlet.name}*\n\n` +
+      `📋 No: ${order.order_number}\n` +
+      `👤 ${order.customer_name} (${order.customer_wa})\n` +
+      `💰 Total: *${totalText}*\n\n` +
+      `Cek admin panel untuk verifikasi pembayaran.`;
+    if (ADMIN_WA) results.admin = await kirimWA(FONNTE_TOKEN, ADMIN_WA, msgProof);
+    if (outlet.phone_wa) results.outlet = await kirimWA(FONNTE_TOKEN, outlet.phone_wa, msgProof);
+
+  } else if (event === "transfer_verified") {
+    // Notif ke customer saat transfer dikonfirmasi
+    if (order.customer_wa) {
+      const msgVerified = `✅ *Pembayaran Dikonfirmasi!*\n\n` +
+        `Halo ${order.customer_name}!\n` +
+        `Transfer untuk pesanan *${order.order_number}* sudah dikonfirmasi.\n\n` +
+        `🏪 Outlet: ${outlet.name}\n` +
+        `⏰ Ambil: ${order.pickup_time || '-'}\n\n` +
+        `Pesanan sedang disiapkan. Terima kasih! 🙏`;
+      results.customer = await kirimWA(FONNTE_TOKEN, order.customer_wa, msgVerified);
+    }
   }
 
   // Log notifikasi ke DB

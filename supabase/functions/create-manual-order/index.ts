@@ -147,7 +147,7 @@ Deno.serve(async (req: Request) => {
         subtotal,
         service_fee:         serviceFee,
         total,
-        status:              "paid",        // langsung paid untuk manual
+        status:              "pending_payment", // menunggu bukti transfer
         payment_method:      "manual",
         tripay_merchant_ref: manualRef,     // kolom NOT NULL — pakai ref manual
         expires_at:          new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 jam
@@ -169,13 +169,21 @@ Deno.serve(async (req: Request) => {
       return Response.json({ error: itemsErr.message }, { status: 500, headers: CORS });
     }
 
-    // Trigger notifikasi WA (fire-and-forget, tidak blokir response)
+    // Trigger notifikasi WA — await dengan timeout 3 detik
     const notifUrl = `${supabaseUrl}/functions/v1/send-wa-notifications`;
-    fetch(notifUrl, {
+    const notifPromise = fetch(notifUrl, {
       method: "POST",
-      headers: { "Authorization": `Bearer ${serviceKey}`, "Content-Type": "application/json" },
+      headers: {
+        "Authorization": `Bearer ${serviceKey}`,
+        "apikey": serviceKey,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({ order_id: order.id, event: "new_order" }),
-    }).catch(() => {}); // abaikan error notif agar tidak blokir order
+    });
+    await Promise.race([
+      notifPromise,
+      new Promise(resolve => setTimeout(resolve, 3000)),
+    ]).catch(() => {});
 
     return Response.json({
       success:      true,

@@ -142,38 +142,77 @@ function renderStatus(o) {
     case 'pending_payment':
       heroHtml = `
         <div class="status-hero">
-          <div class="status-icon">⏳</div>
-          <div class="status-title">Menunggu Pembayaran</div>
-          <div class="status-sub">Scan QRIS di bawah sebelum waktu habis</div>
-          <span class="status-chip status-pending">BELUM DIBAYAR</span>
+          <div class="status-icon">💳</div>
+          <div class="status-title">Transfer Dulu Yuk!</div>
+          <div class="status-sub">Segera transfer dan upload buktinya di bawah</div>
+          <span class="status-chip status-pending">BELUM TRANSFER</span>
         </div>`;
 
-      // Bangun QRIS box
-      const qrisHtml = buildQrisBox(o);
-
       extraHtml = `
-        ${qrisHtml}
         <div class="info-card">
-          <button class="btn-outline" id="btnCekStatus" onclick="doCekStatus()">
-            Sudah Bayar? Cek Status
+          <div style="font-weight:700;font-size:14px;margin-bottom:10px">🏦 Info Rekening Tujuan</div>
+          <div class="info-row">
+            <span class="label">Bank</span>
+            <span class="val" style="font-weight:700">BCA</span>
+          </div>
+          <div class="info-row">
+            <span class="label">No. Rekening</span>
+            <span class="val" style="font-weight:700;font-family:monospace;font-size:15px">1234567890</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Atas Nama</span>
+            <span class="val">SUKA Shawarma</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Jumlah Transfer</span>
+            <span class="val" style="font-weight:800;color:var(--brand);font-size:15px">${formatRupiah(o.total)}</span>
+          </div>
+        </div>
+
+        <div class="info-card" id="uploadCard">
+          <div style="font-weight:700;font-size:14px;margin-bottom:10px">📸 Upload Bukti Transfer</div>
+          <div id="proofPreview" style="display:none;margin-bottom:10px;text-align:center">
+            <img id="proofImg" style="max-width:100%;border-radius:8px;max-height:200px;object-fit:cover" />
+          </div>
+          <label style="display:flex;align-items:center;gap:10px;padding:12px;border:2px dashed var(--line2);border-radius:10px;cursor:pointer;margin-bottom:10px">
+            <span style="font-size:24px">🖼️</span>
+            <div>
+              <div style="font-weight:600;font-size:13px">Pilih foto bukti transfer</div>
+              <div style="font-size:11px;color:var(--muted)">JPG / PNG, maks 5MB</div>
+            </div>
+            <input type="file" id="proofFile" accept="image/*" style="display:none" onchange="previewProof(this)" />
+          </label>
+          <button class="btn-add-big" id="btnUpload" onclick="doUploadProof('${o.order_number}')" disabled
+            style="opacity:0.5">
+            Kirim Bukti Transfer
           </button>
-          <a href="${o._pay_url || '#'}" target="_blank" rel="noopener" class="btn-outline"
-             style="${o._pay_url ? '' : 'opacity:.4;pointer-events:none'}">
-            Buka Halaman Tripay
-          </a>
+          <div id="uploadErr" style="color:var(--brand);font-size:12px;margin-top:8px;display:none"></div>
         </div>`;
       break;
 
+    case 'awaiting_verification':
+      heroHtml = `
+        <div class="status-hero">
+          <div class="status-icon">🔍</div>
+          <div class="status-title">Menunggu Verifikasi</div>
+          <div class="status-sub">Bukti transfer sudah diterima, admin sedang mengecek</div>
+          <span class="status-chip status-preparing">CEK ADMIN</span>
+        </div>`;
+
+      extraHtml = o.proof_url ? `
+        <div class="info-card" style="text-align:center">
+          <div style="font-size:13px;color:var(--muted);margin-bottom:8px">Bukti transfer yang kamu kirim:</div>
+          <img src="${o.proof_url}" style="max-width:100%;border-radius:8px;max-height:220px;object-fit:cover" />
+        </div>` : '';
+      break;
+
     case 'paid':
-      const isManual = o.payment_method === 'manual';
       heroHtml = `
         <div class="status-hero">
           <div class="status-icon">✅</div>
-          <div class="status-title">${isManual ? 'Pesanan Diterima!' : 'Pembayaran Berhasil!'}</div>
-          <div class="status-sub">${isManual
-            ? 'Bayar saat pickup — outlet sedang konfirmasi pesananmu'
-            : 'Pesanan diterima — menunggu konfirmasi outlet'}</div>
-          <span class="status-chip status-paid">${isManual ? 'DIKONFIRMASI' : 'DIBAYAR'}</span>
+          <div class="status-title">Pembayaran Dikonfirmasi!</div>
+          <div class="status-sub">Transfer kamu sudah diverifikasi — outlet sedang menyiapkan pesanan</div>
+          <span class="status-chip status-paid">DIKONFIRMASI</span>
         </div>`;
       break;
 
@@ -295,9 +334,6 @@ function renderStatus(o) {
   document.getElementById('pageContent').innerHTML = heroHtml + extraHtml + infoHtml;
 
   // Post-render hooks per status
-  if (o.status === 'pending_payment') {
-    startCountdownUI(o.expires_at);
-  }
   if (o.status === 'ready') {
     renderOrderQR(o.order_number);
   }
@@ -417,6 +453,88 @@ async function doCekStatus() {
     isCheking = false;
     const b = document.getElementById('btnCekStatus');
     if (b) { b.textContent = 'Sudah Bayar? Cek Status'; b.disabled = false; }
+  }
+}
+
+// ─── Preview foto bukti transfer ─────────────────────────────────────────────
+function previewProof(input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  if (file.size > 5 * 1024 * 1024) {
+    showToast('❌ File terlalu besar (maks 5MB)');
+    input.value = '';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('proofImg').src = e.target.result;
+    document.getElementById('proofPreview').style.display = '';
+    const btn = document.getElementById('btnUpload');
+    if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+  };
+  reader.readAsDataURL(file);
+}
+
+// ─── Upload bukti transfer + update status ────────────────────────────────────
+let isUploading = false;
+
+async function doUploadProof(orderNum) {
+  if (isUploading) return;
+  const fileInput = document.getElementById('proofFile');
+  if (!fileInput || !fileInput.files[0]) { showToast('Pilih foto dulu'); return; }
+
+  isUploading = true;
+  const btn = document.getElementById('btnUpload');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Mengirim…'; }
+
+  try {
+    const file     = fileInput.files[0];
+    const ext      = file.name.split('.').pop().toLowerCase() || 'jpg';
+    const path     = `${orderNum}/${Date.now()}.${ext}`;
+
+    // Upload ke Supabase Storage
+    const { data: upData, error: upErr } = await window.db.storage
+      .from('transfer-proofs')
+      .upload(path, file, { upsert: true, contentType: file.type });
+
+    if (upErr) throw new Error('Upload gagal: ' + upErr.message);
+
+    // Ambil public URL (bucket non-public → pakai signed URL / path saja)
+    const { data: urlData } = window.db.storage
+      .from('transfer-proofs')
+      .getPublicUrl(path);
+    const proofUrl = urlData?.publicUrl || path;
+
+    // Panggil RPC untuk update status
+    const { data: ok, error: rpcErr } = await window.db
+      .rpc('submit_transfer_proof', {
+        p_order_number: orderNum,
+        p_proof_url:    proofUrl,
+      });
+
+    if (rpcErr) throw new Error(rpcErr.message);
+    if (!ok) throw new Error('Order tidak ditemukan atau status sudah berubah');
+
+    // Kirim notif WA ke admin
+    fetch(`${window.SUKA_CONFIG.supabaseUrl}/functions/v1/send-wa-notifications`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${window.SUKA_CONFIG.supabaseAnonKey}`,
+        'apikey': window.SUKA_CONFIG.supabaseAnonKey,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ order_id: order?.id, event: 'transfer_submitted' }),
+    }).catch(() => {});
+
+    showToast('✅ Bukti transfer terkirim!');
+    await loadOrder(null);
+
+  } catch (e) {
+    const errEl = document.getElementById('uploadErr');
+    if (errEl) { errEl.textContent = '❌ ' + e.message; errEl.style.display = ''; }
+    if (btn) { btn.disabled = false; btn.textContent = 'Kirim Bukti Transfer'; btn.style.opacity = '1'; }
+  } finally {
+    isUploading = false;
   }
 }
 

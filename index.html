@@ -117,26 +117,29 @@
     </div>
     <div class="field">
       <label>Waktu Ambil <span style="color:var(--brand)">*</span></label>
-      <input id="fTime" type="text" placeholder="Contoh: 30 menit lagi / jam 14:00" />
-      <div class="err-msg">Waktu ambil wajib diisi</div>
+      <select id="fTime" class="form-input" style="font-size:16px">
+        <option value="">— Pilih waktu ambil —</option>
+        <option>13:00</option><option>13:30</option>
+        <option>14:00</option><option>14:30</option>
+        <option>15:00</option><option>15:30</option>
+        <option>16:00</option><option>16:30</option>
+        <option>17:00</option><option>17:30</option>
+        <option>18:00</option><option>18:30</option>
+        <option>19:00</option><option>19:30</option>
+        <option>20:00</option><option>20:30</option>
+        <option>21:00</option><option>21:30</option>
+        <option>22:00</option>
+      </select>
+      <div class="err-msg">Waktu ambil wajib dipilih</div>
     </div>
     <div class="field">
       <label>Catatan Tambahan</label>
       <textarea id="fNote" class="notes" placeholder="Opsional — tuliskan permintaan khusus"></textarea>
     </div>
-    <div class="hint-banner">
-      💡 Pesanan langsung tercatat. Selesaikan pembayaran di kasir outlet saat pickup.
-    </div>
   </div>
   <div class="sheet-footer">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:13px;color:var(--muted)">
-      <span>Subtotal</span><span id="checkoutSubtotal">Rp 0</span>
-    </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:12px;color:var(--muted)">
-      <span>Biaya layanan (0.7%)</span><span id="checkoutFee">Rp 0</span>
-    </div>
     <button class="btn-add-big" id="btnPay" onclick="submitOrder()">
-      <span>Bayar Sekarang</span>
+      <span>Konfirmasi Pesanan</span>
       <span id="checkoutTotal">Rp 0</span>
     </button>
   </div>
@@ -166,7 +169,7 @@ let currentVariants = [];
 let currentSel      = {};
 let currentQty      = 1;
 
-const SERVICE_FEE_RATE = 0.007;
+const SERVICE_FEE_RATE = 0;
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 (async function init() {
@@ -620,9 +623,7 @@ function renderCartSheet() {
   html += '</div>';
 
   document.getElementById('cartItems').innerHTML = html;
-  document.getElementById('checkoutSubtotal').textContent = formatRupiah(subtotal);
-  document.getElementById('checkoutFee').textContent      = formatRupiah(fee);
-  document.getElementById('checkoutTotal').textContent    = formatRupiah(total);
+  document.getElementById('checkoutTotal').textContent = formatRupiah(subtotal);
 }
 
 function removeCartItem(idx) {
@@ -639,7 +640,7 @@ function submitOrder() {
   [
     { id: 'fName', validate: v => v.trim().length >= 2 },
     { id: 'fWA',   validate: v => validateWA(v) },
-    { id: 'fTime', validate: v => v.trim().length >= 2 },
+    { id: 'fTime', validate: v => v.trim().length > 0 },
   ].forEach(f => {
     const input = document.getElementById(f.id);
     const wrap  = input.closest('.field');

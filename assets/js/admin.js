@@ -93,23 +93,25 @@ function fmtTimeAgo(iso) {
 // ─── Status helpers ───────────────────────────────────────────────────────────
 
 const STATUS_LABELS = {
-  pending_payment: 'Belum Bayar',
-  paid:            'Dibayar',
-  preparing:       'Disiapkan',
-  ready:           'Siap Ambil',
-  done:            'Selesai',
-  cancelled:       'Batal',
-  expired:         'Kedaluwarsa',
+  pending_payment:        'Belum Transfer',
+  awaiting_verification:  'Cek Bukti',
+  paid:                   'Dikonfirmasi',
+  preparing:              'Disiapkan',
+  ready:                  'Siap Ambil',
+  done:                   'Selesai',
+  cancelled:              'Batal',
+  expired:                'Kedaluwarsa',
 };
 
 const STATUS_COLORS = {
-  pending_payment: '#f59e0b',
-  paid:            '#3b82f6',
-  preparing:       '#8b5cf6',
-  ready:           '#10b981',
-  done:            '#6b7280',
-  cancelled:       '#ef4444',
-  expired:         '#9ca3af',
+  pending_payment:        '#f59e0b',
+  awaiting_verification:  '#f97316',
+  paid:                   '#3b82f6',
+  preparing:              '#8b5cf6',
+  ready:                  '#10b981',
+  done:                   '#6b7280',
+  cancelled:              '#ef4444',
+  expired:                '#9ca3af',
 };
 
 const STATUS_NEXT_ACTION = {
