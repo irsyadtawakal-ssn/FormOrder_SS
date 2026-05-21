@@ -96,8 +96,6 @@ const ACTIVE_STATUSES = ['paid', 'preparing', 'ready'];
 
 // ─── Load orders ──────────────────────────────────────────────────────────────
 async function loadOrders() {
-  const outletId = document.getElementById('outletFilter')?.value || null;
-
   let q = window.db
     .from('orders')
     .select(`id, order_number, customer_name, customer_wa, total, status,
@@ -107,7 +105,14 @@ async function loadOrders() {
     .order('created_at', { ascending: false })
     .limit(200);
 
-  if (outletId) q = q.eq('outlet_id', outletId);
+  if (adminUser && adminUser.role === 'outlet_staff' && adminUser.outlet_id) {
+    // outlet_staff hanya lihat order outlet sendiri
+    q = q.eq('outlet_id', adminUser.outlet_id);
+  } else {
+    // super_admin bisa filter per outlet via dropdown
+    const outletId = document.getElementById('outletFilter')?.value || null;
+    if (outletId) q = q.eq('outlet_id', outletId);
+  }
 
   const { data } = await q;
   allOrders = data || [];
