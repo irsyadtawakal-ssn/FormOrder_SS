@@ -45,9 +45,18 @@
 ### Tabel Ranking Menu Items
 
 - Top 3 menu items terbanyak dipesan dalam periode
-- Kolom: Ranking (#), Nama Item, Total Dipesan (qty), Revenue Kontribusi, % dari total revenue
 - Tampil sebagai podium cards: 🥇 🥈 🥉
-- Filter outlet berlaku: staff lihat ranking outlet sendiri, admin bisa filter per outlet atau semua outlet digabung
+- Kolom per card: Nama Item, Total Dipesan (qty), Revenue Kontribusi, % dari total revenue
+- Filter outlet berlaku: staff lihat outlet sendiri, admin bisa filter per outlet atau semua outlet digabung
+
+### Tabel Detail Per Item Per Hari
+
+- Tabel breakdown lengkap di bawah podium cards
+- Kolom: Tanggal, Outlet, Nama Item, Qty Terjual, Subtotal
+- Diurutkan: Tanggal (terbaru) → Outlet → Item
+- Bisa di-sort per kolom dengan klik header
+- Ikut filter outlet & date range yang aktif
+- Data ini juga yang diexport ke CSV
 
 ### Export CSV
 
