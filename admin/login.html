@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Login Admin — SUKA Shawarma</title>
 <link rel="stylesheet" href="../assets/css/style.css" />
+<link rel="manifest" href="/manifest.json" />
+<meta name="theme-color" content="#ff4d4f" />
 </head>
 <body>
 <div class="phone" style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding-bottom:0">
@@ -96,5 +98,6 @@ async function doLogin() {
 
 document.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 </script>
+<script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
 </body>
 </html>

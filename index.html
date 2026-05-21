@@ -6,7 +6,8 @@
 <title>SUKA Shawarma — Pesan Online</title>
 <meta name="description" content="Pesan shawarma online, pickup di outlet terdekat. Bayar saat pickup." />
 <link rel="stylesheet" href="assets/css/style.css" />
-<link rel="manifest" href="manifest.json" />
+<link rel="manifest" href="/manifest.json" />
+<meta name="theme-color" content="#ff4d4f" />
 </head>
 <body>
 <div class="phone">
@@ -675,5 +676,6 @@ function closeAllSheets() {
   document.body.style.overflow = '';
 }
 </script>
+<script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
 </body>
 </html>

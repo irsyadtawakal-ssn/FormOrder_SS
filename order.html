@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Status Pesanan — SUKA Shawarma</title>
 <link rel="stylesheet" href="assets/css/style.css" />
-<link rel="manifest" href="manifest.json" />
+<link rel="manifest" href="/manifest.json" />
+<meta name="theme-color" content="#ff4d4f" />
 </head>
 <body>
 <div class="phone">
@@ -428,5 +429,6 @@ function renderError(msg) {
     </div>`;
 }
 </script>
+<script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
 </body>
 </html>
