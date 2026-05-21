@@ -89,3 +89,7 @@ CREATE POLICY "admin_delete_proof"
 ON storage.objects FOR DELETE
 TO authenticated
 USING (bucket_id = 'transfer-proofs');
+
+-- 5. Tambah kolom AI verification result
+ALTER TABLE orders
+  ADD COLUMN IF NOT EXISTS ai_verification_result JSONB;

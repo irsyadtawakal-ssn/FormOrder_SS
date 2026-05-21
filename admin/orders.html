@@ -100,7 +100,7 @@ async function loadOrders() {
   let q = window.db
     .from('orders')
     .select(`id, order_number, customer_name, customer_wa, total, status,
-             created_at, pickup_time, notes, outlet_id, proof_url,
+             created_at, pickup_time, notes, outlet_id, proof_url, ai_verification_result,
              outlets(name),
              order_items(item_name, quantity, unit_price, selections, note)`)
     .order('created_at', { ascending: false })
@@ -275,9 +275,34 @@ function showDetail(orderId) {
       <span class="val" style="text-align:right">${formatRupiah(i.unit_price * i.quantity)}</span>
     </div>`).join('');
 
+  const ai  = o.ai_verification_result;
+  const aiHtml = ai ? (() => {
+    const badge = {
+      high:   { color: '#16a34a', bg: '#f0fdf4', label: '✅ Tinggi' },
+      medium: { color: '#d97706', bg: '#fffbeb', label: '⚠️ Sedang' },
+      low:    { color: '#dc2626', bg: '#fef2f2', label: '❌ Rendah' },
+      error:  { color: '#6b7280', bg: '#f9fafb', label: '⚠️ Error' },
+    }[ai.confidence] || { color: '#6b7280', bg: '#f9fafb', label: ai.confidence };
+    const ext = ai.extracted || {};
+    return `
+      <div style="padding:10px 12px;background:${badge.bg};border-radius:8px;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <span style="font-weight:700;font-size:13px">🤖 Analisis AI</span>
+          <span style="font-size:12px;font-weight:700;color:${badge.color}">${badge.label}</span>
+        </div>
+        ${ext.nominal   ? `<div style="font-size:12px">💰 Nominal: <b>Rp ${Number(ext.nominal).toLocaleString('id-ID')}</b></div>` : ''}
+        ${ext.penerima  ? `<div style="font-size:12px">👤 Penerima: <b>${ext.penerima}</b></div>` : ''}
+        ${ext.bank_penerima ? `<div style="font-size:12px">🏦 Bank: <b>${ext.bank_penerima}</b></div>` : ''}
+        ${ext.status    ? `<div style="font-size:12px">📋 Status: <b>${ext.status}</b></div>` : ''}
+        ${ai.reason     ? `<div style="font-size:11px;color:${badge.color};margin-top:4px">${ai.reason}</div>` : ''}
+        ${ai.auto_approved ? `<div style="font-size:12px;font-weight:700;color:#16a34a;margin-top:4px">✅ Auto-approved oleh AI</div>` : ''}
+      </div>`;
+  })() : '';
+
   const proofHtml = o.proof_url ? `
     <hr style="border:0;border-top:1px dashed var(--line2);margin:10px 0"/>
     <div style="font-weight:600;font-size:13px;margin-bottom:8px">📸 Bukti Transfer</div>
+    ${aiHtml}
     <img src="${o.proof_url}" style="width:100%;border-radius:8px;max-height:250px;object-fit:cover" />
     ${o.status === 'awaiting_verification' ? `
       <div style="display:flex;gap:8px;margin-top:10px">
@@ -331,7 +356,7 @@ async function handleRealtime(payload) {
     const { data } = await window.db
       .from('orders')
       .select(`id, order_number, customer_name, customer_wa, total, status,
-               created_at, pickup_time, notes, outlet_id, proof_url,
+               created_at, pickup_time, notes, outlet_id, proof_url, ai_verification_result,
                outlets(name),
                order_items(item_name, quantity, unit_price, selections, note)`)
       .eq('id', payload.new.id)

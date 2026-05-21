@@ -543,6 +543,19 @@ async function doUploadProof(orderNum) {
       body: JSON.stringify({ order_id: order?.id, event: 'transfer_submitted' }),
     }).catch(() => {});
 
+    // Panggil AI verifikasi di background (tidak blokir UI)
+    if (order?.id) {
+      fetch(`${window.SUKA_CONFIG.supabaseUrl}/functions/v1/verify-transfer-proof`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${window.SUKA_CONFIG.supabaseAnonKey}`,
+          'apikey': window.SUKA_CONFIG.supabaseAnonKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ order_id: order.id }),
+      }).catch(() => {});
+    }
+
     showToast('✅ Bukti transfer terkirim!');
     await loadOrder(null);
 
