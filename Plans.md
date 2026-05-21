@@ -82,10 +82,10 @@
 **Output:** Owner bisa analisis; karyawan bisa install ke HP
 
 ### Tasks
-- [ ] 6.1 Admin Reports page (`admin/reports.html`) — revenue per outlet, top menu items, order volume
-- [ ] 6.2 Export CSV per outlet per date range
-- [ ] 6.3 `manifest.json` + `sw.js` — PWA installable, offline fallback
-- [ ] 6.4 Print CSS — struk order untuk printer kasir (optional)
+- [x] 6.1 Admin Reports page (`admin/reports.html`) — revenue per outlet, top menu items, order volume
+- [x] 6.2 Export CSV per outlet per date range
+- [x] 6.3 `manifest.json` + `sw.js` — PWA installable, offline fallback
+- [x] 6.4 Print CSS — struk order untuk printer kasir (optional)
 
 ---
 
@@ -122,3 +122,4 @@
 - ✅ 2026-05-21 — Deploy ke order.sukashawarma.com via cPanel Git
 - ✅ 2026-05-21 — compare_price (harga coret + diskon %) di menu
 - ✅ 2026-05-21 — Upload foto menu via Supabase Storage
+- ✅ 2026-05-21 — Phase 6: Reports (metrics, grafik, podium top-3, tabel detail, export CSV) + PWA (manifest + SW + icon) + print CSS
