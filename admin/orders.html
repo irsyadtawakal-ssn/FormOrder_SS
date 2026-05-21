@@ -38,7 +38,7 @@
   </div>
 
   <!-- Daftar order -->
-  <div id="orderList" style="padding:6px 12px">
+  <div id="orderList" style="padding:6px 12px 80px">
     <div class="skeleton-card"><div class="skeleton-lines">
       <div class="skeleton skeleton-line"></div>
       <div class="skeleton skeleton-line short"></div>
@@ -178,9 +178,10 @@ function orderCard(o) {
 
 // ─── Aksi ─────────────────────────────────────────────────────────────────────
 async function doUpdateStatus(orderId, newStatus) {
+  const btn = document.querySelector(`#ord-${orderId} .action-primary`);
+  if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
   try {
     await updateOrderStatus(orderId, newStatus);
-    // Update lokal langsung — tidak tunggu realtime
     const idx = allOrders.findIndex(o => o.id === orderId);
     if (idx >= 0) {
       allOrders[idx] = { ...allOrders[idx], status: newStatus };
@@ -188,18 +189,26 @@ async function doUpdateStatus(orderId, newStatus) {
     }
     adminToast(`✅ Status → ${STATUS_LABELS[newStatus]}`);
   } catch (e) {
+    if (btn) { btn.disabled = false; btn.textContent = STATUS_NEXT_ACTION[allOrders.find(o=>o.id===orderId)?.status]?.label || '?'; }
     adminToast('❌ Gagal: ' + e.message);
   }
 }
 
 async function doCancel(orderId) {
   if (!confirm('Batalkan pesanan ini? Tindakan ini tidak dapat diurungkan.')) return;
+  const btn = document.querySelector(`#ord-${orderId} .action-danger`);
+  if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
   const { error } = await window.db.from('orders').update({
     status:       'cancelled',
     cancel_reason: 'Dibatalkan oleh outlet',
     cancelled_at:  new Date().toISOString(),
   }).eq('id', orderId);
-  if (error) { adminToast('❌ ' + error.message); return; }
+  if (error) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Batalkan'; }
+    adminToast('❌ ' + error.message); return;
+  }
+  const idx = allOrders.findIndex(o => o.id === orderId);
+  if (idx >= 0) { allOrders[idx] = { ...allOrders[idx], status: 'cancelled' }; renderOrders(); }
   adminToast('✅ Pesanan dibatalkan');
 }
 
