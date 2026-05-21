@@ -145,6 +145,16 @@
   </div>
 </div>
 
+<!-- Banner pemulihan pesanan pending -->
+<div id="pendingOrderBanner" style="display:none;margin:8px 12px 0;padding:12px 14px;background:#fef9c3;border-radius:10px;font-size:13px;color:#854d0e;line-height:1.5">
+  ⚠️ <b>Kamu punya pesanan yang belum selesai!</b><br/>
+  Belum upload bukti transfer?
+  <a id="pendingOrderLink" href="#" style="display:inline-block;margin-top:8px;padding:7px 14px;background:#854d0e;color:#fff;border-radius:8px;font-weight:700;font-size:13px;text-decoration:none">
+    Lanjutkan Upload →
+  </a>
+  <button onclick="dismissPendingBanner()" style="float:right;background:none;border:none;font-size:18px;color:#854d0e;cursor:pointer;line-height:1;margin-top:-2px">×</button>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
@@ -170,6 +180,31 @@ let currentSel      = {};
 let currentQty      = 1;
 
 const SERVICE_FEE_RATE = 0;
+
+// ─── Cek pesanan pending dari sesi sebelumnya ─────────────────────────────────
+(function checkPendingOrder() {
+  try {
+    const raw = localStorage.getItem('suka_last_order');
+    if (!raw) return;
+    const saved = JSON.parse(raw);
+    // Abaikan kalau sudah lebih dari 24 jam
+    if (Date.now() - saved.saved_at > 24 * 60 * 60 * 1000) {
+      localStorage.removeItem('suka_last_order');
+      return;
+    }
+    const banner = document.getElementById('pendingOrderBanner');
+    const link   = document.getElementById('pendingOrderLink');
+    if (banner && link && saved.url) {
+      link.href = saved.url;
+      banner.style.display = '';
+    }
+  } catch { /* abaikan */ }
+})();
+
+function dismissPendingBanner() {
+  document.getElementById('pendingOrderBanner').style.display = 'none';
+  localStorage.removeItem('suka_last_order');
+}
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 (async function init() {
