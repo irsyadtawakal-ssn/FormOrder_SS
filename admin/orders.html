@@ -180,6 +180,12 @@ function orderCard(o) {
 async function doUpdateStatus(orderId, newStatus) {
   try {
     await updateOrderStatus(orderId, newStatus);
+    // Update lokal langsung — tidak tunggu realtime
+    const idx = allOrders.findIndex(o => o.id === orderId);
+    if (idx >= 0) {
+      allOrders[idx] = { ...allOrders[idx], status: newStatus };
+      renderOrders();
+    }
     adminToast(`✅ Status → ${STATUS_LABELS[newStatus]}`);
   } catch (e) {
     adminToast('❌ Gagal: ' + e.message);
