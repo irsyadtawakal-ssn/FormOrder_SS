@@ -755,7 +755,7 @@ select.form-input { cursor: pointer; }
 .admin-modal-header {
   padding: 16px 16px 12px; border-bottom: 1px solid var(--line);
   display: flex; justify-content: space-between; align-items: center;
-  position: sticky; top: 0; background: var(--card); z-index: 2;
+  position: sticky; top: 0; background: var(--card); z-index: 10;
 }
 .admin-modal-body { padding: 14px 16px; flex: 1; }
 .admin-modal-footer {
