@@ -1,7 +1,7 @@
 # Plans — SUKA Shawarma Order System
 
 > Ref spec: `docs/superpowers/specs/2026-05-19-sukshawarma-order-design.md`
-> Status: Phase 1–5 ✅ SELESAI + Phase 7 sebagian ✅ — Phase 3 & 6 berikutnya
+> Status: Phase 1–2 ✅ + Phase 4–6 ✅ SELESAI + Phase 7 sebagian — Phase 3 (Notifikasi WA) pending owner input
 
 ---
 
@@ -96,7 +96,7 @@
 ### Tasks
 - [x] 7.1 Deploy frontend ke cPanel `public_html/order/` via Git Version Control
 - [x] 7.2 Konfigurasi subdomain `order.sukashawarma.com` — DNS propagasi selesai ✅
-- [ ] 7.3 SSL/HTTPS untuk subdomain order
+- [x] 7.3 SSL/HTTPS untuk subdomain order
 - [ ] 7.4 End-to-end test semua flow (order → admin konfirmasi)
 - [ ] 7.5 Fix bugs dari UAT
 - [ ] 7.6 Upload foto menu asli semua item
