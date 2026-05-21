@@ -127,10 +127,10 @@
 ---
 
 ## Pending Owner Input
-- [ ] Foto menu items (600x600px per item, 16 item)
-- [ ] Nomor WA tiap outlet untuk notifikasi pesanan (kolom `phone_wa` di tabel outlets)
-- [ ] OPENROUTER_API_KEY di Supabase Secrets (untuk verifikasi AI)
-- [ ] Logo SUKA Shawarma (SVG/PNG untuk topbar)
+- [ ] Foto menu items — upload via `admin/bulk-photos.html` (16 item, bucket `menu-photo`)
+- [x] Nomor WA tiap outlet — SQL migration `20260521_outlet_phones.sql` siap, **jalankan di Supabase SQL Editor**
+- [x] OPENROUTER_API_KEY — sudah diset di Supabase Secrets
+- [x] Logo SUKA Shawarma — `assets/img/logo.png` sudah ada, tampil di topbar semua halaman
 
 ---
 
@@ -149,3 +149,6 @@
 - ✅ 2026-05-21 — WA notifikasi via Fonnte (new_order, ready, cancelled)
 - ✅ 2026-05-21 — Fix mobile: anti-zoom, keyboard overlap, outlet staff data isolation
 - ✅ 2026-05-21 — Phase 8: Transfer manual flow — upload bukti, AI verify, admin panel verifikasi
+- ✅ 2026-05-21 — Bulk upload foto menu via admin/bulk-photos.html (fuzzy auto-match ke nama menu)
+- ✅ 2026-05-21 — Logo SUKA Shawarma di topbar (index, order, admin dashboard, login)
+- ✅ 2026-05-21 — SQL phone_wa 17 outlet (kitchen/BNR, empang, paledang, cimanggu, depok-sukmajaya, jagakarsa, beji, sawangan, pajajaran, dramaga, cibinong, citayam, tebet, cirendeu, pekayon, jatiwaringin, kalisari)
