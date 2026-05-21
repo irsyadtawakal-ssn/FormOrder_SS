@@ -664,16 +664,35 @@ function submitOrder() {
 }
 
 // ─── Sheet helpers ────────────────────────────────────────────────────────────
+function adjustSheetForKeyboard() {
+  const sheets = document.querySelectorAll('.sheet.show');
+  if (!sheets.length) return;
+  const keyboardH = window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop;
+  sheets.forEach(el => { el.style.bottom = Math.max(0, keyboardH) + 'px'; });
+}
+
 function showSheet(id) {
   document.getElementById('scrim').classList.add('show');
   document.getElementById(id).classList.add('show');
   document.body.style.overflow = 'hidden';
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', adjustSheetForKeyboard);
+    window.visualViewport.addEventListener('scroll', adjustSheetForKeyboard);
+  }
 }
 
 function closeAllSheets() {
-  ['itemSheet','cartSheet'].forEach(id => document.getElementById(id).classList.remove('show'));
+  ['itemSheet','cartSheet'].forEach(id => {
+    const el = document.getElementById(id);
+    el.classList.remove('show');
+    el.style.bottom = '';
+  });
   document.getElementById('scrim').classList.remove('show');
   document.body.style.overflow = '';
+  if (window.visualViewport) {
+    window.visualViewport.removeEventListener('resize', adjustSheetForKeyboard);
+    window.visualViewport.removeEventListener('scroll', adjustSheetForKeyboard);
+  }
 }
 </script>
 <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
