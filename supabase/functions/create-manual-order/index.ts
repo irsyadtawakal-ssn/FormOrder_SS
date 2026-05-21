@@ -169,6 +169,14 @@ Deno.serve(async (req: Request) => {
       return Response.json({ error: itemsErr.message }, { status: 500, headers: CORS });
     }
 
+    // Trigger notifikasi WA (fire-and-forget, tidak blokir response)
+    const notifUrl = `${supabaseUrl}/functions/v1/send-wa-notifications`;
+    fetch(notifUrl, {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${serviceKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ order_id: order.id, event: "new_order" }),
+    }).catch(() => {}); // abaikan error notif agar tidak blokir order
+
     return Response.json({
       success:      true,
       order_number: order.order_number,

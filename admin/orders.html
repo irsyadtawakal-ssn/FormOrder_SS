@@ -193,6 +193,15 @@ async function doUpdateStatus(orderId, newStatus) {
       renderOrders();
     }
     adminToast(`✅ Status → ${STATUS_LABELS[newStatus]}`);
+    // Kirim notif WA ke customer saat siap diambil atau dibatalkan
+    if (newStatus === 'ready' || newStatus === 'cancelled') {
+      const event = newStatus === 'ready' ? 'ready' : 'cancelled';
+      fetch(`${window.SUKA_CONFIG.supabaseUrl}/functions/v1/send-wa-notifications`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${window.SUKA_CONFIG.supabaseAnonKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_id: orderId, event }),
+      }).catch(() => {});
+    }
   } catch (e) {
     if (btn) { btn.disabled = false; btn.textContent = STATUS_NEXT_ACTION[allOrders.find(o=>o.id===orderId)?.status]?.label || '?'; }
     adminToast('❌ Gagal: ' + e.message);
