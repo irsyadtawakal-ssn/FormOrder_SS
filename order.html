@@ -305,14 +305,14 @@ function renderStatus(o) {
       heroHtml = `
         <div class="status-hero">
           <div class="status-icon">⌛</div>
-          <div class="status-title">QRIS Kedaluwarsa</div>
-          <div class="status-sub">Waktu pembayaran habis. Silakan buat pesanan baru.</div>
+          <div class="status-title">Pesanan Kedaluwarsa</div>
+          <div class="status-sub">Bukti transfer tidak diterima dalam 2 jam. Silakan pesan ulang.</div>
           <span class="status-chip status-expired">KEDALUWARSA</span>
         </div>`;
 
       extraHtml = `
         <div class="info-card" style="text-align:center">
-          <a href="menu.html?outlet=${encodeURIComponent(o.outlet_slug || '')}"
+          <a href="index.html"
              class="btn-add-big" style="display:block;text-decoration:none;text-align:center">
             Pesan Ulang
           </a>

@@ -42,7 +42,7 @@
 
 ### Tasks
 - [x] 3.1 Edge Function: `send-wa-notifications` — Fonnte API, notif admin + outlet + customer
-- [ ] 3.2 Edge Function: `auto-cancel-expired-orders` — pg_cron tiap 1 menit, scan & cancel expired
+- [x] 3.2 Edge Function: `auto-cancel-expired-orders` — pg_cron tiap 1 menit, scan & cancel expired
 - [ ] 3.3 Seed notification_templates — 5 templates default
 - [x] 3.4 Integrasi notif ke order flow — events: new_order, ready, cancelled, transfer_submitted, transfer_verified
 
@@ -99,7 +99,7 @@
 - [x] 7.3 SSL/HTTPS untuk subdomain order
 - [x] 7.4 Auto-deploy via GitHub webhook + deploy.php di cPanel
 - [ ] 7.5 End-to-end test semua flow (order → transfer → upload → admin verifikasi)
-- [ ] 7.6 Upload foto menu asli semua item
+- [x] 7.6 Upload foto menu asli semua item
 - [ ] 7.7 Training karyawan per outlet
 
 ---
@@ -127,7 +127,7 @@
 ---
 
 ## Pending Owner Input
-- [ ] Foto menu items — sebagian besar sudah, beberapa item belum. Upload sisa via `admin/bulk-photos.html`
+- [x] Foto menu items — semua sudah diupload ✅
 - [x] Nomor WA tiap outlet — SQL migration `20260521_outlet_phones.sql` siap, **jalankan di Supabase SQL Editor**
 - [x] OPENROUTER_API_KEY — sudah diset di Supabase Secrets
 - [x] Logo SUKA Shawarma — `assets/img/logo.png` sudah ada, tampil di topbar semua halaman
@@ -151,4 +151,5 @@
 - ✅ 2026-05-21 — Phase 8: Transfer manual flow — upload bukti, AI verify, admin panel verifikasi
 - ✅ 2026-05-21 — Bulk upload foto menu via admin/bulk-photos.html (fuzzy auto-match ke nama menu)
 - ✅ 2026-05-21 — Logo SUKA Shawarma di topbar (index, order, admin dashboard, login)
+- ✅ 2026-05-21 — Edge Function auto-cancel-expired-orders + pg_cron migration
 - ✅ 2026-05-21 — SQL phone_wa 17 outlet (kitchen/BNR, empang, paledang, cimanggu, depok-sukmajaya, jagakarsa, beji, sawangan, pajajaran, dramaga, cibinong, citayam, tebet, cirendeu, pekayon, jatiwaringin, kalisari)

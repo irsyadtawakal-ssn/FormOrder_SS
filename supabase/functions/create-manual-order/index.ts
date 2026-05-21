@@ -150,7 +150,7 @@ Deno.serve(async (req: Request) => {
         status:              "pending_payment", // menunggu bukti transfer
         payment_method:      "manual",
         tripay_merchant_ref: manualRef,     // kolom NOT NULL — pakai ref manual
-        expires_at:          new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 jam
+        expires_at:          new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2 jam
       })
       .select("id, order_number")
       .single();

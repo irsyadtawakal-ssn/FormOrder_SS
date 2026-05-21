@@ -21,6 +21,17 @@
     <button class="topbar-ic" id="btnCart" onclick="openCartSheet()" style="display:none">🛒</button>
   </div>
 
+  <!-- Hero banner -->
+  <div class="hero-banner">
+    <div class="hero-banner-logo">
+      <img src="assets/img/logo.png" alt="SUKA Shawarma" onerror="this.style.display='none'" />
+    </div>
+    <div class="hero-banner-text">
+      <div class="hero-banner-brand">SUKA SHAWARMA</div>
+      <div class="hero-banner-tagline">Besar dan Nikmat</div>
+    </div>
+  </div>
+
   <!-- Outlet selector -->
   <div class="outlet-sel-wrap">
     <div class="outlet-sel" id="outletSel" onclick="toggleOutletDropdown()">
@@ -42,6 +53,8 @@
                oninput="filterOutletDropdown(this.value)"
                onclick="event.stopPropagation()" />
       </div>
+      <!-- Filter kota -->
+      <div class="city-filter" id="cityFilter"></div>
       <div class="outlet-dropdown-inner" id="outletDropdownList">
         <div style="padding:14px;text-align:center;color:var(--muted);font-size:13px">Memuat outlet…</div>
       </div>
@@ -176,6 +189,28 @@ let allOutlets   = [];
 let menuData     = [];
 let activeCategory = 'Semua';
 let cart         = [];
+let activeCityFilter = 'Semua';
+
+// Mapping sementara slug → kota (akan diganti kolom DB setelah test)
+const CITY_MAP = {
+  'kitchen':        'Bogor',
+  'empang':         'Bogor',
+  'paledang':       'Bogor',
+  'cimanggu':       'Bogor',
+  'pajajaran':      'Bogor',
+  'dramaga':        'Bogor',
+  'cibinong':       'Bogor',
+  'depok-sukmajaya':'Depok',
+  'beji':           'Depok',
+  'sawangan':       'Depok',
+  'citayam':        'Depok',
+  'jagakarsa':      'Jakarta',
+  'tebet':          'Jakarta',
+  'cirendeu':       'Jakarta',
+  'kalisari':       'Jakarta',
+  'pekayon':        'Jakarta',
+  'jatiwaringin':   'Jakarta',
+};
 
 let currentItem     = null;
 let currentVariants = [];
@@ -225,8 +260,34 @@ function dismissPendingBanner() {
 })();
 
 // ─── Outlet dropdown ──────────────────────────────────────────────────────────
+function getFilteredOutlets() {
+  const q = (document.getElementById('outletSearch')?.value || '').toLowerCase().trim();
+  return allOutlets.filter(o => {
+    const name = o.name.replace(/^Mitra\s+/i, '').toLowerCase();
+    const city = CITY_MAP[o.slug] || '';
+    if (activeCityFilter !== 'Semua' && city !== activeCityFilter) return false;
+    if (q && !name.includes(q) && !(o.address || '').toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+
 function renderOutletDropdown() {
-  renderOutletDropdownItems(allOutlets);
+  renderCityFilter();
+  renderOutletDropdownItems(getFilteredOutlets());
+}
+
+function renderCityFilter() {
+  const cities = ['Semua', 'Bogor', 'Jakarta', 'Depok', 'Tangerang', 'Bekasi'];
+  document.getElementById('cityFilter').innerHTML = cities.map(c => `
+    <div class="city-chip ${activeCityFilter === c ? 'active' : ''}"
+         onclick="setCityFilter('${c}')">${c}</div>
+  `).join('');
+}
+
+function setCityFilter(city) {
+  activeCityFilter = city;
+  renderCityFilter();
+  renderOutletDropdownItems(getFilteredOutlets());
 }
 
 function renderOutletDropdownItems(outlets) {
@@ -236,23 +297,31 @@ function renderOutletDropdownItems(outlets) {
     return;
   }
   list.innerHTML = outlets.map(o => {
-    const open = isOutletOpen(o.open_hour, o.close_hour);
+    const open   = isOutletOpen(o.open_hour, o.close_hour);
     const active = o.slug === outletSlug;
+    const name   = o.name.replace(/^Mitra\s+/i, '');
+    const mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(o.name + ' ' + (o.address || ''))}`;
     return `
       <div class="outlet-drop-item ${active ? 'active' : ''}" onclick="selectOutlet('${o.slug}')">
-        <div class="outlet-drop-name">${o.name.replace(/^Mitra\s+/i, '')}</div>
+        <div class="outlet-drop-name">${name}</div>
         <div class="outlet-drop-meta">
           <span style="color:${open ? 'var(--green)' : 'var(--faint)'}">● ${open ? 'Buka' : 'Tutup'}</span>
           ${o.open_hour ? ` · ${formatHour(o.open_hour)}–${formatHour(o.close_hour)}` : ''}
         </div>
+        ${o.address ? `
+        <div class="outlet-drop-addr">
+          📍 ${o.address}
+          <a class="outlet-drop-maps" href="${mapsUrl}" target="_blank"
+             onclick="event.stopPropagation()">🗺 Maps</a>
+        </div>` : ''}
       </div>`;
   }).join('');
 }
 
 function toggleOutletDropdown() {
-  const dd = document.getElementById('outletDropdown');
+  const dd    = document.getElementById('outletDropdown');
   const arrow = document.getElementById('outletSelArrow');
-  const open = dd.style.display === 'none' || dd.style.display === '';
+  const open  = dd.style.display === 'none' || dd.style.display === '';
   dd.style.display = open ? 'block' : 'none';
   arrow.textContent = open ? '▴' : '▾';
   if (open) {
@@ -265,11 +334,7 @@ function toggleOutletDropdown() {
 }
 
 function filterOutletDropdown(q) {
-  const term = q.toLowerCase().trim();
-  const filtered = term
-    ? allOutlets.filter(o => o.name.replace(/^Mitra\s+/i, '').toLowerCase().includes(term))
-    : allOutlets;
-  renderOutletDropdownItems(filtered);
+  renderOutletDropdownItems(getFilteredOutlets());
 }
 
 function closeOutletDropdown() {
