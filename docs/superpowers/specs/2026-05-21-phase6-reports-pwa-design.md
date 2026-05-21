@@ -42,16 +42,18 @@
 - Library: **Chart.js** dari CDN (`https://cdn.jsdelivr.net/npm/chart.js`)
 - Ringan, tidak perlu build step
 
-### Tabel Top Menu Items
+### Tabel Ranking Menu Items
 
-- Top 10 menu items berdasarkan qty terjual dalam periode
-- Kolom: Nama Item, Qty Terjual, Revenue Kontribusi, % dari total
+- Semua menu items diurutkan dari terbanyak dipesan (bukan top 10 — tampil semua)
+- Kolom: Ranking (#), Nama Item, Total Dipesan (qty), Revenue Kontribusi, % dari total revenue
+- Baris #1 diberi highlight (badge "🥇" atau warna emas)
+- Filter outlet berlaku: staff lihat ranking outlet sendiri, admin bisa filter per outlet atau semua outlet digabung
 
 ### Export CSV
 
 - Tombol "Export CSV" di bawah tabel top menu
 - Generate client-side (pakai Blob + URL.createObjectURL — tidak butuh edge function)
-- Isi CSV: semua orders dalam filter yang aktif (order_id, tanggal, outlet, customer_name, items, total)
+- Isi CSV: semua orders dalam filter yang aktif (order_id, tanggal, outlet, customer_name, items, total) + sheet/section ranking menu (ranking, nama_item, qty, revenue)
 - Nama file: `laporan-[outlet]-[start]-[end].csv`
 
 ### Data Source
