@@ -6,6 +6,14 @@ let _rawData    = [];   // rows [{date, outlet_name, item_name, qty, unit_price}
 let _sortCol    = 'date';
 let _sortAsc    = false;
 
+function _esc(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
 (async function init() {
@@ -289,7 +297,7 @@ function _renderPodium(rows) {
     return `
       <div class="podium-card ${i === 0 ? 'rank-1' : ''}">
         <div class="podium-rank">${MEDALS[i]}</div>
-        <div class="podium-name">${name}</div>
+        <div class="podium-name">${_esc(name)}</div>
         <div class="podium-qty">${d.qty}x</div>
         <div class="podium-sub">${formatRupiah(d.revenue)} (${pct}%)</div>
       </div>`;
@@ -328,8 +336,8 @@ function _renderTable(rows) {
   const tbody = sorted.map(r => `
     <tr>
       <td>${r.date}</td>
-      <td style="max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.outlet_name}</td>
-      <td>${r.item_name}</td>
+      <td style="max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${_esc(r.outlet_name)}</td>
+      <td>${_esc(r.item_name)}</td>
       <td style="text-align:right;font-weight:700">${r.qty}</td>
       <td style="text-align:right">${formatRupiah(r.subtotal)}</td>
     </tr>`).join('');
@@ -357,12 +365,14 @@ function exportCSV() {
     ? (document.getElementById('outletFilter').selectedOptions[0]?.text || 'semua')
     : (_user.outlet_id || 'outlet');
 
+  const q = s => '"' + String(s).replace(/"/g, '""') + '"';
+
   // Bagian 1: detail order
   const lines = [
     '# Detail Order',
     'Tanggal,Outlet,Item,Qty,Subtotal',
     ..._rawData.map(r =>
-      `${r.date},"${r.outlet_name}","${r.item_name}",${r.qty},${r.subtotal}`
+      `${r.date},${q(r.outlet_name)},${q(r.item_name)},${r.qty},${r.subtotal}`
     ),
     '',
     '# Ranking Menu',
@@ -379,7 +389,7 @@ function exportCSV() {
   Object.entries(byItem)
     .sort((a, b) => b[1].qty - a[1].qty)
     .forEach(([name, d], i) => {
-      lines.push(`${i + 1},"${name}",${d.qty},${d.revenue}`);
+      lines.push(`${i + 1},${q(name)},${d.qty},${d.revenue}`);
     });
 
   const csv  = lines.join('\n');
