@@ -1,7 +1,7 @@
 # Plans — SUKA Shawarma Order System
 
 > Ref spec: `docs/superpowers/specs/2026-05-19-sukshawarma-order-design.md`
-> Status: Phase 1–2 ✅ + Phase 4–6 ✅ SELESAI + Phase 7 sebagian — Phase 3 (Notifikasi WA) pending owner input
+> Status: Phase 1–7 sebagian ✅ + Phase 8 (Transfer Manual + AI Verify) ✅ SELESAI
 
 ---
 
@@ -24,27 +24,27 @@
 
 ## Phase 2 — Checkout & Payment ✅
 **Scope:** Checkout + manual payment flow + status page
-**Output:** E2E order flow — pesan → bayar saat pickup
+**Output:** E2E order flow — pesan → transfer → pickup
 
 ### Tasks
-- [x] 2.1 Edge Function: `create-manual-order` — bypass Tripay, order langsung status paid
+- [x] 2.1 Edge Function: `create-manual-order` — server-side reprice, INSERT orders + order_items, status `pending_payment`
 - [x] 2.2 Edge Function: `tripay-webhook` — verify HMAC + idempotency (ready for future)
 - [x] 2.3 Edge Function: `check-tripay-status` — fallback polling (ready for future)
-- [x] 2.4 Checkout page (`checkout.html`) — manual payment flow, form customer
+- [x] 2.4 Checkout page (`checkout.html`) — transfer manual flow, info rekening BCA, form customer
 - [x] 2.5 Order status page (`order.html`) — adaptive view per status + realtime subscribe
 - [x] 2.6 `assets/js/app.js` — cart logic, submitManualOrder, payment flow
 
 ---
 
-## Phase 3 — Notifications
-**Scope:** Fonnte WA integration + templates + auto-cancel cron
-**Output:** WA notif end-to-end
+## Phase 3 — Notifications ✅
+**Scope:** Fonnte WA integration + auto events
+**Output:** WA notif end-to-end customer ↔ admin ↔ outlet
 
 ### Tasks
-- [ ] 3.1 Edge Function: `send-wa-notifications` — Fonnte API call, notif admin + outlet + customer
+- [x] 3.1 Edge Function: `send-wa-notifications` — Fonnte API, notif admin + outlet + customer
 - [ ] 3.2 Edge Function: `auto-cancel-expired-orders` — pg_cron tiap 1 menit, scan & cancel expired
-- [ ] 3.3 Seed notification_templates — 5 templates (new_order_admin, new_order_outlet, paid_customer, ready_customer, cancelled_customer)
-- [ ] 3.4 Integrasi notif ke order flow (post-paid trigger)
+- [ ] 3.3 Seed notification_templates — 5 templates default
+- [x] 3.4 Integrasi notif ke order flow — events: new_order, ready, cancelled, transfer_submitted, transfer_verified
 
 ---
 
@@ -68,7 +68,7 @@
 
 ### Tasks
 - [x] 5.1 Admin Users page (`admin/users.html`) — super_admin only, manage outlet_staff accounts
-- [x] 5.2 Admin Settings page (`admin/settings.html`) — service_fee, notification templates, app_settings
+- [x] 5.2 Admin Settings page (`admin/settings.html`) — service_fee, notification templates, app_settings, toggle verifikasi
 - [x] 5.3 CSV bulk import outlets — 19 outlet SUKA Shawarma berhasil diimport
 - [x] 5.4 CSV bulk import menu — 16 item, 6 kategori berhasil diimport
 - [x] 5.5 CSV bulk import outlet_menu_overrides — ready via import.html
@@ -77,7 +77,7 @@
 
 ---
 
-## Phase 6 — Reports & PWA
+## Phase 6 — Reports & PWA ✅
 **Scope:** Analytics + Export CSV + PWA installable
 **Output:** Owner bisa analisis; karyawan bisa install ke HP
 
@@ -97,17 +97,39 @@
 - [x] 7.1 Deploy frontend ke cPanel `public_html/order/` via Git Version Control
 - [x] 7.2 Konfigurasi subdomain `order.sukashawarma.com` — DNS propagasi selesai ✅
 - [x] 7.3 SSL/HTTPS untuk subdomain order
-- [ ] 7.4 End-to-end test semua flow (order → admin konfirmasi)
-- [ ] 7.5 Fix bugs dari UAT
+- [x] 7.4 Auto-deploy via GitHub webhook + deploy.php di cPanel
+- [ ] 7.5 End-to-end test semua flow (order → transfer → upload → admin verifikasi)
 - [ ] 7.6 Upload foto menu asli semua item
 - [ ] 7.7 Training karyawan per outlet
 
 ---
 
+## Phase 8 — Transfer Manual + AI Verifikasi ✅
+**Scope:** Ganti QRIS dengan transfer manual + upload bukti + AI verify
+**Output:** Customer transfer → upload bukti → AI/admin verifikasi → proses
+
+### Tasks
+- [x] 8.1 Checkout: hapus QRIS, tampil info rekening BCA, hapus biaya layanan
+- [x] 8.2 Cart sheet: time picker 13:00–22:00, hapus hint banner & biaya layanan
+- [x] 8.3 `create-manual-order`: status awal `pending_payment` (bukan langsung paid)
+- [x] 8.4 `order.html`: UI upload bukti transfer (state `pending_payment`) + preview foto
+- [x] 8.5 `order.html`: state `awaiting_verification` — tampil foto yang sudah diupload
+- [x] 8.6 Storage bucket `transfer-proofs` + RPC `submit_transfer_proof` (anon call)
+- [x] 8.7 RPC `verify_transfer` (authenticated) — approve/reject oleh admin
+- [x] 8.8 Admin orders: filter chip "💳 Verifikasi", tombol ✅ Verifikasi / ❌ Tolak
+- [x] 8.9 Admin orders: modal detail tampil foto + badge AI confidence + extracted data
+- [x] 8.10 Edge Function `send-wa-notifications`: event `transfer_submitted` + `transfer_verified`
+- [x] 8.11 UX mobile: banner "jangan tutup tab", localStorage persist order URL, recovery banner di index.html
+- [x] 8.12 Edge Function `verify-transfer-proof`: OpenRouter Gemini 3.1 Flash Lite — baca nominal, penerima, bank; scoring + auto-approve jika mode AI + confidence high
+- [x] 8.13 Admin settings: toggle Manual vs AI Otomatis, simpan ke `app_settings.verification_mode`
+- [x] 8.14 Migration SQL: `proof_url`, `proof_submitted_at`, `ai_verification_result` columns
+
+---
+
 ## Pending Owner Input
 - [ ] Foto menu items (600x600px per item, 16 item)
-- [ ] Nomor WA tiap outlet untuk notifikasi pesanan
-- [ ] Fonnte API token (untuk WA notifikasi)
+- [ ] Nomor WA tiap outlet untuk notifikasi pesanan (kolom `phone_wa` di tabel outlets)
+- [ ] OPENROUTER_API_KEY di Supabase Secrets (untuk verifikasi AI)
 - [ ] Logo SUKA Shawarma (SVG/PNG untuk topbar)
 
 ---
@@ -122,4 +144,8 @@
 - ✅ 2026-05-21 — Deploy ke order.sukashawarma.com via cPanel Git
 - ✅ 2026-05-21 — compare_price (harga coret + diskon %) di menu
 - ✅ 2026-05-21 — Upload foto menu via Supabase Storage
-- ✅ 2026-05-21 — Phase 6: Reports (metrics, grafik, podium top-3, tabel detail, export CSV) + PWA (manifest + SW + icon) + print CSS
+- ✅ 2026-05-21 — Phase 6: Reports + PWA + print CSS
+- ✅ 2026-05-21 — Auto-deploy via GitHub webhook (deploy.php di cPanel)
+- ✅ 2026-05-21 — WA notifikasi via Fonnte (new_order, ready, cancelled)
+- ✅ 2026-05-21 — Fix mobile: anti-zoom, keyboard overlap, outlet staff data isolation
+- ✅ 2026-05-21 — Phase 8: Transfer manual flow — upload bukti, AI verify, admin panel verifikasi
