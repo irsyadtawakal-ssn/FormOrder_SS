@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Laporan — SUKA Admin</title>
+<link rel="manifest" href="/manifest.json" />
+<meta name="theme-color" content="#ff4d4f" />
+<link rel="stylesheet" href="../assets/css/style.css" />
+</head>
+<body>
+<div class="phone">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <span class="topbar-title">📊 Laporan</span>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span id="adminName" style="font-size:12px;color:var(--muted)"></span>
+    </div>
+  </div>
+
+  <!-- Filter -->
+  <div class="report-filters" id="filterBar">
+    <select id="outletFilter" class="admin-only" style="display:none">
+      <option value="">Semua Outlet</option>
+    </select>
+    <select id="rangePreset" onchange="onPresetChange()">
+      <option value="today">Hari Ini</option>
+      <option value="7d" selected>7 Hari</option>
+      <option value="30d">30 Hari</option>
+      <option value="custom">Custom</option>
+    </select>
+    <div id="customRange" style="display:none;flex:100%;gap:8px;flex-wrap:wrap">
+      <input type="date" id="dateFrom" />
+      <input type="date" id="dateTo" />
+    </div>
+    <button onclick="loadReport()">Terapkan</button>
+  </div>
+
+  <!-- Metrics -->
+  <div class="metrics-grid" id="metricsGrid">
+    <div class="metric-card"><div class="metric-label">Total Revenue</div><div class="metric-value skeleton-line" style="height:24px;width:80px"></div></div>
+    <div class="metric-card"><div class="metric-label">Jumlah Order</div><div class="metric-value skeleton-line" style="height:24px;width:40px"></div></div>
+    <div class="metric-card"><div class="metric-label">Rata-rata Order</div><div class="metric-value skeleton-line" style="height:24px;width:60px"></div></div>
+    <div class="metric-card"><div class="metric-label">vs Periode Lalu</div><div class="metric-value skeleton-line" style="height:24px;width:50px"></div></div>
+  </div>
+
+  <!-- Chart -->
+  <div class="chart-wrap">
+    <h3>Revenue Harian</h3>
+    <canvas id="revenueChart" height="160"></canvas>
+  </div>
+
+  <!-- Podium top-3 -->
+  <div style="padding:0 12px 8px">
+    <div style="font-size:13px;font-weight:700;color:var(--ink2);margin-bottom:8px">🏆 Menu Terlaris</div>
+  </div>
+  <div class="podium" id="podiumWrap">
+    <div class="report-empty" style="flex:1">Memuat data...</div>
+  </div>
+
+  <!-- Tabel detail -->
+  <div class="report-table-wrap">
+    <h3>
+      Detail Per Item
+      <button onclick="exportCSV()">⬇ Export CSV</button>
+    </h3>
+    <div id="tableWrap"><div class="report-empty">Memuat data...</div></div>
+  </div>
+
+  <!-- Bottom nav -->
+  <nav class="admin-nav">
+    <a href="/admin/index.html"><span>🏠</span><span>Dashboard</span></a>
+    <a href="/admin/orders.html"><span>📋</span><span>Pesanan</span></a>
+    <a href="/admin/menu.html"><span>🌯</span><span>Menu</span></a>
+    <a href="/admin/reports.html" class="active"><span>📊</span><span>Laporan</span></a>
+    <a href="/admin/outlets.html" class="admin-only"><span>📍</span><span>Outlet</span></a>
+    <a href="/admin/settings.html" class="admin-only"><span>⚙️</span><span>Pengaturan</span></a>
+  </nav>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script src="../config.js"></script>
+<script src="../assets/js/supabase.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/admin.js"></script>
+<script src="../assets/js/reports.js"></script>
+<script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
+</body>
+</html>
