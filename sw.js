@@ -28,7 +28,9 @@ const SHELL = [
 // Install — cache shell
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())
+    caches.open(CACHE).then(c =>
+      Promise.allSettled(SHELL.map(url => c.add(url).catch(() => null)))
+    ).then(() => self.skipWaiting())
   );
 });
 
@@ -45,9 +47,15 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
 
-  // Jangan cache request ke Supabase / API eksternal
-  if (url.hostname.includes('supabase') || url.hostname.includes('cdn.jsdelivr')) {
+  // Jangan cache request ke Supabase / API eksternal / Tripay
+  if (url.hostname.includes('supabase') || url.hostname.includes('cdn.jsdelivr') || url.hostname.includes('tripay')) {
     return; // biarkan browser handle (network)
+  }
+
+  // Jangan cache non-GET (POST/PUT/DELETE)
+  if (e.request.method !== 'GET') {
+    e.respondWith(fetch(e.request));
+    return;
   }
 
   // Cache-first untuk shell
