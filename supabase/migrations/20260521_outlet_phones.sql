@@ -19,5 +19,10 @@ UPDATE outlets SET phone_wa = '6282299325627' WHERE slug = 'pekayon';
 UPDATE outlets SET phone_wa = '6281226787768' WHERE slug = 'jatiwaringin';
 UPDATE outlets SET phone_wa = '6285285409462' WHERE slug = 'kalisari';
 
+-- Koreksi address Cimanggu
+UPDATE outlets
+SET address = 'Jl. Ruko Bukit Cimanggu City, Jl. Bukit Cimanggu City Raya No.3A, Cibadak, Kec. Tanah Sereal, Kota Bogor, Jawa Barat 16165'
+WHERE slug = 'cimanggu';
+
 -- Verifikasi hasil
-SELECT slug, name, phone_wa FROM outlets ORDER BY name;
+SELECT slug, name, phone_wa, address FROM outlets ORDER BY name;
