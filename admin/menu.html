@@ -344,7 +344,7 @@ async function uploadMenuPhoto(input) {
   const path = `menu/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
   const { error } = await window.db.storage
-    .from('menu-photos')
+    .from('menu-photo')
     .upload(path, file, { upsert: false, contentType: file.type });
 
   if (error) {
@@ -353,7 +353,7 @@ async function uploadMenuPhoto(input) {
     return;
   }
 
-  const { data: urlData } = window.db.storage.from('menu-photos').getPublicUrl(path);
+  const { data: urlData } = window.db.storage.from('menu-photo').getPublicUrl(path);
   const publicUrl = urlData.publicUrl;
 
   document.getElementById('iPhoto').value = publicUrl;

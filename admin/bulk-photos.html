@@ -270,13 +270,13 @@ async function doUploadAll() {
 
       // Upload ke storage
       const { error: upErr } = await window.db.storage
-        .from('menu-photos')
+        .from('menu-photo')
         .upload(path, m.file, { upsert: false, contentType: m.file.type });
 
       if (upErr) throw new Error(upErr.message);
 
       // Ambil public URL
-      const { data: urlData } = window.db.storage.from('menu-photos').getPublicUrl(path);
+      const { data: urlData } = window.db.storage.from('menu-photo').getPublicUrl(path);
       const publicUrl = urlData.publicUrl;
 
       // Update menu_item
