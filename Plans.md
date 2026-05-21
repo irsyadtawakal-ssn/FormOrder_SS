@@ -127,7 +127,7 @@
 ---
 
 ## Pending Owner Input
-- [ ] Foto menu items — upload via `admin/bulk-photos.html` (16 item, bucket `menu-photo`)
+- [ ] Foto menu items — sebagian besar sudah, beberapa item belum. Upload sisa via `admin/bulk-photos.html`
 - [x] Nomor WA tiap outlet — SQL migration `20260521_outlet_phones.sql` siap, **jalankan di Supabase SQL Editor**
 - [x] OPENROUTER_API_KEY — sudah diset di Supabase Secrets
 - [x] Logo SUKA Shawarma — `assets/img/logo.png` sudah ada, tampil di topbar semua halaman
