@@ -56,17 +56,21 @@ Deno.serve(async (req: Request) => {
     .select(`
       id, order_number, customer_name, customer_wa, total, status,
       pickup_time, notes, created_at,
-      outlets(name, wa_number),
+      outlets(name, phone_wa),
       order_items(item_name, quantity, unit_price)
     `)
     .eq("id", order_id)
     .single();
 
+  console.log("order_id:", order_id);
+  console.log("error:", JSON.stringify(error));
+  console.log("order:", order ? "found" : "null");
+
   if (error || !order) {
-    return Response.json({ error: "Order tidak ditemukan" }, { status: 404, headers: CORS });
+    return Response.json({ error: "Order tidak ditemukan", detail: error?.message }, { status: 404, headers: CORS });
   }
 
-  const outlet     = (order.outlets as { name: string; wa_number: string | null }) || {};
+  const outlet     = (order.outlets as { name: string; phone_wa: string | null }) || {};
   const items      = (order.order_items as { item_name: string; quantity: number; unit_price: number }[]) || [];
   const itemsText  = items.map(i => `- ${i.quantity}× ${i.item_name} (${formatRupiah(i.unit_price * i.quantity)})`).join("\n");
   const totalText  = formatRupiah(order.total);
@@ -86,7 +90,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // Pesan ke outlet
-    if (outlet.wa_number) {
+    if (outlet.phone_wa) {
       const msgOutlet = `🔔 *ORDER BARU MASUK!*\n\n` +
         `📋 No: ${order.order_number}\n` +
         `👤 ${order.customer_name}\n` +
@@ -94,7 +98,7 @@ Deno.serve(async (req: Request) => {
         `${itemsText}\n\n` +
         `💰 Total: *${totalText}*` +
         (order.notes ? `\n📝 Catatan: ${order.notes}` : "");
-      results.outlet = await kirimWA(FONNTE_TOKEN, outlet.wa_number, msgOutlet);
+      results.outlet = await kirimWA(FONNTE_TOKEN, outlet.phone_wa, msgOutlet);
     }
 
     // Pesan ke customer
