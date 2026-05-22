@@ -196,26 +196,6 @@ let activeCategory = 'Semua';
 let cart         = [];
 let activeCityFilter = 'Semua';
 
-// Mapping sementara slug → kota (akan diganti kolom DB setelah test)
-const CITY_MAP = {
-  'kitchen':        'Bogor',
-  'empang':         'Bogor',
-  'paledang':       'Bogor',
-  'cimanggu':       'Bogor',
-  'pajajaran':      'Bogor',
-  'dramaga':        'Bogor',
-  'cibinong':       'Bogor',
-  'depok-sukmajaya':'Depok',
-  'beji':           'Depok',
-  'sawangan':       'Depok',
-  'citayam':        'Depok',
-  'jagakarsa':      'Jakarta',
-  'tebet':          'Jakarta',
-  'cirendeu':       'Jakarta',
-  'kalisari':       'Jakarta',
-  'pekayon':        'Jakarta',
-  'jatiwaringin':   'Jakarta',
-};
 
 let currentItem     = null;
 let currentVariants = [];
@@ -256,7 +236,7 @@ function dismissPendingBanner() {
 
   // Muat outlet list dan menu secara paralel
   const [outletsRes] = await Promise.all([
-    window.db.from('outlets').select('id,slug,name,address,open_hour,close_hour,is_active').eq('is_active', true).order('name'),
+    window.db.from('outlets').select('id,slug,name,address,city,open_hour,close_hour,is_active').eq('is_active', true).order('name'),
     loadMenu()
   ]);
 
@@ -269,8 +249,7 @@ function getFilteredOutlets() {
   const q = (document.getElementById('outletSearch')?.value || '').toLowerCase().trim();
   return allOutlets.filter(o => {
     const name = o.name.replace(/^Mitra\s+/i, '').toLowerCase();
-    const city = CITY_MAP[o.slug] || '';
-    if (activeCityFilter !== 'Semua' && city !== activeCityFilter) return false;
+    if (activeCityFilter !== 'Semua' && (o.city || '') !== activeCityFilter) return false;
     if (q && !name.includes(q) && !(o.address || '').toLowerCase().includes(q)) return false;
     return true;
   });
@@ -282,7 +261,9 @@ function renderOutletDropdown() {
 }
 
 function renderCityFilter() {
-  const cities = ['Semua', 'Bogor', 'Jakarta', 'Depok', 'Tangerang', 'Bekasi'];
+  // Kumpulkan kota unik dari data outlet, urutkan, tambahkan "Semua" di depan
+  const citySet = new Set(allOutlets.map(o => o.city).filter(Boolean));
+  const cities  = ['Semua', ...[...citySet].sort()];
   document.getElementById('cityFilter').innerHTML = cities.map(c => `
     <div class="city-chip ${activeCityFilter === c ? 'active' : ''}"
          onclick="setCityFilter('${c}')">${c}</div>
