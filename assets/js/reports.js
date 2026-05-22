@@ -102,37 +102,39 @@ async function _populateOutletFilter() {
 
 async function _fetchRows(from, to, outletId) {
   let q = window.db
-    .from('order_items')
+    .from('orders')
     .select(`
-      qty,
-      unit_price,
-      item_name,
-      orders!inner(
-        id,
-        created_at,
-        status,
-        outlet_id,
-        outlets(name)
-      )
+      id,
+      created_at,
+      outlet_id,
+      outlets(name),
+      order_items(quantity, unit_price, item_name)
     `)
-    .in('orders.status', ['paid', 'preparing', 'ready', 'done'])
-    .gte('orders.created_at', from + 'T00:00:00+07:00')
-    .lte('orders.created_at', to   + 'T23:59:59+07:00');
+    .in('status', ['paid', 'preparing', 'ready', 'done'])
+    .gte('created_at', from + 'T00:00:00+07:00')
+    .lte('created_at', to   + 'T23:59:59+07:00');
 
-  if (outletId) q = q.eq('orders.outlet_id', outletId);
+  if (outletId) q = q.eq('outlet_id', outletId);
 
   const { data, error } = await q;
   if (error) { console.error('Fetch error:', error); return []; }
 
-  return (data || []).map(row => ({
-    order_id:    row.orders.id,
-    date:        row.orders.created_at.split('T')[0],
-    outlet_name: row.orders.outlets?.name || '—',
-    item_name:   row.item_name,
-    qty:         row.qty,
-    unit_price:  row.unit_price,
-    subtotal:    row.qty * row.unit_price,
-  }));
+  // Flatten: satu baris per item
+  const rows = [];
+  (data || []).forEach(order => {
+    (order.order_items || []).forEach(item => {
+      rows.push({
+        order_id:    order.id,
+        date:        order.created_at.split('T')[0],
+        outlet_name: order.outlets?.name || '—',
+        item_name:   item.item_name,
+        qty:         item.quantity,
+        unit_price:  item.unit_price,
+        subtotal:    item.quantity * item.unit_price,
+      });
+    });
+  });
+  return rows;
 }
 
 // ─── Main load ────────────────────────────────────────────────────────────────
