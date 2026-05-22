@@ -246,6 +246,11 @@ const SERVICE_FEE_RATE = 0;
 
 // ─── Cek pesanan pending dari sesi sebelumnya ─────────────────────────────────
 (function checkPendingOrder() {
+  // Jika user baru balik dari halaman order (klik tombol back), tidak tampilkan banner
+  if (sessionStorage.getItem('back_from_order')) {
+    sessionStorage.removeItem('back_from_order');
+    return;
+  }
   try {
     const raw = localStorage.getItem('suka_last_order');
     if (!raw) return;
