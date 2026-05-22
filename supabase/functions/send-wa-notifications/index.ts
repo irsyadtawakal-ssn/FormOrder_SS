@@ -144,6 +144,21 @@ Deno.serve(async (req: Request) => {
     if (ADMIN_WA) results.admin = await kirimWA(FONNTE_TOKEN, ADMIN_WA, msgProof);
     if (outlet.phone_wa) results.outlet = await kirimWA(FONNTE_TOKEN, outlet.phone_wa, msgProof);
 
+  } else if (event === "transfer_rejected") {
+    // Notif ke customer saat bukti transfer ditolak
+    if (order.customer_wa) {
+      const msgRejected =
+        `❌ *Bukti Transfer Ditolak*\n\n` +
+        `Halo ${order.customer_name},\n` +
+        `Maaf, bukti transfer untuk pesanan *${order.order_number}* tidak dapat diverifikasi.\n\n` +
+        `Kemungkinan penyebab:\n` +
+        `• Foto buram / tidak terbaca\n` +
+        `• Nominal tidak sesuai (${totalText})\n` +
+        `• Rekening tujuan salah\n\n` +
+        `Silakan buka kembali halaman pesananmu dan upload ulang bukti yang benar 📲`;
+      results.customer = await kirimWA(FONNTE_TOKEN, order.customer_wa, msgRejected);
+    }
+
   } else if (event === "transfer_verified") {
     // Notif ke customer — pembayaran dikonfirmasi, pesanan mulai disiapkan
     if (order.customer_wa) {

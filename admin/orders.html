@@ -71,7 +71,7 @@ let allOrders     = [];
 let currentFilter = 'active';
 let currentRole   = '';  // disimpan setelah login untuk cek permission
 
-const ACTIVE_STATUSES = ['pending_payment', 'awaiting_verification', 'paid', 'preparing', 'ready'];
+const ACTIVE_STATUSES = ['pending_payment', 'proof_rejected', 'awaiting_verification', 'paid', 'preparing', 'ready'];
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 (async function init() {
@@ -252,24 +252,23 @@ async function doVerifyTransfer(orderId, action) {
 
   const idx = allOrders.findIndex(o => o.id === orderId);
   if (idx >= 0) {
-    const newStatus = action === 'approve' ? 'paid' : 'pending_payment';
+    const newStatus = action === 'approve' ? 'paid' : 'proof_rejected';
     allOrders[idx] = { ...allOrders[idx], status: newStatus };
     renderOrders();
   }
 
   adminToast(action === 'approve' ? '✅ Pembayaran diverifikasi' : '❌ Bukti transfer ditolak');
 
-  // Kirim WA ke customer jika diverifikasi
-  if (action === 'approve') {
-    fetch(`${window.SUKA_CONFIG.supabaseUrl}/functions/v1/send-wa-notifications`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${window.SUKA_CONFIG.supabaseAnonKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ order_id: orderId, event: 'transfer_verified' }),
-    }).catch(() => {});
-  }
+  // Kirim WA notif ke customer
+  const waEvent = action === 'approve' ? 'transfer_verified' : 'transfer_rejected';
+  fetch(`${window.SUKA_CONFIG.supabaseUrl}/functions/v1/send-wa-notifications`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${window.SUKA_CONFIG.supabaseAnonKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ order_id: orderId, event: waEvent }),
+  }).catch(() => {});
 }
 
 function showDetail(orderId) {

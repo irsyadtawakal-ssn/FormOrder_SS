@@ -94,6 +94,7 @@ function fmtTimeAgo(iso) {
 
 const STATUS_LABELS = {
   pending_payment:        'Belum Transfer',
+  proof_rejected:         'Bukti Ditolak',
   awaiting_verification:  'Cek Bukti',
   paid:                   'Dikonfirmasi',
   preparing:              'Disiapkan',
@@ -105,6 +106,7 @@ const STATUS_LABELS = {
 
 const STATUS_COLORS = {
   pending_payment:        '#f59e0b',
+  proof_rejected:         '#ef4444',
   awaiting_verification:  '#f97316',
   paid:                   '#3b82f6',
   preparing:              '#8b5cf6',
