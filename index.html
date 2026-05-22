@@ -278,7 +278,7 @@ function dismissPendingBanner() {
 
   // Muat outlet list dan menu secara paralel
   const [outletsRes] = await Promise.all([
-    window.db.from('outlets').select('id,slug,name,address,city,open_hour,close_hour,is_active').eq('is_active', true).order('name'),
+    window.db.from('outlets').select('id,slug,name,address,city,maps_url,open_hour,close_hour,is_active').eq('is_active', true).order('name'),
     loadMenu()
   ]);
 
@@ -328,7 +328,7 @@ function renderOutletDropdownItems(outlets) {
     const open   = isOutletOpen(o.open_hour, o.close_hour);
     const active = o.slug === outletSlug;
     const name   = o.name.replace(/^Mitra\s+/i, '');
-    const mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(o.name + ' ' + (o.address || ''))}`;
+    const mapsUrl = o.maps_url || `https://www.google.com/maps/search/${encodeURIComponent(o.name + ' ' + (o.address || ''))}`;
     return `
       <div class="outlet-drop-item ${active ? 'active' : ''}" onclick="selectOutlet('${o.slug}')">
         <div class="outlet-drop-name">${name}</div>
