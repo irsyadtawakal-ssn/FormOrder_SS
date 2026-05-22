@@ -193,6 +193,9 @@
   .chart-wrap {
     margin: 0 0 14px;
   }
+  #revenueChart {
+    max-height: 180px !important;
+  }
   .podium {
     padding: 0 0 14px;
   }
