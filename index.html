@@ -468,7 +468,9 @@ async function loadMenu() {
 
   document.getElementById('searchWrap').style.display = 'block';
   document.getElementById('tabs').style.display = 'flex';
-  document.getElementById('btnCart').style.display = '';
+  // btnCart dihapus bersama topbar — opsional
+  const btnCart = document.getElementById('btnCart');
+  if (btnCart) btnCart.style.display = '';
 
   renderTabs();
   renderMenu();
