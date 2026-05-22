@@ -106,6 +106,15 @@
     </div>
   </div>
 
+  <!-- Banner pemulihan pesanan pending -->
+  <div id="pendingOrderBanner" style="display:none;padding:10px 14px;background:#fef9c3;border-bottom:1px solid #f0e68c;font-size:13px;color:#854d0e;display:none;align-items:center;gap:10px">
+    <span style="flex:1;line-height:1.4">⚠️ <b>Pesanan belum selesai</b> — belum upload bukti transfer?</span>
+    <a id="pendingOrderLink" href="#" style="flex-shrink:0;padding:6px 12px;background:#854d0e;color:#fff;border-radius:8px;font-weight:700;font-size:12px;text-decoration:none;white-space:nowrap">
+      Upload →
+    </a>
+    <button onclick="dismissPendingBanner()" style="flex-shrink:0;background:none;border:none;font-size:18px;color:#854d0e;cursor:pointer;line-height:1;padding:0">×</button>
+  </div>
+
   <!-- Search menu -->
   <div class="search-wrap" id="searchWrap" style="display:none; border-bottom:1px solid var(--line);">
     <input id="searchInput" type="text" placeholder="Cari menu…"
@@ -206,16 +215,6 @@
   </div>
 </div>
 
-<!-- Banner pemulihan pesanan pending -->
-<div id="pendingOrderBanner" style="display:none;margin:8px 12px 0;padding:12px 14px;background:#fef9c3;border-radius:10px;font-size:13px;color:#854d0e;line-height:1.5">
-  ⚠️ <b>Kamu punya pesanan yang belum selesai!</b><br/>
-  Belum upload bukti transfer?
-  <a id="pendingOrderLink" href="#" style="display:inline-block;margin-top:8px;padding:7px 14px;background:#854d0e;color:#fff;border-radius:8px;font-weight:700;font-size:13px;text-decoration:none">
-    Lanjutkan Upload →
-  </a>
-  <button onclick="dismissPendingBanner()" style="float:right;background:none;border:none;font-size:18px;color:#854d0e;cursor:pointer;line-height:1;margin-top:-2px">×</button>
-</div>
-
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
@@ -264,7 +263,7 @@ const SERVICE_FEE_RATE = 0;
     const link   = document.getElementById('pendingOrderLink');
     if (banner && link && saved.url) {
       link.href = saved.url;
-      banner.style.display = '';
+      banner.style.display = 'flex';
     }
   } catch { /* abaikan */ }
 })();
