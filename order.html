@@ -109,7 +109,7 @@ async function loadOrder(cached) {
   }
 
   // Simpan order aktif ke localStorage supaya bisa dipulihkan kalau tab hilang
-  if (['pending_payment', 'awaiting_verification'].includes(order.status)) {
+  if (['pending_payment', 'awaiting_verification', 'proof_rejected'].includes(order.status)) {
     localStorage.setItem('suka_last_order', JSON.stringify({
       order_number: order.order_number,
       url: window.location.href,
@@ -190,7 +190,7 @@ function uploadFormHtml(orderNum) {
       </div>
       <input type="file" id="proofFile" accept="image/*" style="display:none" onchange="previewProof(this)" />
     </label>
-    <button class="btn-add-big" id="btnUpload" onclick="doUploadProof('${orderNum}')" disabled style="opacity:0.5">
+    <button class="btn-add-big" id="btnUpload" data-order-num="${orderNum}" disabled style="opacity:0.5">
       Kirim Bukti Transfer
     </button>
     <div id="uploadErr" style="color:var(--brand);font-size:12px;margin-top:8px;display:none"></div>
@@ -216,7 +216,7 @@ function renderStatus(o) {
           <div class="status-icon">❌</div>
           <div class="status-title">Bukti Ditolak</div>
           <div class="status-sub">Bukti transfer kamu tidak valid. Silakan upload ulang yang benar.</div>
-          <span class="status-chip status-cancelled">DITOLAK</span>
+          <span class="status-chip status-preparing">UPLOAD ULANG</span>
         </div>`;
       extraHtml = `
         <div style="margin:0 0 10px;padding:12px 14px;background:#fbe7df;border-radius:10px;font-size:13px;line-height:1.6;color:var(--accent-ink)">
@@ -428,6 +428,10 @@ function renderStatus(o) {
   }
   if (o.status === 'awaiting_verification' && o.proof_url) {
     loadSignedProofUrl(o.proof_url);
+  }
+  if (o.status === 'pending_payment' || o.status === 'proof_rejected') {
+    const btn = document.getElementById('btnUpload');
+    if (btn) btn.addEventListener('click', () => doUploadProof(btn.dataset.orderNum));
   }
 }
 

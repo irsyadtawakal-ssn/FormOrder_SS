@@ -153,3 +153,6 @@
 - ✅ 2026-05-21 — Logo SUKA Shawarma di topbar (index, order, admin dashboard, login)
 - ✅ 2026-05-21 — Edge Function auto-cancel-expired-orders + pg_cron migration
 - ✅ 2026-05-21 — SQL phone_wa 17 outlet (kitchen/BNR, empang, paledang, cimanggu, depok-sukmajaya, jagakarsa, beji, sawangan, pajajaran, dramaga, cibinong, citayam, tebet, cirendeu, pekayon, jatiwaringin, kalisari)
+- ✅ 2026-05-22 — Design system SUKA (warm palette + Plus Jakarta Sans) applied to all pages
+- ✅ 2026-05-22 — proof_rejected status + WA notif untuk bukti transfer ditolak
+- ✅ 2026-05-22 — Admin desktop/tablet responsive: sidebar nav, two-panel orders, centered modal [46360d6]
