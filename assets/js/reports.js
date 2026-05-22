@@ -115,7 +115,7 @@ async function _fetchRows(from, to, outletId) {
         outlets(name)
       )
     `)
-    .eq('orders.status', 'done')
+    .in('orders.status', ['paid', 'preparing', 'ready', 'done'])
     .gte('orders.created_at', from + 'T00:00:00+07:00')
     .lte('orders.created_at', to   + 'T23:59:59+07:00');
 
