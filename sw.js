@@ -1,5 +1,5 @@
 // Service Worker — SUKA Shawarma
-const CACHE = 'suka-v1';
+const CACHE = 'suka-v2'; // Naikkan versi setiap kali ada perubahan shell
 
 // File shell yang di-cache (cache-first)
 const SHELL = [
@@ -17,6 +17,7 @@ const SHELL = [
   '/admin/users.html',
   '/admin/reports.html',
   '/assets/css/style.css',
+  '/assets/css/admin-desktop.css',
   '/assets/js/app.js',
   '/assets/js/admin.js',
   '/assets/js/supabase.js',
