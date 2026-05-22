@@ -176,6 +176,30 @@
   }
   .outlet-filter-row select { width: 220px; flex-shrink: 0; }
 
+  /* ─── Reports: hilangkan padding/margin horizontal duplikat ─────────────── */
+  /* admin-content sudah punya padding 20px, jadi elemen di dalam tidak perlu */
+  .report-filters {
+    padding: 0 0 14px;
+    background: transparent;
+    border-bottom: 0;
+    gap: 12px;
+  }
+  .metrics-grid {
+    padding: 0;
+    margin-bottom: 14px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  .chart-wrap {
+    margin: 0 0 14px;
+  }
+  .podium {
+    padding: 0 0 14px;
+  }
+  .report-table-wrap {
+    margin: 0 0 14px;
+  }
+
 }
 
 /* ─── Desktop: 1200px+ ────────────────────────────────────────────────────── */
