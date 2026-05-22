@@ -257,7 +257,7 @@ function renderStatus(o) {
       extraHtml = o.proof_url ? `
         <div class="info-card" style="text-align:center">
           <div style="font-size:13px;color:var(--muted);margin-bottom:8px">Bukti transfer yang kamu kirim:</div>
-          <img src="${o.proof_url}" style="max-width:100%;border-radius:8px;max-height:220px;object-fit:cover" />
+          <img id="proofDisplayImg" data-path="${o.proof_url}" style="max-width:100%;border-radius:8px;max-height:220px;object-fit:cover;background:var(--line)" />
         </div>` : '';
       break;
 
@@ -392,6 +392,27 @@ function renderStatus(o) {
   if (o.status === 'ready') {
     renderOrderQR(o.order_number);
   }
+  if (o.status === 'awaiting_verification' && o.proof_url) {
+    loadSignedProofUrl(o.proof_url);
+  }
+}
+
+// ─── Load signed URL untuk tampil foto bukti transfer ─────────────────────────
+async function loadSignedProofUrl(pathOrUrl) {
+  try {
+    // Ekstrak path jika tersimpan sebagai full URL lama
+    let path = pathOrUrl;
+    if (pathOrUrl.includes('/transfer-proofs/')) {
+      path = pathOrUrl.split('/transfer-proofs/').pop().split('?')[0];
+    }
+    const { data, error } = await window.db.storage
+      .from('transfer-proofs')
+      .createSignedUrl(path, 3600);
+    if (data?.signedUrl) {
+      const img = document.getElementById('proofDisplayImg');
+      if (img) img.src = data.signedUrl;
+    }
+  } catch (_) {}
 }
 
 // ─── QR code QRIS (untuk state pending_payment) ───────────────────────────────
@@ -554,11 +575,8 @@ async function doUploadProof(orderNum) {
 
     if (upErr) throw new Error('Upload gagal: ' + upErr.message);
 
-    // Ambil public URL (bucket non-public → pakai signed URL / path saja)
-    const { data: urlData } = window.db.storage
-      .from('transfer-proofs')
-      .getPublicUrl(path);
-    const proofUrl = urlData?.publicUrl || path;
+    // Simpan path saja — bucket private, URL di-generate saat display
+    const proofUrl = path;
 
     // Panggil RPC untuk update status
     const { data: ok, error: rpcErr } = await window.db

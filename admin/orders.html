@@ -310,7 +310,7 @@ function showDetail(orderId) {
     <hr style="border:0;border-top:1px dashed var(--line2);margin:10px 0"/>
     <div style="font-weight:600;font-size:13px;margin-bottom:8px">📸 Bukti Transfer</div>
     ${aiHtml}
-    <img src="${o.proof_url}" style="width:100%;border-radius:8px;max-height:250px;object-fit:cover" />
+    <img id="adminProofImg" data-path="${o.proof_url}" style="width:100%;border-radius:8px;max-height:250px;object-fit:cover;background:var(--line)" />
     ${o.status === 'awaiting_verification' && currentRole === 'super_admin' ? `
       <div style="display:flex;gap:8px;margin-top:10px">
         <button class="action-btn action-primary" style="flex:1;background:var(--green,#22c55e)"
@@ -342,6 +342,24 @@ function showDetail(orderId) {
     ${o.notes ? `<div style="margin-top:8px;font-size:13px;color:var(--muted);background:var(--bg);padding:8px 10px;border-radius:8px">📝 ${o.notes}</div>` : ''}
     ${proofHtml}
   `);
+  // Load signed URL untuk foto bukti transfer (bucket private)
+  if (o.proof_url) loadSignedAdminProofUrl(o.proof_url);
+}
+
+async function loadSignedAdminProofUrl(pathOrUrl) {
+  try {
+    let path = pathOrUrl;
+    if (pathOrUrl.includes('/transfer-proofs/')) {
+      path = pathOrUrl.split('/transfer-proofs/').pop().split('?')[0];
+    }
+    const { data } = await window.db.storage
+      .from('transfer-proofs')
+      .createSignedUrl(path, 3600);
+    if (data?.signedUrl) {
+      const img = document.getElementById('adminProofImg');
+      if (img) img.src = data.signedUrl;
+    }
+  } catch (_) {}
 }
 
 // ─── Realtime ─────────────────────────────────────────────────────────────────
