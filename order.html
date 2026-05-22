@@ -412,22 +412,15 @@ function renderStatus(o) {
   }
 }
 
-// ─── Load signed URL untuk tampil foto bukti transfer ─────────────────────────
-async function loadSignedProofUrl(pathOrUrl) {
-  try {
-    // Ekstrak path jika tersimpan sebagai full URL lama
-    let path = pathOrUrl;
-    if (pathOrUrl.includes('/transfer-proofs/')) {
-      path = pathOrUrl.split('/transfer-proofs/').pop().split('?')[0];
-    }
-    const { data, error } = await window.db.storage
-      .from('transfer-proofs')
-      .createSignedUrl(path, 3600);
-    if (data?.signedUrl) {
-      const img = document.getElementById('proofDisplayImg');
-      if (img) img.src = data.signedUrl;
-    }
-  } catch (_) {}
+// ─── Load public URL untuk tampil foto bukti transfer ─────────────────────────
+function loadSignedProofUrl(pathOrUrl) {
+  const img = document.getElementById('proofDisplayImg');
+  if (!img || !pathOrUrl) return;
+  // Jika sudah full URL, pakai langsung
+  if (pathOrUrl.startsWith('http')) { img.src = pathOrUrl; return; }
+  // Jika hanya path, generate public URL
+  const { data } = window.db.storage.from('transfer-proofs').getPublicUrl(pathOrUrl);
+  if (data?.publicUrl) img.src = data.publicUrl;
 }
 
 // ─── QR code QRIS (untuk state pending_payment) ───────────────────────────────
@@ -590,8 +583,11 @@ async function doUploadProof(orderNum) {
 
     if (upErr) throw new Error('Upload gagal: ' + upErr.message);
 
-    // Simpan path saja — bucket private, URL di-generate saat display
-    const proofUrl = path;
+    // Ambil public URL (bucket harus public di Supabase Storage settings)
+    const { data: urlData } = window.db.storage
+      .from('transfer-proofs')
+      .getPublicUrl(path);
+    const proofUrl = urlData?.publicUrl || path;
 
     // Panggil RPC untuk update status
     const { data: ok, error: rpcErr } = await window.db

@@ -346,20 +346,12 @@ function showDetail(orderId) {
   if (o.proof_url) loadSignedAdminProofUrl(o.proof_url);
 }
 
-async function loadSignedAdminProofUrl(pathOrUrl) {
-  try {
-    let path = pathOrUrl;
-    if (pathOrUrl.includes('/transfer-proofs/')) {
-      path = pathOrUrl.split('/transfer-proofs/').pop().split('?')[0];
-    }
-    const { data } = await window.db.storage
-      .from('transfer-proofs')
-      .createSignedUrl(path, 3600);
-    if (data?.signedUrl) {
-      const img = document.getElementById('adminProofImg');
-      if (img) img.src = data.signedUrl;
-    }
-  } catch (_) {}
+function loadSignedAdminProofUrl(pathOrUrl) {
+  const img = document.getElementById('adminProofImg');
+  if (!img || !pathOrUrl) return;
+  if (pathOrUrl.startsWith('http')) { img.src = pathOrUrl; return; }
+  const { data } = window.db.storage.from('transfer-proofs').getPublicUrl(pathOrUrl);
+  if (data?.publicUrl) img.src = data.publicUrl;
 }
 
 // ─── Realtime ─────────────────────────────────────────────────────────────────
