@@ -566,7 +566,7 @@ img { display: block; max-width: 100%; }
   transition: background .15s; white-space: nowrap; align-self: flex-end;
 }
 .how-to-btn:hover { background: rgba(255,255,255,.32); }
-.how-to-box { max-width: 400px; width: 92%; border-radius: 16px; padding: 0; overflow: hidden; }
+.how-to-box { max-width: 400px; width: 92%; border-radius: 16px; padding: 0; overflow: hidden; position: relative; }
 .how-to-steps { padding: 16px; display: flex; flex-direction: column; gap: 16px; }
 .how-to-step { display: flex; gap: 14px; align-items: flex-start; }
 .how-to-num {
