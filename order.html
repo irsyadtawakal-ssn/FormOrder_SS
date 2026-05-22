@@ -85,7 +85,7 @@ async function loadOrder(cached) {
   // Ambil order + outlet dari Supabase
   const { data, error } = await window.db
     .from('orders')
-    .select('*, outlets(name, address, phone_wa)')
+    .select('*, outlets(name, address, phone_wa), order_items(item_name, quantity, unit_price, notes)')
     .eq('order_number', orderNumber)
     .single();
 
@@ -238,7 +238,7 @@ function renderStatus(o) {
 
       extraHtml = `
         <!-- Step indicator -->
-        <div style="display:flex;align-items:center;padding:0 20px 14px;gap:0">
+        <div style="display:flex;align-items:center;padding:0 12px 14px;gap:0">
           <div style="flex:0 0 auto;text-align:center">
             <div style="width:32px;height:32px;border-radius:50%;background:var(--brand);color:#fff;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto 4px">1</div>
             <div style="font-size:10px;font-weight:700;color:var(--brand)">Transfer</div>
@@ -278,7 +278,7 @@ function renderStatus(o) {
         </div>
 
         <!-- Warning jangan tutup tab -->
-        <div style="margin:0 0 10px;padding:10px 14px;background:#fef9c3;border-radius:10px;font-size:12px;line-height:1.6;color:#854d0e">
+        <div style="margin:0 12px 10px;padding:10px 14px;background:#fef9c3;border-radius:10px;font-size:12px;line-height:1.6;color:#854d0e">
           📱 <b>Jangan tutup tab ini</b> — setelah transfer di m-banking, kembali ke sini dan upload buktinya.
         </div>
 
@@ -412,14 +412,28 @@ function renderStatus(o) {
       + ', ' + d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
   };
 
+  const items = o.order_items || [];
+  const itemsHtml = items.length ? `
+    <div style="margin:8px 0 4px;padding-top:8px;border-top:1px solid var(--line)">
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Item Dipesan</div>
+      ${items.map(it => `
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:5px 0;font-size:13px">
+          <div style="flex:1;min-width:0">
+            <span style="font-weight:600">${it.quantity}× ${it.item_name}</span>
+            ${it.notes ? `<div style="font-size:11px;color:var(--muted);margin-top:1px">📝 ${it.notes}</div>` : ''}
+          </div>
+          <span style="font-weight:700;white-space:nowrap;margin-left:10px">${formatRupiah(it.unit_price * it.quantity)}</span>
+        </div>`).join('')}
+    </div>` : '';
+
   const infoHtml = `
-    <details style="margin:0 0 12px;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden">
+    <details style="margin:0 12px 12px;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden">
       <summary style="padding:12px 14px;font-weight:700;font-size:13px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;list-style:none;-webkit-appearance:none">
         <span>📋 Detail Pesanan</span>
         <span style="font-size:11px;color:var(--muted);font-weight:500">Lihat ▾</span>
       </summary>
       <div style="padding:0 14px 12px;border-top:1px solid var(--line)">
-        <div class="info-row">
+        <div class="info-row" style="padding-top:8px">
           <span class="label">No. Order</span>
           <span class="val" style="font-family:monospace;font-size:13px">${o.order_number}</span>
         </div>
@@ -427,18 +441,11 @@ function renderStatus(o) {
           <span class="label">Outlet</span>
           <span class="val">${outletName}</span>
         </div>
-        ${outletAddress ? `<div class="info-row">
-          <span class="label">Alamat</span>
-          <span class="val" style="font-size:13px;font-weight:500;color:var(--muted)">${outletAddress}</span>
-        </div>` : ''}
-        <div class="info-row">
-          <span class="label">Waktu Pesan</span>
-          <span class="val" style="font-size:13px">${fmtOrderTime(o.created_at)}</span>
-        </div>
         ${o.pickup_time ? `<div class="info-row">
           <span class="label">Waktu Ambil</span>
           <span class="val" style="font-weight:700">${o.pickup_time}</span>
         </div>` : ''}
+        ${itemsHtml}
         <div class="info-row" style="border-top:1px dashed var(--line2);margin-top:6px;padding-top:8px">
           <span class="label" style="font-weight:700">Total</span>
           <span class="val" style="font-size:16px;font-weight:800;color:var(--brand)">${formatRupiah(o.total)}</span>
