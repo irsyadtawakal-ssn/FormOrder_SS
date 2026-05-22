@@ -29,11 +29,11 @@ Deno.serve(async (req: Request) => {
 
   const now = new Date().toISOString();
 
-  // Ambil order yang sudah expired (pending_payment & melewati expires_at)
+  // Ambil order yang sudah expired (pending_payment / proof_rejected & melewati expires_at)
   const { data: expiredOrders, error: fetchErr } = await db
     .from("orders")
     .select("id, order_number, customer_name, customer_wa, outlets(name)")
-    .eq("status", "pending_payment")
+    .in("status", ["pending_payment", "proof_rejected"])
     .lt("expires_at", now);
 
   if (fetchErr) {

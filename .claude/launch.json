@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "design-system-preview",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "7788", "--directory", "SUKA Shawarma Design System"],
+      "port": 7788
+    },
+    {
+      "name": "production-preview",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "7789"],
+      "port": 7789
+    }
+  ]
+}

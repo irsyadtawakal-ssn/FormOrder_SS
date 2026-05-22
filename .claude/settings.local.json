@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(superpowers:brainstorming)",
+      "Skill(superpowers:brainstorming:*)",
+      "Skill(anthropic-skills:pdf)",
+      "Skill(anthropic-skills:pdf:*)",
+      "Bash(python -c \"import reportlab; print\\('reportlab', reportlab.Version\\)\")",
+      "Bash(python -c \"import reportlab; print\\('ok', reportlab.Version\\)\")",
+      "Bash(python -m pip install reportlab)",
+      "Bash(python -m pip install pypdf --quiet)",
+      "Bash(python -c \"from pypdf import PdfReader; r = PdfReader\\(r'D:/MIT/CLAUDE CODE PROJECT/LYNK ID COPYCAT/docs/presentation/linka-id-prd-presentation.pdf'\\); print\\('Pages:', len\\(r.pages\\)\\)\")",
+      "Skill(claude-code-harness:harness-setup)",
+      "Skill(claude-code-harness:harness-setup:*)",
+      "Bash(mkdir -p \"D:/MIT/CLAUDE CODE PROJECT/TiktokGo SS/.claude\")",
+      "Skill(claude-code-harness:harness-work)",
+      "Skill(claude-code-harness:harness-work:*)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git remote *)",
+      "Bash(git fetch *)",
+      "Bash(git reset *)",
+      "Bash(git ls-tree *)",
+      "Bash(git restore *)",
+      "Bash(mv admin/admin/* admin/ && rmdir admin/admin && mv assets/assets/css assets/css && mv assets/assets/js assets/js && rmdir assets/assets && mv supabase/supabase/functions supabase/functions && mv supabase/supabase/migrations supabase/migrations && mv supabase/supabase/seed.sql supabase/seed.sql && rmdir supabase/supabase && rmdir \"TiktokGo SS/admin\" && rmdir \"TiktokGo SS\")",
+      "Bash(mv supabase/functions/functions/* supabase/functions/ && rmdir supabase/functions/functions && git add -A && git status | grep supabase)",
+      "Bash(git commit *)",
+      "Skill(superpowers:writing-plans)",
+      "Skill(superpowers:writing-plans:*)",
+      "Skill(superpowers:subagent-driven-development)",
+      "Skill(superpowers:subagent-driven-development:*)",
+      "Bash(Get-ChildItem -Path \"D:\\\\MIT\\\\CLAUDE CODE PROJECT\\\\TiktokGo SS\" -Filter \"*.html\" -Recurse)",
+      "Bash(Select-Object FullName)",
+      "PowerShell($lines = \\(Get-Content \"D:\\\\MIT\\\\CLAUDE CODE PROJECT\\\\TiktokGo SS\\\\assets\\\\css\\\\style.css\"\\).Count; Write-Host \"Total lines: $lines\")",
+      "Bash(git push *)",
+      "WebFetch(domain:wablas.com)",
+      "WebFetch(domain:openrouter.ai)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(not exist *)"
+    ]
+  }
+}
