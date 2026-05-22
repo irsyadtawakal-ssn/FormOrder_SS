@@ -85,7 +85,7 @@ async function loadOrder(cached) {
   // Ambil order + outlet dari Supabase
   const { data, error } = await window.db
     .from('orders')
-    .select('*, outlets(name, address, phone_wa), order_items(item_name, quantity, unit_price, notes)')
+    .select('*, outlets(name, address, phone_wa), order_items(item_name, quantity, unit_price, note)')
     .eq('order_number', orderNumber)
     .single();
 
@@ -424,7 +424,7 @@ function renderStatus(o) {
         <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:5px 0;font-size:13px">
           <div style="flex:1;min-width:0">
             <span style="font-weight:600">${it.quantity}× ${it.item_name}</span>
-            ${it.notes ? `<div style="font-size:11px;color:var(--muted);margin-top:1px">📝 ${it.notes}</div>` : ''}
+            ${it.note ? `<div style="font-size:11px;color:var(--muted);margin-top:1px">📝 ${it.note}</div>` : ''}
           </div>
           <span style="font-weight:700;white-space:nowrap;margin-left:10px">${formatRupiah(it.unit_price * it.quantity)}</span>
         </div>`).join('')}
