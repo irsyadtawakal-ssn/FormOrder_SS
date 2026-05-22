@@ -212,6 +212,13 @@ async function doCheckout() {
       pickup_time:    checkoutData.pickupTime,
       payment_method: 'manual',
       status:         'pending_payment', // ← wajib ada agar order.html tampil form upload
+      // Simpan item cart agar order.html bisa tampil items sebelum DB query selesai
+      order_items:    checkoutData.cart.map(item => ({
+        item_name:  item.name,
+        quantity:   item.qty,
+        unit_price: item.unitPrice,
+        notes:      item.note || null,
+      })),
     }));
 
     // Hapus cart setelah order berhasil dibuat

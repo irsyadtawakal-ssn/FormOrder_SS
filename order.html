@@ -103,6 +103,10 @@ async function loadOrder(cached) {
   if (cached) {
     order._qris_url = order.qris_url || cached.qris_url;
     order._pay_url  = order.tripay_pay_url || cached.pay_url;
+    // Gunakan items dari cache jika DB tidak return (kemungkinan RLS)
+    if (!order.order_items?.length && cached.order_items?.length) {
+      order.order_items = cached.order_items;
+    }
   } else {
     order._qris_url = order.qris_url;
     order._pay_url  = order.tripay_pay_url;
