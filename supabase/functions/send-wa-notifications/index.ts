@@ -110,7 +110,7 @@ Deno.serve(async (req: Request) => {
         `⏰ Ambil: ${order.pickup_time || "-"}\n\n` +
         `${itemsText}\n\n` +
         `💰 Total: *${totalText}*\n\n` +
-        `Bayar saat pickup ya! 🙏`;
+        `Segera transfer ke rekening BCA *0955193763* a/n Irsyad Tawakkal, lalu upload bukti transfernya di halaman pesananmu ya! 🙏`;
       results.customer = await kirimWA(FONNTE_TOKEN, order.customer_wa, msgCustomer);
     }
 
