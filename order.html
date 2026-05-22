@@ -50,6 +50,10 @@ const orderNumber = getParam('order');
 let order         = null;
 let realtimeChannel = null;
 let countdownTimer  = null;
+let pollTimer       = null;
+
+// Status terminal — tidak perlu poll lagi setelah ini
+const TERMINAL_STATUSES = ['paid', 'done', 'cancelled', 'expired'];
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 (async function init() {
@@ -117,6 +121,36 @@ async function loadOrder(cached) {
 
   renderStatus(order);
   subscribeRealtime(order.id);
+
+  // Polling fallback tiap 5 detik — aktif jika status masih menunggu
+  startPolling();
+}
+
+// ─── Polling fallback (backup jika Realtime tidak terpicu) ────────────────────
+function startPolling() {
+  stopPolling();
+  if (!order || TERMINAL_STATUSES.includes(order.status)) return;
+
+  pollTimer = setInterval(async () => {
+    if (!order || TERMINAL_STATUSES.includes(order.status)) { stopPolling(); return; }
+
+    const { data } = await window.db
+      .from('orders')
+      .select('status, cancelled_at, cancel_reason')
+      .eq('order_number', orderNumber)
+      .single();
+
+    if (data && data.status !== order.status) {
+      // Status berubah — reload penuh supaya semua data segar
+      order = { ...order, ...data };
+      renderStatus(order);
+      if (TERMINAL_STATUSES.includes(data.status)) stopPolling();
+    }
+  }, 5000);
+}
+
+function stopPolling() {
+  if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
 }
 
 // ─── Subscribe realtime untuk update otomatis ─────────────────────────────────
