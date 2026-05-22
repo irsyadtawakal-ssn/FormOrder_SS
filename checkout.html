@@ -216,6 +216,7 @@ async function doCheckout() {
       customer_name:  checkoutData.customerName,
       pickup_time:    checkoutData.pickupTime,
       payment_method: 'manual',
+      status:         'pending_payment', // ← wajib ada agar order.html tampil form upload
     }));
 
     // Hapus cart setelah order berhasil dibuat

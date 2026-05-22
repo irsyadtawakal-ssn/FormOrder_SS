@@ -75,6 +75,9 @@ function readCachedOrder() {
 
 // ─── Load order dari DB ───────────────────────────────────────────────────────
 async function loadOrder(cached) {
+  // Tampilkan data cache dulu (tidak perlu tunggu DB) agar user langsung lihat form upload
+  if (cached && cached.status) renderStatus(cached);
+
   // Ambil order + outlet dari Supabase
   const { data, error } = await window.db
     .from('orders')
@@ -83,10 +86,8 @@ async function loadOrder(cached) {
     .single();
 
   if (error || !data) {
-    // Fallback ke cached jika ada
-    if (cached) {
-      renderStatus(cached);
-    } else {
+    // Kalau DB gagal tapi sudah ada cache dengan status → biarkan cache tampil
+    if (!cached || !cached.status) {
       renderError('Order tidak ditemukan. Pastikan URL sudah benar.');
     }
     return;
