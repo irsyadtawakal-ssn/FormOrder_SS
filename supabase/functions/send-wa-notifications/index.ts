@@ -80,7 +80,7 @@ Deno.serve(async (req: Request) => {
   const results: Record<string, boolean> = {};
 
   if (event === "new_order") {
-    // Pesan ke admin pusat
+    // Pesan ke admin pusat saja — customer & outlet dapat notif setelah verifikasi
     if (ADMIN_WA) {
       const msgAdmin = `🔔 *ORDER BARU — ${outlet.name}*\n\n` +
         `📋 No: ${order.order_number}\n` +
@@ -88,33 +88,9 @@ Deno.serve(async (req: Request) => {
         `⏰ Ambil: ${order.pickup_time || "-"}\n\n` +
         `${itemsText}\n\n` +
         `💰 Total: *${totalText}*` +
-        (order.notes ? `\n📝 Catatan: ${order.notes}` : "");
+        (order.notes ? `\n📝 Catatan: ${order.notes}` : "") +
+        `\n\n🔗 https://order.sukshawarma.com/admin/orders.html`;
       results.admin = await kirimWA(FONNTE_TOKEN, ADMIN_WA, msgAdmin);
-    }
-
-    // Pesan ke outlet
-    if (outlet.phone_wa) {
-      const msgOutlet = `🔔 *ORDER BARU MASUK!*\n\n` +
-        `📋 No: ${order.order_number}\n` +
-        `👤 ${order.customer_name}\n` +
-        `⏰ Ambil: ${order.pickup_time || "-"}\n\n` +
-        `${itemsText}\n\n` +
-        `💰 Total: *${totalText}*` +
-        (order.notes ? `\n📝 Catatan: ${order.notes}` : "");
-      results.outlet = await kirimWA(FONNTE_TOKEN, outlet.phone_wa, msgOutlet);
-    }
-
-    // Pesan ke customer
-    if (order.customer_wa) {
-      const msgCustomer = `✅ *Pesanan Diterima!*\n\n` +
-        `Halo ${order.customer_name}! Pesananmu sudah masuk.\n\n` +
-        `📋 No: *${order.order_number}*\n` +
-        `🏪 Outlet: ${outlet.name}\n` +
-        `⏰ Ambil: ${order.pickup_time || "-"}\n\n` +
-        `${itemsText}\n\n` +
-        `💰 Total: *${totalText}*\n\n` +
-        `Segera transfer ke rekening BCA *0955193763* a/n Irsyad Tawakkal, lalu upload bukti transfernya di halaman pesananmu ya! 🙏`;
-      results.customer = await kirimWA(FONNTE_TOKEN, order.customer_wa, msgCustomer);
     }
 
   } else if (event === "ready") {
