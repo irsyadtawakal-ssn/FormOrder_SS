@@ -927,6 +927,7 @@ select.form-input { cursor: pointer; }
   color: var(--ink2);
   margin: 0 0 12px;
 }
+#revenueChart { height: 160px !important; }
 
 /* Podium top-3 */
 .podium {
