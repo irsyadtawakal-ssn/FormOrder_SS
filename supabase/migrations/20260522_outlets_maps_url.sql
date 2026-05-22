@@ -23,10 +23,6 @@ UPDATE outlets SET maps_url = 'https://maps.app.goo.gl/Hi6rPCD9eYZxEEsa8' WHERE 
 UPDATE outlets SET maps_url = 'https://maps.app.goo.gl/SGPd9WkLhBHtJXP86' WHERE slug = 'ciseeng';
 UPDATE outlets SET maps_url = 'https://maps.app.goo.gl/wE1hrhFgXVqrqeBs8' WHERE slug = 'jatiasih';
 UPDATE outlets SET maps_url = 'https://maps.app.goo.gl/u5qzaaXNyFDCw83L9' WHERE slug = 'pajajaran';
-UPDATE outlets SET maps_url = 'https://maps.app.goo.gl/N6jT7dVe5Jb87fCK7' WHERE slug = 'blok-m';
-
--- Tambah city untuk Blok M (Jakarta) jika belum ada
-UPDATE outlets SET city = 'Jakarta' WHERE slug = 'blok-m' AND (city IS NULL OR city = '');
 
 -- Cek hasil:
 -- SELECT slug, name, city, maps_url FROM outlets ORDER BY city, name;
