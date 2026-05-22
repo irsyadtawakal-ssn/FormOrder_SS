@@ -145,15 +145,30 @@ Deno.serve(async (req: Request) => {
     if (outlet.phone_wa) results.outlet = await kirimWA(FONNTE_TOKEN, outlet.phone_wa, msgProof);
 
   } else if (event === "transfer_verified") {
-    // Notif ke customer saat transfer dikonfirmasi
+    // Notif ke customer — pembayaran dikonfirmasi, pesanan mulai disiapkan
     if (order.customer_wa) {
-      const msgVerified = `✅ *Pembayaran Dikonfirmasi!*\n\n` +
-        `Halo ${order.customer_name}!\n` +
-        `Transfer untuk pesanan *${order.order_number}* sudah dikonfirmasi.\n\n` +
+      const msgVerified =
+        `🎉 *Pembayaran Dikonfirmasi!*\n\n` +
+        `Halo ${order.customer_name}! Transfer kamu sudah kami terima ✅\n\n` +
+        `📋 No: *${order.order_number}*\n` +
         `🏪 Outlet: ${outlet.name}\n` +
-        `⏰ Ambil: ${order.pickup_time || '-'}\n\n` +
-        `Pesanan sedang disiapkan. Terima kasih! 🙏`;
+        `⏰ Ambil: ${order.pickup_time || "-"}\n\n` +
+        `${itemsText}\n\n` +
+        `💰 Total: *${totalText}*\n\n` +
+        `Pesanan sedang disiapkan. Datang sesuai waktu pickup ya! 🙏`;
       results.customer = await kirimWA(FONNTE_TOKEN, order.customer_wa, msgVerified);
+    }
+    // Notif ke outlet — mulai siapkan pesanan
+    if (outlet.phone_wa) {
+      const msgOutletVerified =
+        `✅ *PEMBAYARAN TERVERIFIKASI — SIAPKAN PESANAN*\n\n` +
+        `📋 No: ${order.order_number}\n` +
+        `👤 ${order.customer_name}\n` +
+        `⏰ Ambil: ${order.pickup_time || "-"}\n\n` +
+        `${itemsText}\n\n` +
+        `💰 Total: *${totalText}*` +
+        (order.notes ? `\n📝 Catatan: ${order.notes}` : "");
+      results.outlet = await kirimWA(FONNTE_TOKEN, outlet.phone_wa, msgOutletVerified);
     }
   }
 
