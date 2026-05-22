@@ -36,6 +36,60 @@
     </div>
   </div>
 
+  <!-- Tombol cara pesan -->
+  <div style="text-align:center;padding:10px 16px 4px">
+    <button class="how-to-btn" onclick="document.getElementById('howToModal').style.display='flex'">
+      ℹ️ Cara Pesan
+    </button>
+  </div>
+
+  <!-- Modal cara pesan -->
+  <div class="modal-overlay" id="howToModal" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+    <div class="modal-box how-to-box">
+      <div class="modal-header">
+        <span>📋 Cara Pesan</span>
+        <button class="modal-close" onclick="document.getElementById('howToModal').style.display='none'">✕</button>
+      </div>
+      <div class="how-to-steps">
+        <div class="how-to-step">
+          <div class="how-to-num">1</div>
+          <div>
+            <div class="how-to-title">Pilih Outlet</div>
+            <div class="how-to-desc">Tap nama outlet di atas, lalu pilih lokasi SUKA Shawarma terdekat dari kamu.</div>
+          </div>
+        </div>
+        <div class="how-to-step">
+          <div class="how-to-num">2</div>
+          <div>
+            <div class="how-to-title">Pilih Menu</div>
+            <div class="how-to-desc">Tambahkan menu yang kamu inginkan ke keranjang, lalu tap <b>Pesan Sekarang</b>.</div>
+          </div>
+        </div>
+        <div class="how-to-step">
+          <div class="how-to-num">3</div>
+          <div>
+            <div class="how-to-title">Isi Data & Waktu Pickup</div>
+            <div class="how-to-desc">Masukkan nama, nomor WhatsApp, dan estimasi waktu kamu ambil pesanan.</div>
+          </div>
+        </div>
+        <div class="how-to-step">
+          <div class="how-to-num">4</div>
+          <div>
+            <div class="how-to-title">Transfer & Upload Bukti</div>
+            <div class="how-to-desc">Lakukan transfer sesuai nominal, lalu upload foto/screenshot bukti pembayaran.</div>
+          </div>
+        </div>
+        <div class="how-to-step">
+          <div class="how-to-num">5</div>
+          <div>
+            <div class="how-to-title">Ambil Pesanan</div>
+            <div class="how-to-desc">Setelah pembayaran dikonfirmasi, datang ke outlet sesuai waktu pickup yang dipilih. 🎉</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Outlet selector -->
   <div class="outlet-sel-wrap">
     <div class="outlet-sel" id="outletSel" onclick="toggleOutletDropdown()">
