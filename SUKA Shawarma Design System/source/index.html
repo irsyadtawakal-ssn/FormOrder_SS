@@ -1,12 +1,12 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="id">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Konfirmasi Pesanan — SUKA Shawarma</title>
-<link rel="stylesheet" href="assets/css/style.css?v=2" />
+<link rel="stylesheet" href="assets/css/style.css" />
 <link rel="manifest" href="/manifest.json" />
-<meta name="theme-color" content="#f29744" />
+<meta name="theme-color" content="#ff4d4f" />
 </head>
 <body>
 <div class="phone">
@@ -39,8 +39,14 @@
     padding:12px 16px;border-top:1px solid var(--line);z-index:30;
     display:none;
   ">
+    <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:4px">
+      <span>Subtotal</span><span id="fSubtotal">—</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:10px">
+      <span>Biaya layanan</span><span id="fFee">—</span>
+    </div>
     <button class="btn-add-big" id="btnBayar" onclick="doCheckout()">
-      <span>Konfirmasi Pesanan</span>
+      <span>Bayar Sekarang</span>
       <span id="fTotal">—</span>
     </button>
   </div>
@@ -86,10 +92,13 @@ function renderPage() {
   const { outletName, outletAddress, customerName, customerWA, pickupTime, notes, cart } = checkoutData;
 
   const subtotal = getCartTotal(cart);
-  const total    = subtotal;
+  const fee      = Math.ceil(subtotal * SERVICE_FEE_RATE);
+  const total    = subtotal + fee;
 
   // Update footer
-  document.getElementById('fTotal').textContent      = formatRupiah(total);
+  document.getElementById('fSubtotal').textContent = formatRupiah(subtotal);
+  document.getElementById('fFee').textContent      = formatRupiah(fee);
+  document.getElementById('fTotal').textContent    = formatRupiah(total);
   document.getElementById('footerPay').style.display = '';
 
   // Items HTML
@@ -154,35 +163,45 @@ function renderPage() {
 
     <!-- Rincian harga -->
     <div class="info-card">
-      <div style="font-weight:700;font-size:14px;margin-bottom:8px">💰 Total Pembayaran</div>
-      <div class="info-row" style="padding-top:4px">
+      <div style="font-weight:700;font-size:14px;margin-bottom:8px">💰 Rincian Pembayaran</div>
+      <div class="info-row">
+        <span class="label">Subtotal</span>
+        <span class="val">${formatRupiah(subtotal)}</span>
+      </div>
+      <div class="info-row">
+        <span class="label">Biaya layanan</span>
+        <span class="val" style="color:var(--muted)">${formatRupiah(fee)} <span style="font-size:11px;font-weight:500">(0.7%)</span></span>
+      </div>
+      <div class="info-row" style="border-top:1px dashed var(--line2);margin-top:6px;padding-top:8px">
         <span class="label" style="font-weight:700;font-size:15px;color:var(--ink)">Total</span>
         <span class="val" style="font-size:18px;font-weight:800;color:var(--brand)">${formatRupiah(total)}</span>
       </div>
     </div>
 
-    <!-- Info transfer -->
+    <!-- Pilihan metode pembayaran -->
     <div class="info-card" style="margin-bottom:12px">
-      <div style="font-weight:700;font-size:14px;margin-bottom:10px">🏦 Transfer ke Rekening</div>
-      <div class="info-row">
-        <span class="label">Bank</span>
-        <span class="val" style="font-weight:700">BCA</span>
-      </div>
-      <div class="info-row">
-        <span class="label">No. Rekening</span>
-        <span class="val" style="font-weight:700;font-family:monospace;font-size:15px">0955193763</span>
-      </div>
-      <div class="info-row">
-        <span class="label">Atas Nama</span>
-        <span class="val">PT Suka Profit Berkah</span>
-      </div>
-      <div class="info-row">
-        <span class="label">Jumlah Transfer</span>
-        <span class="val" style="font-weight:800;color:var(--brand);font-size:15px">${formatRupiah(total)}</span>
-      </div>
-      <div style="margin-top:10px;padding:10px 12px;background:var(--bg);border-radius:8px;font-size:12px;color:var(--muted);line-height:1.5">
-        📸 Setelah transfer, upload bukti transfer di halaman status pesanan.
-      </div>
+      <div style="font-weight:700;font-size:14px;margin-bottom:10px">💳 Metode Pembayaran</div>
+
+      <label style="display:flex;align-items:center;gap:12px;padding:10px 12px;border:2px solid var(--brand);border-radius:10px;cursor:pointer;margin-bottom:8px">
+        <input type="radio" name="payMethod" value="manual" checked style="accent-color:var(--brand)" />
+        <div>
+          <div style="font-weight:600;font-size:13px">💵 Bayar di Kasir / Transfer Manual</div>
+          <div style="font-size:11px;color:var(--muted)">Konfirmasi oleh admin outlet</div>
+        </div>
+      </label>
+
+      <label style="display:flex;align-items:center;gap:12px;padding:10px 12px;border:2px solid var(--line);border-radius:10px;cursor:not-allowed;opacity:0.5">
+        <input type="radio" name="payMethod" value="qris" disabled style="accent-color:var(--brand)" />
+        <div>
+          <div style="font-weight:600;font-size:13px">📱 QRIS Dinamis</div>
+          <div style="font-size:11px;color:var(--muted)">🚧 Coming Soon</div>
+        </div>
+      </label>
+    </div>
+
+    <!-- Penjelasan pembayaran -->
+    <div class="hint-banner" style="margin:0 12px 12px">
+      💡 Pesanan akan langsung tercatat. Selesaikan pembayaran di kasir outlet saat pickup.
     </div>
 
     <!-- Spacer agar konten tidak tertutup footer -->
@@ -216,7 +235,6 @@ async function doCheckout() {
       customer_name:  checkoutData.customerName,
       pickup_time:    checkoutData.pickupTime,
       payment_method: 'manual',
-      status:         'pending_payment', // ← wajib ada agar order.html tampil form upload
     }));
 
     // Hapus cart setelah order berhasil dibuat

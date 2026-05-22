@@ -1,12 +1,12 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="id">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Menu — SUKA Admin</title>
-<link rel="stylesheet" href="../assets/css/style.css?v=2" />
+<link rel="stylesheet" href="../assets/css/style.css" />
 <link rel="manifest" href="/manifest.json" />
-<meta name="theme-color" content="#f29744" />
+<meta name="theme-color" content="#ff4d4f" />
 </head>
 <body>
 <div class="phone">
@@ -14,10 +14,7 @@
   <!-- Topbar -->
   <div class="topbar">
     <span class="topbar-title">🌯 Menu</span>
-    <div style="display:flex;gap:6px">
-      <a href="/admin/bulk-photos.html" class="topbar-action admin-only" style="text-decoration:none">📷 Bulk</a>
-      <button class="topbar-action admin-only" onclick="openItemForm(null)">+ Tambah</button>
-    </div>
+    <button class="topbar-action admin-only" onclick="openItemForm(null)">+ Tambah</button>
   </div>
 
   <!-- Category tabs -->
@@ -344,7 +341,7 @@ async function uploadMenuPhoto(input) {
   const path = `menu/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
   const { error } = await window.db.storage
-    .from('menu-photo')
+    .from('menu-photos')
     .upload(path, file, { upsert: false, contentType: file.type });
 
   if (error) {
@@ -353,7 +350,7 @@ async function uploadMenuPhoto(input) {
     return;
   }
 
-  const { data: urlData } = window.db.storage.from('menu-photo').getPublicUrl(path);
+  const { data: urlData } = window.db.storage.from('menu-photos').getPublicUrl(path);
   const publicUrl = urlData.publicUrl;
 
   document.getElementById('iPhoto').value = publicUrl;

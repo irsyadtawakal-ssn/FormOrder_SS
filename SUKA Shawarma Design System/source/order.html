@@ -1,12 +1,12 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="id">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Status Pesanan — SUKA Shawarma</title>
-<link rel="stylesheet" href="assets/css/style.css?v=2" />
+<link rel="stylesheet" href="assets/css/style.css" />
 <link rel="manifest" href="/manifest.json" />
-<meta name="theme-color" content="#f29744" />
+<meta name="theme-color" content="#ff4d4f" />
 </head>
 <body>
 <div class="phone">
@@ -14,10 +14,7 @@
   <!-- Topbar -->
   <div class="topbar">
     <button class="topbar-ic" onclick="window.location.href='index.html'">‹</button>
-    <div class="topbar-logo">
-      <img src="assets/img/logo.png" alt="SUKA Shawarma" style="height:32px;width:auto;vertical-align:middle;margin-right:6px" onerror="this.style.display='none'">
-      <span>SUKA Shawarma</span>
-    </div>
+    <div class="topbar-logo">🌯 SUKA Shawarma</div>
     <span style="width:32px"></span>
   </div>
 
@@ -50,10 +47,6 @@ const orderNumber = getParam('order');
 let order         = null;
 let realtimeChannel = null;
 let countdownTimer  = null;
-let pollTimer       = null;
-
-// Status terminal — tidak perlu poll lagi setelah ini
-const TERMINAL_STATUSES = ['paid', 'done', 'cancelled', 'expired'];
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 (async function init() {
@@ -79,9 +72,6 @@ function readCachedOrder() {
 
 // ─── Load order dari DB ───────────────────────────────────────────────────────
 async function loadOrder(cached) {
-  // Tampilkan data cache dulu (tidak perlu tunggu DB) agar user langsung lihat form upload
-  if (cached && cached.status) renderStatus(cached);
-
   // Ambil order + outlet dari Supabase
   const { data, error } = await window.db
     .from('orders')
@@ -90,8 +80,10 @@ async function loadOrder(cached) {
     .single();
 
   if (error || !data) {
-    // Kalau DB gagal tapi sudah ada cache dengan status → biarkan cache tampil
-    if (!cached || !cached.status) {
+    // Fallback ke cached jika ada
+    if (cached) {
+      renderStatus(cached);
+    } else {
       renderError('Order tidak ditemukan. Pastikan URL sudah benar.');
     }
     return;
@@ -108,49 +100,8 @@ async function loadOrder(cached) {
     order._pay_url  = order.tripay_pay_url;
   }
 
-  // Simpan order aktif ke localStorage supaya bisa dipulihkan kalau tab hilang
-  if (['pending_payment', 'awaiting_verification'].includes(order.status)) {
-    localStorage.setItem('suka_last_order', JSON.stringify({
-      order_number: order.order_number,
-      url: window.location.href,
-      saved_at: Date.now(),
-    }));
-  } else {
-    localStorage.removeItem('suka_last_order');
-  }
-
   renderStatus(order);
   subscribeRealtime(order.id);
-
-  // Polling fallback tiap 5 detik — aktif jika status masih menunggu
-  startPolling();
-}
-
-// ─── Polling fallback (backup jika Realtime tidak terpicu) ────────────────────
-function startPolling() {
-  stopPolling();
-  if (!order || TERMINAL_STATUSES.includes(order.status)) return;
-
-  pollTimer = setInterval(async () => {
-    if (!order || TERMINAL_STATUSES.includes(order.status)) { stopPolling(); return; }
-
-    const { data } = await window.db
-      .from('orders')
-      .select('status, cancelled_at, cancel_reason')
-      .eq('order_number', orderNumber)
-      .single();
-
-    if (data && data.status !== order.status) {
-      // Status berubah — reload penuh supaya semua data segar
-      order = { ...order, ...data };
-      renderStatus(order);
-      if (TERMINAL_STATUSES.includes(data.status)) stopPolling();
-    }
-  }, 5000);
-}
-
-function stopPolling() {
-  if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
 }
 
 // ─── Subscribe realtime untuk update otomatis ─────────────────────────────────
@@ -191,83 +142,38 @@ function renderStatus(o) {
     case 'pending_payment':
       heroHtml = `
         <div class="status-hero">
-          <div class="status-icon">💳</div>
-          <div class="status-title">Transfer Dulu Yuk!</div>
-          <div class="status-sub">Segera transfer dan upload buktinya di bawah</div>
-          <span class="status-chip status-pending">BELUM TRANSFER</span>
+          <div class="status-icon">⏳</div>
+          <div class="status-title">Menunggu Pembayaran</div>
+          <div class="status-sub">Scan QRIS di bawah sebelum waktu habis</div>
+          <span class="status-chip status-pending">BELUM DIBAYAR</span>
         </div>`;
+
+      // Bangun QRIS box
+      const qrisHtml = buildQrisBox(o);
 
       extraHtml = `
+        ${qrisHtml}
         <div class="info-card">
-          <div style="font-weight:700;font-size:14px;margin-bottom:10px">🏦 Info Rekening Tujuan</div>
-          <div class="info-row">
-            <span class="label">Bank</span>
-            <span class="val" style="font-weight:700">BCA</span>
-          </div>
-          <div class="info-row">
-            <span class="label">No. Rekening</span>
-            <span class="val" style="font-weight:700;font-family:monospace;font-size:15px">0955193763</span>
-          </div>
-          <div class="info-row">
-            <span class="label">Atas Nama</span>
-            <span class="val">PT Suka Profit Berkah</span>
-          </div>
-          <div class="info-row">
-            <span class="label">Jumlah Transfer</span>
-            <span class="val" style="font-weight:800;color:var(--brand);font-size:15px">${formatRupiah(o.total)}</span>
-          </div>
-        </div>
-
-        <div style="margin:0 0 10px;padding:12px 14px;background:#fef9c3;border-radius:10px;font-size:13px;line-height:1.6;color:#854d0e">
-          📱 <b>Jangan tutup tab ini.</b><br/>
-          Setelah transfer di m-banking, kembali ke tab browser ini lalu upload screenshot konfirmasi.
-        </div>
-
-        <div class="info-card" id="uploadCard">
-          <div style="font-weight:700;font-size:14px;margin-bottom:10px">📸 Upload Bukti Transfer</div>
-          <div id="proofPreview" style="display:none;margin-bottom:10px;text-align:center">
-            <img id="proofImg" style="max-width:100%;border-radius:8px;max-height:200px;object-fit:cover" />
-            <div style="font-size:12px;color:var(--muted);margin-top:6px">Pastikan nominal terlihat jelas</div>
-          </div>
-          <label id="proofLabel" style="display:flex;align-items:center;gap:10px;padding:14px 12px;border:2px dashed var(--line2);border-radius:10px;cursor:pointer;margin-bottom:10px;background:var(--bg)">
-            <span style="font-size:28px">🖼️</span>
-            <div>
-              <div style="font-weight:700;font-size:14px">Pilih Screenshot / Foto</div>
-              <div style="font-size:12px;color:var(--muted);margin-top:2px">Galeri atau kamera • JPG/PNG maks 5MB</div>
-            </div>
-            <input type="file" id="proofFile" accept="image/*" style="display:none" onchange="previewProof(this)" />
-          </label>
-          <button class="btn-add-big" id="btnUpload" onclick="doUploadProof('${o.order_number}')" disabled
-            style="opacity:0.5">
-            Kirim Bukti Transfer
+          <button class="btn-outline" id="btnCekStatus" onclick="doCekStatus()">
+            Sudah Bayar? Cek Status
           </button>
-          <div id="uploadErr" style="color:var(--brand);font-size:12px;margin-top:8px;display:none"></div>
+          <a href="${o._pay_url || '#'}" target="_blank" rel="noopener" class="btn-outline"
+             style="${o._pay_url ? '' : 'opacity:.4;pointer-events:none'}">
+            Buka Halaman Tripay
+          </a>
         </div>`;
-      break;
-
-    case 'awaiting_verification':
-      heroHtml = `
-        <div class="status-hero">
-          <div class="status-icon">🔍</div>
-          <div class="status-title">Menunggu Verifikasi</div>
-          <div class="status-sub">Bukti transfer sudah diterima, admin sedang mengecek</div>
-          <span class="status-chip status-preparing">CEK ADMIN</span>
-        </div>`;
-
-      extraHtml = o.proof_url ? `
-        <div class="info-card" style="text-align:center">
-          <div style="font-size:13px;color:var(--muted);margin-bottom:8px">Bukti transfer yang kamu kirim:</div>
-          <img src="${o.proof_url}" style="max-width:100%;border-radius:8px;max-height:220px;object-fit:cover" />
-        </div>` : '';
       break;
 
     case 'paid':
+      const isManual = o.payment_method === 'manual';
       heroHtml = `
         <div class="status-hero">
           <div class="status-icon">✅</div>
-          <div class="status-title">Pembayaran Dikonfirmasi!</div>
-          <div class="status-sub">Transfer kamu sudah diverifikasi — outlet sedang menyiapkan pesanan</div>
-          <span class="status-chip status-paid">DIKONFIRMASI</span>
+          <div class="status-title">${isManual ? 'Pesanan Diterima!' : 'Pembayaran Berhasil!'}</div>
+          <div class="status-sub">${isManual
+            ? 'Bayar saat pickup — outlet sedang konfirmasi pesananmu'
+            : 'Pesanan diterima — menunggu konfirmasi outlet'}</div>
+          <span class="status-chip status-paid">${isManual ? 'DIKONFIRMASI' : 'DIBAYAR'}</span>
         </div>`;
       break;
 
@@ -340,14 +246,14 @@ function renderStatus(o) {
       heroHtml = `
         <div class="status-hero">
           <div class="status-icon">⌛</div>
-          <div class="status-title">Pesanan Kedaluwarsa</div>
-          <div class="status-sub">Bukti transfer tidak diterima dalam 2 jam. Silakan pesan ulang.</div>
+          <div class="status-title">QRIS Kedaluwarsa</div>
+          <div class="status-sub">Waktu pembayaran habis. Silakan buat pesanan baru.</div>
           <span class="status-chip status-expired">KEDALUWARSA</span>
         </div>`;
 
       extraHtml = `
         <div class="info-card" style="text-align:center">
-          <a href="index.html"
+          <a href="menu.html?outlet=${encodeURIComponent(o.outlet_slug || '')}"
              class="btn-add-big" style="display:block;text-decoration:none;text-align:center">
             Pesan Ulang
           </a>
@@ -389,6 +295,9 @@ function renderStatus(o) {
   document.getElementById('pageContent').innerHTML = heroHtml + extraHtml + infoHtml;
 
   // Post-render hooks per status
+  if (o.status === 'pending_payment') {
+    startCountdownUI(o.expires_at);
+  }
   if (o.status === 'ready') {
     renderOrderQR(o.order_number);
   }
@@ -508,101 +417,6 @@ async function doCekStatus() {
     isCheking = false;
     const b = document.getElementById('btnCekStatus');
     if (b) { b.textContent = 'Sudah Bayar? Cek Status'; b.disabled = false; }
-  }
-}
-
-// ─── Preview foto bukti transfer ─────────────────────────────────────────────
-function previewProof(input) {
-  if (!input.files || !input.files[0]) return;
-  const file = input.files[0];
-  if (file.size > 5 * 1024 * 1024) {
-    showToast('❌ File terlalu besar (maks 5MB)');
-    input.value = '';
-    return;
-  }
-  const reader = new FileReader();
-  reader.onload = e => {
-    document.getElementById('proofImg').src = e.target.result;
-    document.getElementById('proofPreview').style.display = '';
-    const btn = document.getElementById('btnUpload');
-    if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
-  };
-  reader.readAsDataURL(file);
-}
-
-// ─── Upload bukti transfer + update status ────────────────────────────────────
-let isUploading = false;
-
-async function doUploadProof(orderNum) {
-  if (isUploading) return;
-  const fileInput = document.getElementById('proofFile');
-  if (!fileInput || !fileInput.files[0]) { showToast('Pilih foto dulu'); return; }
-
-  isUploading = true;
-  const btn = document.getElementById('btnUpload');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Mengirim…'; }
-
-  try {
-    const file     = fileInput.files[0];
-    const ext      = file.name.split('.').pop().toLowerCase() || 'jpg';
-    const path     = `${orderNum}/${Date.now()}.${ext}`;
-
-    // Upload ke Supabase Storage
-    const { data: upData, error: upErr } = await window.db.storage
-      .from('transfer-proofs')
-      .upload(path, file, { upsert: true, contentType: file.type });
-
-    if (upErr) throw new Error('Upload gagal: ' + upErr.message);
-
-    // Ambil public URL (bucket non-public → pakai signed URL / path saja)
-    const { data: urlData } = window.db.storage
-      .from('transfer-proofs')
-      .getPublicUrl(path);
-    const proofUrl = urlData?.publicUrl || path;
-
-    // Panggil RPC untuk update status
-    const { data: ok, error: rpcErr } = await window.db
-      .rpc('submit_transfer_proof', {
-        p_order_number: orderNum,
-        p_proof_url:    proofUrl,
-      });
-
-    if (rpcErr) throw new Error(rpcErr.message);
-    if (!ok) throw new Error('Order tidak ditemukan atau status sudah berubah');
-
-    // Kirim notif WA ke admin
-    fetch(`${window.SUKA_CONFIG.supabaseUrl}/functions/v1/send-wa-notifications`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${window.SUKA_CONFIG.supabaseAnonKey}`,
-        'apikey': window.SUKA_CONFIG.supabaseAnonKey,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ order_id: order?.id, event: 'transfer_submitted' }),
-    }).catch(() => {});
-
-    // Panggil AI verifikasi di background (tidak blokir UI)
-    if (order?.id) {
-      fetch(`${window.SUKA_CONFIG.supabaseUrl}/functions/v1/verify-transfer-proof`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${window.SUKA_CONFIG.supabaseAnonKey}`,
-          'apikey': window.SUKA_CONFIG.supabaseAnonKey,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ order_id: order.id }),
-      }).catch(() => {});
-    }
-
-    showToast('✅ Bukti transfer terkirim!');
-    await loadOrder(null);
-
-  } catch (e) {
-    const errEl = document.getElementById('uploadErr');
-    if (errEl) { errEl.textContent = '❌ ' + e.message; errEl.style.display = ''; }
-    if (btn) { btn.disabled = false; btn.textContent = 'Kirim Bukti Transfer'; btn.style.opacity = '1'; }
-  } finally {
-    isUploading = false;
   }
 }
 
