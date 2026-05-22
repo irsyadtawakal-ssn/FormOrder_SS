@@ -553,7 +553,7 @@ img { display: block; max-width: 100%; }
 .outlet-drop-item.active { background: var(--brand-bg); }
 .outlet-drop-name { font-weight: 600; font-size: 14px; margin-bottom: 2px; }
 .outlet-drop-meta { font-size: 12px; color: var(--muted); }
-.outlet-drop-addr { font-size: 11px; color: var(--faint); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.outlet-drop-addr { font-size: 11px; color: var(--faint); margin-top: 2px; line-height: 1.4; }
 .outlet-drop-maps { font-size: 11px; color: var(--blue); margin-left: 4px; text-decoration: none; }
 .outlet-drop-maps:hover { text-decoration: underline; }
 
