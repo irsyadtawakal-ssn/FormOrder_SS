@@ -132,8 +132,35 @@ Deno.serve(async (req: Request) => {
     const serviceFee = Math.ceil(subtotal * serviceFeeRate);
     const total      = subtotal + serviceFee;
 
-    // ── Buat referensi manual (bukan dari Tripay) ──────────────────────────
-    const manualRef = `MANUAL-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
+    // ── Generate order number: [KODE]-DDMMYY-NNN ──────────────────────────
+    // Kode outlet: 3 huruf pertama dari slug (depok-sukmajaya → DEP, cimanggu → CIM)
+    const outletCode = outlet_slug.split("-")[0].slice(0, 3).toUpperCase();
+
+    // Tanggal hari ini dalam format DDMMYY (WIB = UTC+7)
+    const now   = new Date(Date.now() + 7 * 60 * 60 * 1000); // UTC → WIB
+    const dd    = String(now.getUTCDate()).padStart(2, "0");
+    const mm    = String(now.getUTCMonth() + 1).padStart(2, "0");
+    const yy    = String(now.getUTCFullYear()).slice(2);
+    const today = `${dd}${mm}${yy}`;
+
+    // Hitung jumlah order outlet ini hari ini untuk nomor urut
+    const startOfDay = new Date(Date.UTC(
+      now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()
+    ) - 7 * 60 * 60 * 1000).toISOString(); // balik ke UTC untuk filter DB
+    const endOfDay   = new Date(Date.UTC(
+      now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1
+    ) - 7 * 60 * 60 * 1000).toISOString();
+
+    const { count: todayCount } = await db
+      .from("orders")
+      .select("id", { count: "exact", head: true })
+      .eq("outlet_id", outlet.id)
+      .gte("created_at", startOfDay)
+      .lt("created_at", endOfDay);
+
+    const seq        = String((todayCount ?? 0) + 1).padStart(3, "0");
+    const orderNum   = `${outletCode}-${today}-${seq}`;
+    const manualRef  = `MANUAL-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
 
     // ── INSERT order ───────────────────────────────────────────────────────
     const { data: order, error: orderErr } = await db
@@ -147,9 +174,10 @@ Deno.serve(async (req: Request) => {
         subtotal,
         service_fee:         serviceFee,
         total,
-        status:              "pending_payment", // menunggu bukti transfer
+        status:              "pending_payment",
         payment_method:      "manual",
-        tripay_merchant_ref: manualRef,     // kolom NOT NULL — pakai ref manual
+        order_number:        orderNum,       // pakai format baru
+        tripay_merchant_ref: manualRef,
         expires_at:          new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2 jam
       })
       .select("id, order_number")
