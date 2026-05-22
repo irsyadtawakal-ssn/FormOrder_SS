@@ -41,7 +41,7 @@ Deno.serve(async (req: Request) => {
       .select("value")
       .eq("key", "service_fee_percent")
       .single();
-    const serviceFeeRate = parseFloat(String(feeRow?.value ?? 0.7)) / 100;
+    const serviceFeeRate = parseFloat(String(feeRow?.value ?? 0)) / 100;
 
     // ── Parse payload ──────────────────────────────────────────────────────
     const body = await req.json();
