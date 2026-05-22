@@ -364,6 +364,13 @@ function renderStatus(o) {
   }
 
   // Info order bawah
+  const fmtOrderTime = t => {
+    if (!t) return '—';
+    const d = new Date(t);
+    return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+      + ', ' + d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+  };
+
   const infoHtml = `
     <div class="info-card">
       <div style="font-weight:700;font-size:14px;margin-bottom:8px">📋 Detail Pesanan</div>
@@ -378,6 +385,14 @@ function renderStatus(o) {
       ${outletAddress ? `<div class="info-row">
         <span class="label">Alamat</span>
         <span class="val" style="font-size:13px;font-weight:500;color:var(--muted)">${outletAddress}</span>
+      </div>` : ''}
+      <div class="info-row">
+        <span class="label">Waktu Pesan</span>
+        <span class="val" style="font-size:13px">${fmtOrderTime(o.created_at)}</span>
+      </div>
+      ${o.pickup_time ? `<div class="info-row">
+        <span class="label">Waktu Ambil</span>
+        <span class="val" style="font-weight:700">${o.pickup_time}</span>
       </div>` : ''}
       <div class="info-row" style="border-top:1px dashed var(--line2);margin-top:6px;padding-top:8px">
         <span class="label" style="font-weight:700">Total</span>
