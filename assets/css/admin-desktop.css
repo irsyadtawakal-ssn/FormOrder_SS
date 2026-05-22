@@ -176,6 +176,56 @@
   }
   .outlet-filter-row select { width: 220px; flex-shrink: 0; }
 
+  /* ─── Hilangkan double horizontal spacing di dalam admin-content ───────── */
+  /* admin-content sudah punya padding 16px 20px, semua elemen dalam tidak
+     perlu punya margin/padding horizontal sendiri di desktop               */
+
+  /* Tabs (menu page) */
+  .admin-content .tabs {
+    padding-left: 0;
+    padding-right: 0;
+    background: transparent;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 4px;
+  }
+
+  /* Search wrap */
+  .admin-content .search-wrap {
+    padding-left: 0;
+    padding-right: 0;
+    background: transparent;
+  }
+
+  /* Info card (settings, order) */
+  .admin-content .info-card {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  /* Skeleton card */
+  .admin-content .skeleton-card {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  /* Section subtitle */
+  .admin-content .section-subtitle {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  /* menuList inline style override */
+  .admin-content #menuList {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  /* Hint banner (JS-injected, punya inline margin) */
+  .admin-content .hint-banner {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
   /* ─── Reports: hilangkan padding/margin horizontal duplikat ─────────────── */
   /* admin-content sudah punya padding 20px, jadi elemen di dalam tidak perlu */
   .report-filters {
