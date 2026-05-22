@@ -69,6 +69,7 @@
 // ─── State ────────────────────────────────────────────────────────────────────
 let allOrders     = [];
 let currentFilter = 'active';
+let currentRole   = '';  // disimpan setelah login untuk cek permission
 
 const ACTIVE_STATUSES = ['pending_payment', 'awaiting_verification', 'paid', 'preparing', 'ready'];
 
@@ -77,6 +78,7 @@ const ACTIVE_STATUSES = ['pending_payment', 'awaiting_verification', 'paid', 'pr
   const u = await requireAuth();
   if (!u) return;
 
+  currentRole = u.role;
   document.getElementById('liveIndicator').style.display = '';
 
   if (u.role === 'super_admin') {
@@ -89,6 +91,9 @@ const ACTIVE_STATUSES = ['pending_payment', 'awaiting_verification', 'paid', 'pr
       sel.appendChild(opt);
     });
     document.getElementById('outletFilterWrap').style.display = '';
+  } else {
+    // outlet_staff: sembunyikan chip filter Verifikasi (bukan urusan mereka)
+    document.querySelector('[data-status="awaiting_verification"]')?.remove();
   }
 
   await loadOrders();
@@ -174,9 +179,11 @@ function orderCard(o) {
     ${o.pickup_time ? `<div style="font-size:12px;color:var(--ink2)">⏰ Ambil: ${o.pickup_time}</div>` : ''}
     ${o.notes ? `<div style="font-size:12px;color:var(--muted);margin-top:2px">📝 ${o.notes}</div>` : ''}
     <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
-      ${o.status === 'awaiting_verification' ? `
+      ${o.status === 'awaiting_verification' && currentRole === 'super_admin' ? `
         <button class="action-btn action-primary" onclick="doVerifyTransfer('${o.id}','approve')" style="background:var(--green,#22c55e)">✅ Verifikasi</button>
         <button class="action-btn action-danger"  onclick="doVerifyTransfer('${o.id}','reject')">❌ Tolak</button>
+      ` : o.status === 'awaiting_verification' && currentRole !== 'super_admin' ? `
+        <span style="font-size:12px;color:var(--muted)">⏳ Menunggu verifikasi admin pusat</span>
       ` : action ? `<button class="action-btn action-primary" onclick="doUpdateStatus('${o.id}','${action.next}')">${action.label}</button>` : ''}
       <button class="action-btn action-secondary" onclick="showDetail('${o.id}')">
         ${o.status === 'awaiting_verification' ? '🖼 Lihat Bukti' : 'Detail'}
@@ -304,12 +311,15 @@ function showDetail(orderId) {
     <div style="font-weight:600;font-size:13px;margin-bottom:8px">📸 Bukti Transfer</div>
     ${aiHtml}
     <img src="${o.proof_url}" style="width:100%;border-radius:8px;max-height:250px;object-fit:cover" />
-    ${o.status === 'awaiting_verification' ? `
+    ${o.status === 'awaiting_verification' && currentRole === 'super_admin' ? `
       <div style="display:flex;gap:8px;margin-top:10px">
         <button class="action-btn action-primary" style="flex:1;background:var(--green,#22c55e)"
           onclick="closeModal();doVerifyTransfer('${o.id}','approve')">✅ Verifikasi</button>
         <button class="action-btn action-danger" style="flex:1"
           onclick="closeModal();doVerifyTransfer('${o.id}','reject')">❌ Tolak</button>
+      </div>` : o.status === 'awaiting_verification' ? `
+      <div style="margin-top:10px;padding:10px;background:#fef9c3;border-radius:8px;font-size:13px;color:#854d0e">
+        ⏳ Menunggu verifikasi oleh admin pusat
       </div>` : ''}
   ` : '';
 
