@@ -177,7 +177,8 @@ function subscribeRealtime(orderId) {
 // ─── Render UI berdasarkan status ─────────────────────────────────────────────
 function uploadFormHtml(orderNum) {
   return `<div class="info-card" id="uploadCard">
-    <div style="font-weight:700;font-size:14px;margin-bottom:10px">📸 Upload Bukti Transfer</div>
+    <div style="font-weight:700;font-size:14px;margin-bottom:4px">📸 Upload Bukti Transfer</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Screenshot struk m-banking kamu</div>
     <div id="proofPreview" style="display:none;margin-bottom:10px;text-align:center">
       <img id="proofImg" style="max-width:100%;border-radius:8px;max-height:200px;object-fit:cover" />
       <div style="font-size:12px;color:var(--muted);margin-top:6px">Pastikan nominal terlihat jelas</div>
@@ -191,7 +192,7 @@ function uploadFormHtml(orderNum) {
       <input type="file" id="proofFile" accept="image/*" style="display:none" onchange="previewProof(this)" />
     </label>
     <button class="btn-add-big" id="btnUpload" data-order-num="${orderNum}" disabled style="opacity:0.5">
-      Kirim Bukti Transfer
+      Pilih foto dulu di atas
     </button>
     <div id="uploadErr" style="color:var(--brand);font-size:12px;margin-top:8px;display:none"></div>
   </div>`;
@@ -231,36 +232,57 @@ function renderStatus(o) {
         <div class="status-hero">
           <div class="status-icon">💳</div>
           <div class="status-title">Transfer Dulu Yuk!</div>
-          <div class="status-sub">Segera transfer dan upload buktinya di bawah</div>
+          <div class="status-sub">Ikuti 2 langkah di bawah untuk konfirmasi pesanan</div>
           <span class="status-chip status-pending">BELUM TRANSFER</span>
         </div>`;
 
       extraHtml = `
+        <!-- Step indicator -->
+        <div style="display:flex;align-items:center;padding:0 20px 14px;gap:0">
+          <div style="flex:0 0 auto;text-align:center">
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--brand);color:#fff;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto 4px">1</div>
+            <div style="font-size:10px;font-weight:700;color:var(--brand)">Transfer</div>
+          </div>
+          <div style="flex:1;height:2px;background:var(--line2);margin:0 8px 16px"></div>
+          <div style="flex:0 0 auto;text-align:center">
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--line2);color:var(--muted);font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto 4px">2</div>
+            <div style="font-size:10px;font-weight:700;color:var(--muted)">Upload Bukti</div>
+          </div>
+        </div>
+
+        <!-- Rekening tujuan -->
         <div class="info-card">
-          <div style="font-weight:700;font-size:14px;margin-bottom:10px">🏦 Info Rekening Tujuan</div>
+          <div style="font-weight:700;font-size:14px;margin-bottom:10px">🏦 Langkah 1 — Transfer ke Rekening</div>
           <div class="info-row">
             <span class="label">Bank</span>
             <span class="val" style="font-weight:700">BCA</span>
           </div>
           <div class="info-row">
             <span class="label">No. Rekening</span>
-            <span class="val" style="font-weight:700;font-family:monospace;font-size:15px">0955193763</span>
+            <div style="display:flex;align-items:center;gap:8px;flex:1">
+              <span style="font-weight:700;font-family:monospace;font-size:15px">0955193763</span>
+              <button onclick="copyRek()" id="btnCopyRek"
+                style="flex-shrink:0;background:var(--brand-bg);color:var(--brand);border:0;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer">
+                Salin
+              </button>
+            </div>
           </div>
           <div class="info-row">
             <span class="label">Atas Nama</span>
             <span class="val">PT Suka Profit Berkah</span>
           </div>
-          <div class="info-row">
-            <span class="label">Jumlah Transfer</span>
-            <span class="val" style="font-weight:800;color:var(--brand);font-size:15px">${formatRupiah(o.total)}</span>
+          <div class="info-row" style="border-top:1px dashed var(--line2);margin-top:6px;padding-top:10px">
+            <span class="label" style="font-weight:700;color:var(--ink)">Transfer</span>
+            <span class="val" style="font-weight:800;color:var(--brand);font-size:18px">${formatRupiah(o.total)}</span>
           </div>
         </div>
 
-        <div style="margin:0 0 10px;padding:12px 14px;background:#fef9c3;border-radius:10px;font-size:13px;line-height:1.6;color:#854d0e">
-          📱 <b>Jangan tutup tab ini.</b><br/>
-          Setelah transfer di m-banking, kembali ke tab browser ini lalu upload screenshot konfirmasi.
+        <!-- Warning jangan tutup tab -->
+        <div style="margin:0 0 10px;padding:10px 14px;background:#fef9c3;border-radius:10px;font-size:12px;line-height:1.6;color:#854d0e">
+          📱 <b>Jangan tutup tab ini</b> — setelah transfer di m-banking, kembali ke sini dan upload buktinya.
         </div>
 
+        <!-- Upload form -->
         ${uploadFormHtml(o.order_number)}`;
       break;
 
@@ -391,33 +413,38 @@ function renderStatus(o) {
   };
 
   const infoHtml = `
-    <div class="info-card">
-      <div style="font-weight:700;font-size:14px;margin-bottom:8px">📋 Detail Pesanan</div>
-      <div class="info-row">
-        <span class="label">No. Order</span>
-        <span class="val" style="font-family:monospace;font-size:13px">${o.order_number}</span>
+    <details style="margin:0 0 12px;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden">
+      <summary style="padding:12px 14px;font-weight:700;font-size:13px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;list-style:none;-webkit-appearance:none">
+        <span>📋 Detail Pesanan</span>
+        <span style="font-size:11px;color:var(--muted);font-weight:500">Lihat ▾</span>
+      </summary>
+      <div style="padding:0 14px 12px;border-top:1px solid var(--line)">
+        <div class="info-row">
+          <span class="label">No. Order</span>
+          <span class="val" style="font-family:monospace;font-size:13px">${o.order_number}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Outlet</span>
+          <span class="val">${outletName}</span>
+        </div>
+        ${outletAddress ? `<div class="info-row">
+          <span class="label">Alamat</span>
+          <span class="val" style="font-size:13px;font-weight:500;color:var(--muted)">${outletAddress}</span>
+        </div>` : ''}
+        <div class="info-row">
+          <span class="label">Waktu Pesan</span>
+          <span class="val" style="font-size:13px">${fmtOrderTime(o.created_at)}</span>
+        </div>
+        ${o.pickup_time ? `<div class="info-row">
+          <span class="label">Waktu Ambil</span>
+          <span class="val" style="font-weight:700">${o.pickup_time}</span>
+        </div>` : ''}
+        <div class="info-row" style="border-top:1px dashed var(--line2);margin-top:6px;padding-top:8px">
+          <span class="label" style="font-weight:700">Total</span>
+          <span class="val" style="font-size:16px;font-weight:800;color:var(--brand)">${formatRupiah(o.total)}</span>
+        </div>
       </div>
-      <div class="info-row">
-        <span class="label">Outlet</span>
-        <span class="val">${outletName}</span>
-      </div>
-      ${outletAddress ? `<div class="info-row">
-        <span class="label">Alamat</span>
-        <span class="val" style="font-size:13px;font-weight:500;color:var(--muted)">${outletAddress}</span>
-      </div>` : ''}
-      <div class="info-row">
-        <span class="label">Waktu Pesan</span>
-        <span class="val" style="font-size:13px">${fmtOrderTime(o.created_at)}</span>
-      </div>
-      ${o.pickup_time ? `<div class="info-row">
-        <span class="label">Waktu Ambil</span>
-        <span class="val" style="font-weight:700">${o.pickup_time}</span>
-      </div>` : ''}
-      <div class="info-row" style="border-top:1px dashed var(--line2);margin-top:6px;padding-top:8px">
-        <span class="label" style="font-weight:700">Total</span>
-        <span class="val" style="font-size:16px;font-weight:800;color:var(--brand)">${formatRupiah(o.total)}</span>
-      </div>
-    </div>
+    </details>
     <div style="height:32px"></div>`;
 
   document.getElementById('pageContent').innerHTML = heroHtml + extraHtml + infoHtml;
@@ -563,6 +590,22 @@ async function doCekStatus() {
   }
 }
 
+// ─── Salin nomor rekening ke clipboard ────────────────────────────────────────
+function copyRek() {
+  navigator.clipboard.writeText('0955193763').then(() => {
+    const btn = document.getElementById('btnCopyRek');
+    if (!btn) return;
+    btn.textContent = '✅ Disalin!';
+    btn.style.background = 'var(--green-bg)';
+    btn.style.color = 'var(--green)';
+    setTimeout(() => {
+      btn.textContent = 'Salin';
+      btn.style.background = 'var(--brand-bg)';
+      btn.style.color = 'var(--brand)';
+    }, 2000);
+  }).catch(() => showToast('Salin manual: 0955193763'));
+}
+
 // ─── Preview foto bukti transfer ─────────────────────────────────────────────
 function previewProof(input) {
   if (!input.files || !input.files[0]) return;
@@ -577,7 +620,11 @@ function previewProof(input) {
     document.getElementById('proofImg').src = e.target.result;
     document.getElementById('proofPreview').style.display = '';
     const btn = document.getElementById('btnUpload');
-    if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+    if (btn) {
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.textContent = 'Kirim Bukti Transfer';
+    }
   };
   reader.readAsDataURL(file);
 }
