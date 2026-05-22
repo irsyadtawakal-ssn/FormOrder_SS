@@ -5,11 +5,33 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Pesanan — SUKA Admin</title>
 <link rel="stylesheet" href="../assets/css/style.css?v=2" />
+<link rel="stylesheet" href="../assets/css/admin-desktop.css?v=1" />
 <link rel="manifest" href="/manifest.json" />
 <meta name="theme-color" content="#f29744" />
 </head>
 <body>
 <div class="phone">
+
+  <!-- Sidebar — hanya muncul di tablet/desktop via CSS -->
+  <aside class="admin-sidebar" style="display:none">
+    <div class="admin-sidebar-logo">🌯 SUKA Admin</div>
+    <div class="admin-sidebar-user">
+      <div class="name" id="sidebarName">—</div>
+      <div class="role" id="sidebarRole">—</div>
+    </div>
+    <nav class="admin-sidebar-nav">
+      <a href="/admin/index.html"><span>🏠</span><span>Dashboard</span></a>
+      <a href="/admin/orders.html"><span>📋</span><span>Pesanan</span></a>
+      <a href="/admin/menu.html"><span>🌯</span><span>Menu</span></a>
+      <a href="/admin/reports.html"><span>📊</span><span>Laporan</span></a>
+      <a href="/admin/outlets.html" class="admin-only"><span>📍</span><span>Outlet</span></a>
+      <a href="/admin/users.html" class="admin-only"><span>👥</span><span>Pengguna</span></a>
+      <a href="/admin/settings.html" class="admin-only"><span>⚙️</span><span>Pengaturan</span></a>
+    </nav>
+    <div class="admin-sidebar-footer">
+      <button onclick="adminSignOut()">🚪 Keluar</button>
+    </div>
+  </aside>
 
   <!-- Topbar -->
   <div class="topbar">
@@ -19,6 +41,8 @@
       <span id="adminName" style="font-size:12px;color:var(--muted)"></span>
     </div>
   </div>
+
+  <div class="admin-content">
 
   <!-- Filter status -->
   <div class="chips" id="filterChips" style="padding-bottom:8px">
@@ -38,13 +62,25 @@
     </select>
   </div>
 
-  <!-- Daftar order -->
-  <div id="orderList" style="padding:6px 12px 80px">
-    <div class="skeleton-card"><div class="skeleton-lines">
-      <div class="skeleton skeleton-line"></div>
-      <div class="skeleton skeleton-line short"></div>
-    </div></div>
+  <!-- Daftar order + detail panel (desktop) -->
+  <div class="orders-panel">
+    <div class="orders-panel-list">
+      <div id="orderList" style="padding:6px 0 80px">
+        <div class="skeleton-card"><div class="skeleton-lines">
+          <div class="skeleton skeleton-line"></div>
+          <div class="skeleton skeleton-line short"></div>
+        </div></div>
+      </div>
+    </div>
+    <div class="orders-panel-detail" id="orderDetailPanel">
+      <div class="orders-panel-detail-empty">
+        <span>📋</span>
+        <span>Pilih pesanan untuk melihat detail</span>
+      </div>
+    </div>
   </div>
+
+  </div><!-- /admin-content -->
 
   <!-- Bottom nav -->
   <nav class="admin-nav">
@@ -67,9 +103,10 @@
 <script src="../assets/js/admin.js"></script>
 <script>
 // ─── State ────────────────────────────────────────────────────────────────────
-let allOrders     = [];
-let currentFilter = 'active';
-let currentRole   = '';  // disimpan setelah login untuk cek permission
+let allOrders       = [];
+let currentFilter   = 'active';
+let currentRole     = '';  // disimpan setelah login untuk cek permission
+let selectedOrderId = null; // untuk panel detail desktop
 
 const ACTIVE_STATUSES = ['pending_payment', 'proof_rejected', 'awaiting_verification', 'paid', 'preparing', 'ready'];
 
@@ -154,6 +191,12 @@ function renderOrders() {
     return;
   }
   el.innerHTML = list.map(orderCard).join('') + '<div style="height:80px"></div>';
+
+  // Refresh panel detail jika ada order yang sedang dipilih (desktop)
+  if (selectedOrderId && window.matchMedia('(min-width: 1200px)').matches) {
+    const stillExists = allOrders.find(o => o.id === selectedOrderId);
+    if (stillExists) _renderDetailPanel(stillExists);
+  }
 }
 
 function orderCard(o) {
@@ -188,7 +231,7 @@ function orderCard(o) {
       <button class="action-btn action-secondary" onclick="showDetail('${o.id}')">
         ${o.status === 'awaiting_verification' ? '🖼 Lihat Bukti' : 'Detail'}
       </button>
-      ${['pending_payment','awaiting_verification','paid','preparing','ready'].includes(o.status)
+      ${['pending_payment','awaiting_verification','proof_rejected','paid','preparing','ready'].includes(o.status)
         ? `<button class="action-btn action-danger" onclick="doCancel('${o.id}')">Batalkan</button>` : ''}
     </div>
   </div>`;
@@ -271,17 +314,9 @@ async function doVerifyTransfer(orderId, action) {
   }).catch(() => {});
 }
 
-function showDetail(orderId) {
-  const o = allOrders.find(x => x.id === orderId);
-  if (!o) return;
-
-  const itemsHtml = (o.order_items || []).map(i => `
-    <div class="info-row" style="padding:4px 0">
-      <span class="label">${i.quantity}× ${i.item_name}</span>
-      <span class="val" style="text-align:right">${formatRupiah(i.unit_price * i.quantity)}</span>
-    </div>`).join('');
-
-  const ai  = o.ai_verification_result;
+// ─── Helper: bangun bagian AI & bukti transfer ────────────────────────────────
+function _buildProofSection(o) {
+  const ai = o.ai_verification_result;
   const aiHtml = ai ? (() => {
     const badge = {
       high:   { color: '#16a34a', bg: '#f0fdf4', label: '✅ Tinggi' },
@@ -305,7 +340,7 @@ function showDetail(orderId) {
       </div>`;
   })() : '';
 
-  const proofHtml = o.proof_url ? `
+  if (o.proof_url) return `
     <hr style="border:0;border-top:1px dashed var(--line2);margin:10px 0"/>
     <div style="font-weight:600;font-size:13px;margin-bottom:8px">📸 Bukti Transfer</div>
     ${aiHtml}
@@ -320,9 +355,26 @@ function showDetail(orderId) {
       <div style="margin-top:10px;padding:10px;background:#fef9c3;border-radius:8px;font-size:13px;color:#854d0e">
         ⏳ Menunggu verifikasi oleh admin pusat
       </div>` : ''}
-  ` : '';
+  `;
+  if (o.status === 'proof_rejected') return `
+    <hr style="border:0;border-top:1px dashed var(--line2);margin:10px 0"/>
+    <div style="padding:10px 12px;background:#fbe7df;border-radius:10px;font-size:13px;line-height:1.6">
+      ❌ <b>Bukti transfer ditolak.</b><br/>
+      Menunggu customer upload ulang bukti yang benar.
+    </div>
+  `;
+  return '';
+}
 
-  openModal(`📋 ${o.order_number}`, `
+// ─── Helper: bangun body HTML detail order ────────────────────────────────────
+function _buildDetailBody(o) {
+  const itemsHtml = (o.order_items || []).map(i => `
+    <div class="info-row" style="padding:4px 0">
+      <span class="label">${i.quantity}× ${i.item_name}</span>
+      <span class="val" style="text-align:right">${formatRupiah(i.unit_price * i.quantity)}</span>
+    </div>`).join('');
+
+  return `
     <div class="info-row"><span class="label">Status</span><span class="val">${statusBadge(o.status)}</span></div>
     <div class="info-row"><span class="label">Nama</span><span class="val">${o.customer_name}</span></div>
     <div class="info-row"><span class="label">WhatsApp</span>
@@ -339,10 +391,60 @@ function showDetail(orderId) {
       <span class="val" style="font-weight:800;color:var(--brand);font-size:16px">${formatRupiah(o.total)}</span>
     </div>
     ${o.notes ? `<div style="margin-top:8px;font-size:13px;color:var(--muted);background:var(--bg);padding:8px 10px;border-radius:8px">📝 ${o.notes}</div>` : ''}
-    ${proofHtml}
-  `);
-  // Load signed URL untuk foto bukti transfer (bucket private)
+    ${_buildProofSection(o)}
+  `;
+}
+
+// ─── Helper: tombol aksi untuk panel desktop ──────────────────────────────────
+function _buildPanelActions(o) {
+  const action = STATUS_NEXT_ACTION[o.status];
+  let html = '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;padding-top:16px;border-top:1px solid var(--line)">';
+  if (o.status === 'awaiting_verification' && currentRole === 'super_admin') {
+    html += `<button class="action-btn action-primary" style="flex:1;background:var(--green,#22c55e)"
+      onclick="doVerifyTransfer('${o.id}','approve')">✅ Verifikasi</button>`;
+    html += `<button class="action-btn action-danger" style="flex:1"
+      onclick="doVerifyTransfer('${o.id}','reject')">❌ Tolak</button>`;
+  } else if (action) {
+    html += `<button class="action-btn action-primary"
+      onclick="doUpdateStatus('${o.id}','${action.next}')">${action.label}</button>`;
+  }
+  if (['pending_payment','awaiting_verification','proof_rejected','paid','preparing','ready'].includes(o.status)) {
+    html += `<button class="action-btn action-danger"
+      onclick="doCancel('${o.id}')">Batalkan</button>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+// ─── Render detail ke panel kanan (desktop ≥ 1200px) ─────────────────────────
+function _renderDetailPanel(o) {
+  const panel = document.getElementById('orderDetailPanel');
+  if (!panel) return;
+  panel.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <span style="font-weight:700;font-size:15px">📋 ${o.order_number}</span>
+      ${statusBadge(o.status)}
+    </div>
+    ${_buildDetailBody(o)}
+    ${_buildPanelActions(o)}
+  `;
   if (o.proof_url) loadSignedAdminProofUrl(o.proof_url);
+}
+
+// ─── showDetail: modal di mobile/tablet, panel di desktop ─────────────────────
+function showDetail(orderId) {
+  const o = allOrders.find(x => x.id === orderId);
+  if (!o) return;
+
+  selectedOrderId = orderId;
+
+  const isDesktop = window.matchMedia('(min-width: 1200px)').matches;
+  if (isDesktop) {
+    _renderDetailPanel(o);
+  } else {
+    openModal(`📋 ${o.order_number}`, _buildDetailBody(o));
+    if (o.proof_url) loadSignedAdminProofUrl(o.proof_url);
+  }
 }
 
 function loadSignedAdminProofUrl(pathOrUrl) {

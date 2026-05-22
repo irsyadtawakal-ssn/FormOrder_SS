@@ -5,11 +5,33 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Pengaturan — SUKA Admin</title>
 <link rel="stylesheet" href="../assets/css/style.css?v=2" />
+<link rel="stylesheet" href="../assets/css/admin-desktop.css?v=1" />
 <link rel="manifest" href="/manifest.json" />
 <meta name="theme-color" content="#f29744" />
 </head>
 <body>
 <div class="phone">
+
+  <!-- Sidebar — hanya muncul di tablet/desktop via CSS -->
+  <aside class="admin-sidebar" style="display:none">
+    <div class="admin-sidebar-logo">🌯 SUKA Admin</div>
+    <div class="admin-sidebar-user">
+      <div class="name" id="sidebarName">—</div>
+      <div class="role" id="sidebarRole">—</div>
+    </div>
+    <nav class="admin-sidebar-nav">
+      <a href="/admin/index.html"><span>🏠</span><span>Dashboard</span></a>
+      <a href="/admin/orders.html"><span>📋</span><span>Pesanan</span></a>
+      <a href="/admin/menu.html"><span>🌯</span><span>Menu</span></a>
+      <a href="/admin/reports.html"><span>📊</span><span>Laporan</span></a>
+      <a href="/admin/outlets.html" class="admin-only"><span>📍</span><span>Outlet</span></a>
+      <a href="/admin/users.html" class="admin-only"><span>👥</span><span>Pengguna</span></a>
+      <a href="/admin/settings.html" class="admin-only"><span>⚙️</span><span>Pengaturan</span></a>
+    </nav>
+    <div class="admin-sidebar-footer">
+      <button onclick="adminSignOut()">🚪 Keluar</button>
+    </div>
+  </aside>
 
   <!-- Topbar -->
   <div class="topbar">
@@ -17,13 +39,17 @@
     <span style="width:32px"></span>
   </div>
 
+  <div class="admin-content">
+
   <!-- Konten -->
-  <div id="pageContent" style="padding:12px">
+  <div id="pageContent" style="padding:0">
     <div class="skeleton-card"><div class="skeleton-lines">
       <div class="skeleton skeleton-line"></div>
       <div class="skeleton skeleton-line short"></div>
     </div></div>
   </div>
+
+  </div><!-- /admin-content -->
 
   <!-- Bottom nav -->
   <nav class="admin-nav">

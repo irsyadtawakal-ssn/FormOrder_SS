@@ -63,6 +63,11 @@ function _renderAdminMeta() {
     roleEl.textContent = adminUser.role === 'super_admin' ? 'Super Admin' : 'Staff Outlet';
     roleEl.style.color = adminUser.role === 'super_admin' ? 'var(--brand)' : 'var(--blue)';
   }
+  // Sidebar name/role (tablet & desktop)
+  const sidebarName = document.getElementById('sidebarName');
+  const sidebarRole = document.getElementById('sidebarRole');
+  if (sidebarName) sidebarName.textContent = adminUser.full_name || adminUser.email;
+  if (sidebarRole) sidebarRole.textContent = adminUser.role === 'super_admin' ? 'Super Admin' : 'Staff Outlet';
 }
 
 // ─── Format ───────────────────────────────────────────────────────────────────
@@ -230,8 +235,10 @@ async function updateOrderStatus(orderId, newStatus) {
 
 function setActiveNav() {
   const curr = location.pathname.split('/').pop() || 'index.html';
-  document.querySelectorAll('.admin-nav a').forEach(a => {
-    a.classList.toggle('active', a.getAttribute('href') === curr);
+  // Tandai link aktif di bottom nav DAN sidebar
+  document.querySelectorAll('.admin-nav a, .admin-sidebar-nav a').forEach(a => {
+    const hrefPage = (a.getAttribute('href') || '').split('/').pop();
+    a.classList.toggle('active', hrefPage === curr);
   });
 }
 
