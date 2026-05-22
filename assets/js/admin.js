@@ -138,9 +138,23 @@ function statusBadge(status) {
 
 let _audioCtx = null;
 
+// Browser blokir AudioContext sebelum ada interaksi user — unlock saat pertama klik/tap
+function _unlockAudio() {
+  if (_audioCtx) return;
+  try {
+    _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    // Resume jika suspended (Safari)
+    if (_audioCtx.state === 'suspended') _audioCtx.resume();
+  } catch (e) {}
+}
+document.addEventListener('click',     _unlockAudio, { once: false, passive: true });
+document.addEventListener('touchstart', _unlockAudio, { once: false, passive: true });
+document.addEventListener('keydown',    _unlockAudio, { once: false, passive: true });
+
 function playDing() {
   try {
     if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (_audioCtx.state === 'suspended') _audioCtx.resume();
     const osc  = _audioCtx.createOscillator();
     const gain = _audioCtx.createGain();
     osc.connect(gain);
@@ -152,7 +166,7 @@ function playDing() {
     gain.gain.exponentialRampToValueAtTime(0.001, _audioCtx.currentTime + 0.5);
     osc.start();
     osc.stop(_audioCtx.currentTime + 0.5);
-  } catch (e) { /* audio tidak tersedia tanpa interaksi pengguna */ }
+  } catch (e) { /* audio tidak tersedia */ }
 }
 
 // ─── Realtime channel registry ────────────────────────────────────────────────
