@@ -1,35 +1,38 @@
 /* SUKA Shawarma — Design System */
+@import url('https://fonts.googleapis.com/css2?family=Lilita+One&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 /* ─── Variables ─────────────────────────────────────────────────────────────── */
 :root {
-  --bg:        #fafafa;
+  /* Warm SUKA palette — SS_cp_001 brand plate */
+  --bg:        #fff7ed;   /* suka-cream */
   --card:      #ffffff;
-  --ink:       #111111;
-  --ink2:      #333333;
-  --muted:     #666666;
-  --faint:     #999999;
-  --line:      #eeeeee;
-  --line2:     #e4e4e4;
+  --ink:       #400a07;   /* suka-ink */
+  --ink2:      #6b3a31;   /* suka-ink-2 */
+  --muted:     #8a6b5e;   /* suka-muted */
+  --faint:     #b39a8a;   /* suka-faint */
+  --line:      #f2e6d8;   /* warm divider */
+  --line2:     #e6d4bf;   /* warm border */
 
-  --brand:     #ff4d4f;
-  --brand-dk:  #e83e40;
-  --brand-bg:  #fff1f1;
-  --accent:    #fff5e6;
-  --accent-ink:#a85b00;
+  --brand:     #f29744;   /* suka-orange */
+  --brand-dk:  #ee8a2c;   /* suka-orange-deep */
+  --brand-bg:  #fff1e0;   /* suka-orange-soft */
+  --accent:    #fbe7df;   /* suka-brown-soft */
+  --accent-ink:#701604;   /* suka-brown */
 
   --green:     #0a7d2c;
   --green-bg:  #f0fdf4;
-  --orange:    #f97316;
+  --orange:    #f29744;
   --blue:      #2563eb;
 
   --radius:    14px;
   --radius-sm: 10px;
   --radius-xs: 8px;
-  --shadow:    0 1px 2px rgba(0,0,0,.04), 0 4px 16px rgba(0,0,0,.06);
-  --shadow-lg: 0 8px 30px rgba(0,0,0,.18);
+  --shadow:    0 1px 2px rgba(64,10,7,.04), 0 4px 16px rgba(64,10,7,.07);
+  --shadow-lg: 0 8px 30px rgba(64,10,7,.18);
   --container: 480px;
 
-  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --font: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --font-display: "Lilita One", system-ui, sans-serif;
 }
 
 /* ─── Reset & base ──────────────────────────────────────────────────────────── */
@@ -38,7 +41,7 @@ html, body {
   margin: 0; padding: 0;
   background: #e8e8e8;
   color: var(--ink);
-  font: 15px/1.5 var(--font);
+  font: 14px/1.5 var(--font);
   -webkit-font-smoothing: antialiased;
 }
 a { color: inherit; text-decoration: none; }
@@ -599,7 +602,7 @@ img { display: block; max-width: 100%; }
 
 /* ─── Hero banner ────────────────────────────────────────────────────────────── */
 .hero-banner {
-  background: linear-gradient(135deg, #c0392b 0%, #e74c3c 45%, #ff6b35 100%);
+  background: linear-gradient(135deg, var(--accent-ink) 0%, var(--brand-dk) 50%, var(--brand) 100%);
   padding: 20px 20px 18px;
   display: flex; align-items: center; gap: 14px;
   position: relative; overflow: hidden; min-height: 90px;
