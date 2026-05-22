@@ -369,9 +369,9 @@ function _buildProofSection(o) {
 // ─── Helper: bangun body HTML detail order ────────────────────────────────────
 function _buildDetailBody(o) {
   const itemsHtml = (o.order_items || []).map(i => `
-    <div class="info-row" style="padding:4px 0">
-      <span class="label">${i.quantity}× ${i.item_name}</span>
-      <span class="val" style="text-align:right">${formatRupiah(i.unit_price * i.quantity)}</span>
+    <div class="info-row" style="padding:4px 0;align-items:flex-start">
+      <span class="label">${i.quantity}× ${i.item_name}${i.note ? `<br><span style="font-size:11px;color:var(--muted);font-weight:400">📝 ${i.note}</span>` : ''}</span>
+      <span class="val" style="text-align:right;flex-shrink:0;margin-left:8px">${formatRupiah(i.unit_price * i.quantity)}</span>
     </div>`).join('');
 
   return `
