@@ -172,7 +172,7 @@ function renderOrders() {
   const el   = document.getElementById('orderList');
 
   if (list.length === 0) {
-    el.innerHTML = `<div class="empty">
+    el.innerHTML = `<div class="empty" style="grid-column:1/-1">
       <div class="empty-icon">📭</div>
       <div class="empty-title">Tidak ada pesanan</div>
       <div class="empty-desc">untuk filter ini</div>
