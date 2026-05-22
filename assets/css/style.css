@@ -780,6 +780,48 @@ select.form-input { cursor: pointer; }
 .admin-nav a.active { color: var(--brand); }
 .admin-nav a:active { color: var(--brand-dk); }
 
+/* ─── Nav badge (notif pesanan) ─────────────────────────────────────────────── */
+.nav-badge {
+  position: absolute; top: -5px; right: -7px;
+  background: #ef4444; color: #fff;
+  font-size: 9px; font-weight: 800;
+  min-width: 15px; height: 15px;
+  border-radius: 999px;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 3px; line-height: 1;
+  pointer-events: none;
+  border: 1.5px solid var(--card);
+}
+
+/* ─── Order notification banner (muncul dari bawah) ─────────────────────────── */
+.order-notif-banner {
+  position: fixed;
+  bottom: -120px; left: 50%; transform: translateX(-50%);
+  width: calc(100% - 24px); max-width: calc(var(--container) - 24px);
+  z-index: 200;
+  transition: bottom .35s cubic-bezier(.34,1.56,.64,1);
+  pointer-events: none;
+}
+.order-notif-banner.show { bottom: 76px; pointer-events: auto; }
+.order-notif-inner {
+  background: #1e293b; color: #fff;
+  border-radius: 16px; padding: 12px 14px;
+  display: flex; align-items: center; gap: 10px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.3);
+}
+.order-notif-msg { font-size: 13px; font-weight: 700; }
+.order-notif-sub { font-size: 11px; color: rgba(255,255,255,.55); margin-top: 2px; }
+.order-notif-action {
+  flex-shrink: 0;
+  background: var(--brand); color: #fff; text-decoration: none;
+  font-size: 12px; font-weight: 700;
+  padding: 7px 13px; border-radius: 10px; white-space: nowrap;
+}
+.order-notif-x {
+  background: none; border: none; color: rgba(255,255,255,.4);
+  font-size: 20px; cursor: pointer; padding: 0; line-height: 1; flex-shrink: 0;
+}
+
 /* ─── Topbar action button (kanan) ───────────────────────────────────────────── */
 .topbar-action {
   font-size: 13px; font-weight: 600; color: var(--brand);

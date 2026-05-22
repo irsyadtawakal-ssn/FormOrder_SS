@@ -28,6 +28,7 @@ async function requireAuth() {
   adminUser = { ...profile, email: user.email };
   _applyRoleVisibility();
   _renderAdminMeta();
+  startOrderNotifications(adminUser); // mulai notif realtime di semua halaman
   return adminUser;
 }
 
@@ -169,6 +170,136 @@ function cleanupChannels() {
 }
 
 window.addEventListener('beforeunload', cleanupChannels);
+
+// ─── Order Notifications (berjalan di semua halaman admin) ───────────────────
+
+const _ACTIVE_STATUSES_NOTIF = ['pending_payment', 'awaiting_verification', 'paid', 'preparing', 'ready'];
+
+async function startOrderNotifications(user) {
+  // Refresh badge awal
+  await _refreshNavBadge(user);
+
+  const outletFilter = (user.role === 'outlet_staff' && user.outlet_id)
+    ? `outlet_id=eq.${user.outlet_id}` : undefined;
+
+  const ch = window.db.channel('admin-notif-global')
+    .on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'orders',
+      ...(outletFilter ? { filter: outletFilter } : {}),
+    }, async (payload) => {
+      const { data: order } = await window.db
+        .from('orders')
+        .select('id, order_number, customer_name, total, outlets(name)')
+        .eq('id', payload.new.id)
+        .single();
+      if (order) _onNewOrder(order, user);
+    })
+    .on('postgres_changes', {
+      event: 'UPDATE',
+      schema: 'public',
+      table: 'orders',
+      ...(outletFilter ? { filter: outletFilter } : {}),
+    }, async (payload) => {
+      // Saat bukti transfer masuk (→ awaiting_verification), beritahu super_admin
+      if (user.role === 'super_admin'
+          && payload.new.status === 'awaiting_verification'
+          && payload.old?.status !== 'awaiting_verification') {
+        const { data: order } = await window.db
+          .from('orders')
+          .select('id, order_number, customer_name, total, outlets(name)')
+          .eq('id', payload.new.id)
+          .single();
+        if (order) _onAwaitingVerif(order);
+      }
+      // Refresh badge setiap ada perubahan status
+      _refreshNavBadge(user);
+    })
+    .subscribe();
+
+  addRealtimeChannel(ch);
+}
+
+async function _refreshNavBadge(user) {
+  let q = window.db
+    .from('orders')
+    .select('id', { count: 'exact', head: true })
+    .in('status', _ACTIVE_STATUSES_NOTIF);
+  if (user.role === 'outlet_staff' && user.outlet_id) {
+    q = q.eq('outlet_id', user.outlet_id);
+  }
+  const { count } = await q;
+  _updateNavBadge(count || 0);
+}
+
+function _updateNavBadge(count) {
+  document.querySelectorAll(
+    '.admin-nav a[href*="orders.html"], .admin-sidebar-nav a[href*="orders.html"]'
+  ).forEach(a => {
+    let badge = a.querySelector('.nav-badge');
+    if (count > 0) {
+      if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'nav-badge';
+        const iconSpan = a.querySelector('span:first-child');
+        if (iconSpan) {
+          iconSpan.style.position = 'relative';
+          iconSpan.style.display = 'inline-block';
+          iconSpan.appendChild(badge);
+        }
+      }
+      badge.textContent = count > 99 ? '99+' : String(count);
+    } else {
+      badge?.remove();
+    }
+  });
+}
+
+function _onNewOrder(order, user) {
+  playDing();
+  _refreshNavBadge(user);
+  // Jika sedang di halaman orders — list sudah auto-refresh via subscribeOrders(), skip banner
+  if (location.pathname.endsWith('orders.html')) return;
+  const outletName = (order.outlets || {}).name || '';
+  _showOrderNotifBanner(
+    `🆕 Pesanan baru — <b>${order.customer_name}</b>`,
+    `${order.order_number}${outletName ? ' · ' + outletName : ''} · ${formatRupiah(order.total)}`
+  );
+}
+
+function _onAwaitingVerif(order) {
+  playDing();
+  if (location.pathname.endsWith('orders.html')) return;
+  const outletName = (order.outlets || {}).name || '';
+  _showOrderNotifBanner(
+    `💳 Bukti transfer masuk — <b>${order.customer_name}</b>`,
+    `${order.order_number}${outletName ? ' · ' + outletName : ''} · ${formatRupiah(order.total)}`
+  );
+}
+
+function _showOrderNotifBanner(msgHtml, subText) {
+  let el = document.getElementById('orderNotifBanner');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'orderNotifBanner';
+    el.className = 'order-notif-banner';
+    (document.querySelector('.phone') || document.body).appendChild(el);
+  }
+  el.innerHTML = `
+    <div class="order-notif-inner">
+      <div style="flex:1;min-width:0">
+        <div class="order-notif-msg">${msgHtml}</div>
+        <div class="order-notif-sub">${subText}</div>
+      </div>
+      <a href="/admin/orders.html" class="order-notif-action">Lihat →</a>
+      <button onclick="this.closest('.order-notif-banner').classList.remove('show')" class="order-notif-x">×</button>
+    </div>`;
+  el.classList.remove('show');
+  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('show')));
+  clearTimeout(el._tid);
+  el._tid = setTimeout(() => el.classList.remove('show'), 10000);
+}
 
 // ─── Admin modal (bottom sheet) ───────────────────────────────────────────────
 
