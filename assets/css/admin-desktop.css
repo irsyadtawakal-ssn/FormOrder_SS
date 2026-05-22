@@ -5,8 +5,6 @@
    Desktop (≥ 1200px): sidebar lebih lebar, layout 2-kolom untuk order.
 */
 
-/* Order detail panel: disembunyikan sampai desktop */
-.orders-panel-detail { display: none; }
 
 /* ─── Tablet: 768px+ ──────────────────────────────────────────────────────── */
 @media (min-width: 768px) {
@@ -268,45 +266,14 @@
     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)) !important;
   }
 
-  /* Orders: layout dua panel (master-detail) */
-  .orders-panel {
+  /* Orders: list full width di desktop */
+  #orderList {
     display: grid;
-    grid-template-columns: 360px 1fr;
-    gap: 16px;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 12px;
     align-items: start;
   }
-
-  .orders-panel-list {
-    position: sticky;
-    top: 16px;
-    max-height: calc(100vh - 120px);
-    overflow-y: auto;
-    padding-right: 4px;
-    scrollbar-width: thin;
-    scrollbar-color: var(--line2) transparent;
-  }
-
-  .orders-panel-detail {
-    display: block;
-    background: var(--card);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    min-height: 500px;
-    padding: 24px;
-  }
-
-  .orders-panel-detail-empty {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 500px;
-    color: var(--faint);
-    font-size: 14px;
-    gap: 10px;
-    text-align: center;
-  }
-  .orders-panel-detail-empty span:first-child { font-size: 48px; }
+  #orderList > div[style*="height:80px"] { grid-column: 1 / -1; }
 
   /* Modal lebih lebar di desktop */
   .admin-modal-card {

@@ -62,22 +62,12 @@
     </select>
   </div>
 
-  <!-- Daftar order + detail panel (desktop) -->
-  <div class="orders-panel">
-    <div class="orders-panel-list">
-      <div id="orderList" style="padding:6px 0 80px">
-        <div class="skeleton-card"><div class="skeleton-lines">
-          <div class="skeleton skeleton-line"></div>
-          <div class="skeleton skeleton-line short"></div>
-        </div></div>
-      </div>
-    </div>
-    <div class="orders-panel-detail" id="orderDetailPanel">
-      <div class="orders-panel-detail-empty">
-        <span>📋</span>
-        <span>Pilih pesanan untuk melihat detail</span>
-      </div>
-    </div>
+  <!-- Daftar order -->
+  <div id="orderList" style="padding:6px 0 80px">
+    <div class="skeleton-card"><div class="skeleton-lines">
+      <div class="skeleton skeleton-line"></div>
+      <div class="skeleton skeleton-line short"></div>
+    </div></div>
   </div>
 
   </div><!-- /admin-content -->
@@ -103,10 +93,9 @@
 <script src="../assets/js/admin.js"></script>
 <script>
 // ─── State ────────────────────────────────────────────────────────────────────
-let allOrders       = [];
-let currentFilter   = 'active';
-let currentRole     = '';  // disimpan setelah login untuk cek permission
-let selectedOrderId = null; // untuk panel detail desktop
+let allOrders     = [];
+let currentFilter = 'active';
+let currentRole   = '';
 
 const ACTIVE_STATUSES = ['pending_payment', 'proof_rejected', 'awaiting_verification', 'paid', 'preparing', 'ready'];
 
@@ -191,12 +180,6 @@ function renderOrders() {
     return;
   }
   el.innerHTML = list.map(orderCard).join('') + '<div style="height:80px"></div>';
-
-  // Refresh panel detail jika ada order yang sedang dipilih (desktop)
-  if (selectedOrderId && window.matchMedia('(min-width: 1200px)').matches) {
-    const stillExists = allOrders.find(o => o.id === selectedOrderId);
-    if (stillExists) _renderDetailPanel(stillExists);
-  }
 }
 
 function orderCard(o) {
@@ -395,56 +378,12 @@ function _buildDetailBody(o) {
   `;
 }
 
-// ─── Helper: tombol aksi untuk panel desktop ──────────────────────────────────
-function _buildPanelActions(o) {
-  const action = STATUS_NEXT_ACTION[o.status];
-  let html = '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;padding-top:16px;border-top:1px solid var(--line)">';
-  if (o.status === 'awaiting_verification' && currentRole === 'super_admin') {
-    html += `<button class="action-btn action-primary" style="flex:1;background:var(--green,#22c55e)"
-      onclick="doVerifyTransfer('${o.id}','approve')">✅ Verifikasi</button>`;
-    html += `<button class="action-btn action-danger" style="flex:1"
-      onclick="doVerifyTransfer('${o.id}','reject')">❌ Tolak</button>`;
-  } else if (action) {
-    html += `<button class="action-btn action-primary"
-      onclick="doUpdateStatus('${o.id}','${action.next}')">${action.label}</button>`;
-  }
-  if (['pending_payment','awaiting_verification','proof_rejected','paid','preparing','ready'].includes(o.status)) {
-    html += `<button class="action-btn action-danger"
-      onclick="doCancel('${o.id}')">Batalkan</button>`;
-  }
-  html += '</div>';
-  return html;
-}
-
-// ─── Render detail ke panel kanan (desktop ≥ 1200px) ─────────────────────────
-function _renderDetailPanel(o) {
-  const panel = document.getElementById('orderDetailPanel');
-  if (!panel) return;
-  panel.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-      <span style="font-weight:700;font-size:15px">📋 ${o.order_number}</span>
-      ${statusBadge(o.status)}
-    </div>
-    ${_buildDetailBody(o)}
-    ${_buildPanelActions(o)}
-  `;
-  if (o.proof_url) loadSignedAdminProofUrl(o.proof_url);
-}
-
-// ─── showDetail: modal di mobile/tablet, panel di desktop ─────────────────────
+// ─── showDetail: selalu modal ─────────────────────────────────────────────────
 function showDetail(orderId) {
   const o = allOrders.find(x => x.id === orderId);
   if (!o) return;
-
-  selectedOrderId = orderId;
-
-  const isDesktop = window.matchMedia('(min-width: 1200px)').matches;
-  if (isDesktop) {
-    _renderDetailPanel(o);
-  } else {
-    openModal(`📋 ${o.order_number}`, _buildDetailBody(o));
-    if (o.proof_url) loadSignedAdminProofUrl(o.proof_url);
-  }
+  openModal(`📋 ${o.order_number}`, _buildDetailBody(o));
+  if (o.proof_url) loadSignedAdminProofUrl(o.proof_url);
 }
 
 function loadSignedAdminProofUrl(pathOrUrl) {
