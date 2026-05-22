@@ -559,11 +559,13 @@ img { display: block; max-width: 100%; }
 
 /* ─── Cara Pesan button & modal ─────────────────────────────────────────────── */
 .how-to-btn {
-  background: none; border: 1.5px solid var(--brand); color: var(--brand);
-  border-radius: 20px; padding: 5px 16px; font-size: 13px; font-family: var(--font);
-  cursor: pointer; font-weight: 600; transition: background .15s, color .15s;
+  background: rgba(255,255,255,.18); border: 1.5px solid rgba(255,255,255,.6);
+  color: #fff; border-radius: 20px; padding: 5px 13px;
+  font-size: 12px; font-family: var(--font);
+  cursor: pointer; font-weight: 600;
+  transition: background .15s; white-space: nowrap; align-self: flex-end;
 }
-.how-to-btn:hover { background: var(--brand); color: #fff; }
+.how-to-btn:hover { background: rgba(255,255,255,.32); }
 .how-to-box { max-width: 400px; width: 92%; border-radius: 16px; padding: 0; overflow: hidden; }
 .how-to-steps { padding: 16px; display: flex; flex-direction: column; gap: 16px; }
 .how-to-step { display: flex; gap: 14px; align-items: flex-start; }
