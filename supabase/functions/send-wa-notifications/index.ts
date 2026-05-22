@@ -57,7 +57,7 @@ Deno.serve(async (req: Request) => {
       id, order_number, customer_name, customer_wa, total, status,
       pickup_time, notes, created_at,
       outlets(name, phone_wa),
-      order_items(item_name, quantity, unit_price)
+      order_items(item_name, quantity, unit_price, note)
     `)
     .eq("id", order_id)
     .single();
@@ -71,8 +71,11 @@ Deno.serve(async (req: Request) => {
   }
 
   const outlet     = (order.outlets as { name: string; phone_wa: string | null }) || {};
-  const items      = (order.order_items as { item_name: string; quantity: number; unit_price: number }[]) || [];
-  const itemsText  = items.map(i => `- ${i.quantity}× ${i.item_name} (${formatRupiah(i.unit_price * i.quantity)})`).join("\n");
+  const items      = (order.order_items as { item_name: string; quantity: number; unit_price: number; note?: string }[]) || [];
+  const itemsText  = items.map(i =>
+    `- ${i.quantity}× ${i.item_name} (${formatRupiah(i.unit_price * i.quantity)})` +
+    (i.note ? `\n  📝 ${i.note}` : "")
+  ).join("\n");
   const totalText  = formatRupiah(order.total);
   const results: Record<string, boolean> = {};
 
