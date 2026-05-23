@@ -4,8 +4,8 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Pengaturan — SUKA Admin</title>
-<link rel="stylesheet" href="../assets/css/style.css?v=4" />
-<link rel="stylesheet" href="../assets/css/admin-desktop.css?v=4" />
+<link rel="stylesheet" href="../assets/css/style.css?v=5" />
+<link rel="stylesheet" href="../assets/css/admin-desktop.css?v=5" />
 <link rel="manifest" href="/manifest.json" />
 <meta name="theme-color" content="#f29744" />
 </head>
@@ -24,6 +24,8 @@
       <a href="/admin/orders.html"><span>📋</span><span>Pesanan</span></a>
       <a href="/admin/menu.html"><span>🌯</span><span>Menu</span></a>
       <a href="/admin/reports.html"><span>📊</span><span>Laporan</span></a>
+      <a href="/admin/customers.html" class="admin-only"><span>🧑‍🤝‍🧑</span><span>Pelanggan</span></a>
+      <a href="/admin/vouchers.html" class="admin-only"><span>🎟️</span><span>Voucher</span></a>
       <a href="/admin/outlets.html" class="admin-only"><span>📍</span><span>Outlet</span></a>
       <a href="/admin/users.html" class="admin-only"><span>👥</span><span>Pengguna</span></a>
       <a href="/admin/settings.html" class="admin-only"><span>⚙️</span><span>Pengaturan</span></a>
@@ -200,8 +202,74 @@ function renderPage() {
       : templates.map(tmplCard).join('')
     }
 
+    <!-- ── Program Loyalty ───────────────────────────────────── -->
+    <div class="info-card" style="margin-bottom:12px">
+      <div style="font-weight:700;font-size:14px;margin-bottom:14px">🎁 Program Loyalty</div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--line)">
+        <div>
+          <div style="font-weight:600;font-size:13px">Aktifkan Program Loyalty</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">Customer dapat voucher saat milestone tercapai</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="loyaltyEnabled"
+            ${val('loyalty_enabled','false') === 'true' ? 'checked' : ''}
+            onchange="saveLoyaltySetting('loyalty_enabled', this.checked ? 'true' : 'false')">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--line)">
+        <div>
+          <div style="font-weight:600;font-size:13px">Notif WA Otomatis</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">Kirim WA ke customer saat dapat voucher</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="loyaltyNotifAuto"
+            ${val('loyalty_notif_auto','false') === 'true' ? 'checked' : ''}
+            onchange="saveLoyaltySetting('loyalty_notif_auto', this.checked ? 'true' : 'false')">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:10px">MILESTONE & REWARD</div>
+      ${[1,2,3].map(n => loyaltyMilestoneRow(n)).join('')}
+    </div>
+
     <div style="height:80px"></div>
   `;
+}
+
+function loyaltyMilestoneRow(n) {
+  const count  = val(`loyalty_milestone_${n}`, n === 1 ? '5' : n === 2 ? '10' : '20');
+  const reward = val(`loyalty_reward_${n}`, '');
+  return `
+    <div style="border:1px solid var(--line2);border-radius:10px;padding:12px;margin-bottom:8px">
+      <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:8px">MILESTONE ${n}</div>
+      <div style="display:flex;gap:8px">
+        <div style="flex-shrink:0;width:80px">
+          <label style="font-size:11px;color:var(--muted)">Order ke-</label>
+          <input type="number" class="form-input" style="font-size:13px;padding:7px 8px;margin-top:3px"
+            value="${count}" min="1"
+            onchange="saveLoyaltySetting('loyalty_milestone_${n}', this.value)">
+        </div>
+        <div style="flex:1">
+          <label style="font-size:11px;color:var(--muted)">Reward</label>
+          <input type="text" class="form-input" style="font-size:13px;padding:7px 8px;margin-top:3px"
+            value="${reward}" placeholder="Deskripsi reward..."
+            onchange="saveLoyaltySetting('loyalty_reward_${n}', this.value)">
+        </div>
+      </div>
+    </div>`;
+}
+
+async function saveLoyaltySetting(key, value) {
+  const { error } = await window.db
+    .from('app_settings')
+    .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+  if (error) { adminToast('❌ Gagal simpan'); return; }
+  settings[key] = { key, value };
+  adminToast('✅ Tersimpan');
 }
 
 function tmplCard(tmpl) {

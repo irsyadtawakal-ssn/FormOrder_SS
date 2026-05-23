@@ -1,0 +1,274 @@
+﻿<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Pelanggan â€” SUKA Admin</title>
+<link rel="stylesheet" href="../assets/css/style.css?v=5" />
+<link rel="stylesheet" href="../assets/css/admin-desktop.css?v=5" />
+<link rel="manifest" href="/manifest.json" />
+<meta name="theme-color" content="#f29744" />
+</head>
+<body>
+<div class="phone">
+
+  <!-- Sidebar -->
+  <aside class="admin-sidebar" style="display:none">
+    <div class="admin-sidebar-logo">ðŸŒ¯ SUKA Admin</div>
+    <div class="admin-sidebar-user">
+      <div class="name" id="sidebarName">â€”</div>
+      <div class="role" id="sidebarRole">â€”</div>
+    </div>
+    <nav class="admin-sidebar-nav">
+      <a href="/admin/index.html"><span>ðŸ </span><span>Dashboard</span></a>
+      <a href="/admin/orders.html"><span>ðŸ“‹</span><span>Pesanan</span></a>
+      <a href="/admin/menu.html"><span>ðŸŒ¯</span><span>Menu</span></a>
+      <a href="/admin/reports.html"><span>ðŸ“Š</span><span>Laporan</span></a>
+      <a href="/admin/customers.html" class="admin-only active"><span>ðŸ§‘â€ðŸ¤â€ðŸ§‘</span><span>Pelanggan</span></a>
+      <a href="/admin/vouchers.html" class="admin-only"><span>ðŸŽŸï¸</span><span>Voucher</span></a>
+      <a href="/admin/outlets.html" class="admin-only"><span>ðŸ“</span><span>Outlet</span></a>
+      <a href="/admin/users.html" class="admin-only"><span>ðŸ‘¥</span><span>Pengguna</span></a>
+      <a href="/admin/settings.html" class="admin-only"><span>âš™ï¸</span><span>Pengaturan</span></a>
+    </nav>
+    <div class="admin-sidebar-footer">
+      <button onclick="adminSignOut()">ðŸšª Keluar</button>
+    </div>
+  </aside>
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <span class="topbar-title">ðŸ§‘â€ðŸ¤â€ðŸ§‘ Pelanggan</span>
+    <span id="adminName" style="font-size:12px;color:var(--muted)"></span>
+  </div>
+
+  <div class="admin-content">
+
+    <!-- Search + stats row -->
+    <div style="padding:8px 12px 4px;display:flex;gap:8px;align-items:center">
+      <input type="search" id="searchInput" class="form-input" placeholder="Cari nama / WAâ€¦"
+             style="flex:1;font-size:13px" oninput="renderTable()" />
+    </div>
+
+    <!-- Sort chips -->
+    <div class="chips" style="padding-bottom:4px">
+      <button class="chip active" data-sort="last_order_at" onclick="setSort('last_order_at')">Terbaru</button>
+      <button class="chip" data-sort="total_orders" onclick="setSort('total_orders')">Order Terbanyak</button>
+      <button class="chip" data-sort="total_spent" onclick="setSort('total_spent')">Pengeluaran</button>
+    </div>
+
+    <!-- Summary bar -->
+    <div id="summaryBar" style="padding:4px 12px 8px;font-size:12px;color:var(--muted)">â€”</div>
+
+    <!-- Table -->
+    <div style="overflow-x:auto;padding-bottom:80px">
+      <table class="report-table" id="custTable">
+        <thead>
+          <tr>
+            <th style="text-align:left">Pelanggan</th>
+            <th style="text-align:right">Order</th>
+            <th style="text-align:right">Total Belanja</th>
+            <th style="text-align:right">Terakhir Order</th>
+          </tr>
+        </thead>
+        <tbody id="custBody">
+          <tr><td colspan="4" class="report-empty">Memuatâ€¦</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div><!-- /admin-content -->
+
+  <!-- Bottom nav -->
+  <nav class="admin-nav">
+    <a href="/admin/index.html"><span>ðŸ </span><span>Dashboard</span></a>
+    <a href="/admin/orders.html"><span>ðŸ“‹</span><span>Pesanan</span></a>
+    <a href="/admin/menu.html"><span>ðŸŒ¯</span><span>Menu</span></a>
+    <a href="/admin/reports.html"><span>ðŸ“Š</span><span>Laporan</span></a>
+    <a href="/admin/customers.html" class="admin-only"><span>ðŸ§‘â€ðŸ¤â€ðŸ§‘</span><span>Pelanggan</span></a>
+    <a href="/admin/settings.html" class="admin-only"><span>âš™ï¸</span><span>Pengaturan</span></a>
+  </nav>
+
+</div>
+<div class="toast" id="toast"></div>
+<div id="adminModal" class="admin-modal-overlay" style="display:none"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="../config.js"></script>
+<script src="../assets/js/supabase.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/admin.js"></script>
+<script src="../assets/js/loyalty.js"></script>
+<script>
+// â”€â”€â”€ State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+let allCustomers = [];
+let currentSort  = 'last_order_at';
+
+// â”€â”€â”€ Init â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+(async function init() {
+  const u = await requireAuth();
+  if (!u) return;
+  // Halaman ini hanya untuk super_admin
+  if (u.role !== 'super_admin') {
+    document.querySelector('.admin-content').innerHTML =
+      '<p style="padding:32px;text-align:center;color:var(--muted)">Akses terbatas untuk Super Admin.</p>';
+    return;
+  }
+  await loadCustomers();
+})();
+
+// â”€â”€â”€ Load data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+async function loadCustomers() {
+  const { data, error } = await db
+    .from('customers')
+    .select('*')
+    .order('last_order_at', { ascending: false });
+
+  if (error) {
+    showToast('Gagal memuat data pelanggan');
+    return;
+  }
+  allCustomers = data || [];
+  updateSummary();
+  renderTable();
+}
+
+// â”€â”€â”€ Summary bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function updateSummary() {
+  const total  = allCustomers.length;
+  const spent  = allCustomers.reduce((s, c) => s + (c.total_spent || 0), 0);
+  const orders = allCustomers.reduce((s, c) => s + (c.total_orders || 0), 0);
+  document.getElementById('summaryBar').textContent =
+    `${total} pelanggan Â· ${orders} total order Â· ${formatRupiah(spent)} total belanja`;
+}
+
+// â”€â”€â”€ Sort â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function setSort(col) {
+  currentSort = col;
+  document.querySelectorAll('.chips .chip').forEach(b => {
+    b.classList.toggle('active', b.dataset.sort === col);
+  });
+  renderTable();
+}
+
+// â”€â”€â”€ Render table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function renderTable() {
+  const q = (document.getElementById('searchInput').value || '').toLowerCase();
+  let rows = allCustomers.filter(c =>
+    (c.name || '').toLowerCase().includes(q) ||
+    (c.wa_number || '').includes(q)
+  );
+
+  // Sort
+  rows.sort((a, b) => {
+    if (currentSort === 'last_order_at') {
+      return (b.last_order_at || '') > (a.last_order_at || '') ? 1 : -1;
+    }
+    if (currentSort === 'total_orders') return (b.total_orders || 0) - (a.total_orders || 0);
+    if (currentSort === 'total_spent')  return (b.total_spent  || 0) - (a.total_spent  || 0);
+    return 0;
+  });
+
+  const tbody = document.getElementById('custBody');
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="4" class="report-empty">Belum ada data pelanggan.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = rows.map(c => {
+    const wa        = c.wa_number || 'â€”';
+    const lastOrder = c.last_order_at
+      ? new Date(c.last_order_at).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' })
+      : 'â€”';
+    return `
+      <tr style="cursor:pointer" onclick="showCustomerDetail('${c.wa_number}')">
+        <td>
+          <div style="font-weight:600;font-size:13px">${escHtml(c.name || 'â€”')}</div>
+          <div style="font-size:11px;color:var(--muted)">ðŸ“± ${wa}</div>
+        </td>
+        <td style="text-align:right;font-weight:600">${c.total_orders || 0}Ã—</td>
+        <td style="text-align:right">${formatRupiah(c.total_spent || 0)}</td>
+        <td style="text-align:right;font-size:12px;color:var(--muted)">${lastOrder}</td>
+      </tr>`;
+  }).join('');
+}
+
+// â”€â”€â”€ Escape HTML â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// â”€â”€â”€ Detail modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+async function showCustomerDetail(waNumber) {
+  const c = allCustomers.find(x => x.wa_number === waNumber);
+  if (!c) return;
+
+  // Ambil voucher milik customer ini
+  const { data: vouchers } = await db
+    .from('vouchers')
+    .select('*')
+    .eq('customer_wa', waNumber)
+    .order('created_at', { ascending: false });
+
+  const vList = (vouchers || []);
+  const firstOrder = c.first_order_at
+    ? new Date(c.first_order_at).toLocaleDateString('id-ID', { day:'2-digit', month:'long', year:'numeric' })
+    : 'â€”';
+  const lastOrder = c.last_order_at
+    ? new Date(c.last_order_at).toLocaleDateString('id-ID', { day:'2-digit', month:'long', year:'numeric' })
+    : 'â€”';
+
+  const voucherHtml = vList.length
+    ? vList.map(v => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+          <div>
+            <div style="font-weight:700;font-family:monospace;letter-spacing:1px">${v.code}</div>
+            <div style="font-size:11px;color:var(--muted)">${escHtml(v.reward_desc)} Â· Milestone ${v.milestone}Ã—</div>
+          </div>
+          <span style="font-size:11px;padding:2px 8px;border-radius:20px;${v.is_used
+            ? 'background:#f3f4f6;color:var(--muted)'
+            : 'background:#dcfce7;color:#16a34a'}">${v.is_used ? 'Dipakai' : 'Aktif'}</span>
+        </div>`).join('')
+    : '<div style="color:var(--muted);font-size:13px;padding:8px 0">Belum ada voucher.</div>';
+
+  openAdminModal(`
+    <div class="modal-header">
+      <span>ðŸ§‘ Detail Pelanggan</span>
+      <button onclick="closeAdminModal()" class="btn-icon">âœ•</button>
+    </div>
+    <div class="modal-body">
+      <div class="info-group">
+        <div class="info-row">
+          <span class="label">Nama</span>
+          <span class="val">${escHtml(c.name || 'â€”')}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">No. WA</span>
+          <span class="val">${c.wa_number}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Total Order</span>
+          <span class="val" style="font-weight:700">${c.total_orders || 0}Ã—</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Total Belanja</span>
+          <span class="val" style="font-weight:700">${formatRupiah(c.total_spent || 0)}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Order Pertama</span>
+          <span class="val">${firstOrder}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Order Terakhir</span>
+          <span class="val">${lastOrder}</span>
+        </div>
+      </div>
+      <div style="margin-top:16px">
+        <div style="font-weight:600;margin-bottom:4px">ðŸŽŸï¸ Voucher (${vList.length})</div>
+        ${voucherHtml}
+      </div>
+    </div>
+  `);
+}
+</script>
+</body>
+</html>
