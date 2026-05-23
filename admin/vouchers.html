@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Voucher â€” SUKA Admin</title>
+<title>Voucher — SUKA Admin</title>
 <link rel="stylesheet" href="../assets/css/style.css?v=5" />
 <link rel="stylesheet" href="../assets/css/admin-desktop.css?v=5" />
 <link rel="manifest" href="/manifest.json" />
@@ -14,30 +14,30 @@
 
   <!-- Sidebar -->
   <aside class="admin-sidebar" style="display:none">
-    <div class="admin-sidebar-logo">ðŸŒ¯ SUKA Admin</div>
+    <div class="admin-sidebar-logo">🌯 SUKA Admin</div>
     <div class="admin-sidebar-user">
-      <div class="name" id="sidebarName">â€”</div>
-      <div class="role" id="sidebarRole">â€”</div>
+      <div class="name" id="sidebarName">—</div>
+      <div class="role" id="sidebarRole">—</div>
     </div>
     <nav class="admin-sidebar-nav">
-      <a href="/admin/index.html"><span>ðŸ </span><span>Dashboard</span></a>
-      <a href="/admin/orders.html"><span>ðŸ“‹</span><span>Pesanan</span></a>
-      <a href="/admin/menu.html"><span>ðŸŒ¯</span><span>Menu</span></a>
-      <a href="/admin/reports.html"><span>ðŸ“Š</span><span>Laporan</span></a>
-      <a href="/admin/customers.html" class="admin-only"><span>ðŸ§‘â€ðŸ¤â€ðŸ§‘</span><span>Pelanggan</span></a>
-      <a href="/admin/vouchers.html" class="admin-only active"><span>ðŸŽŸï¸</span><span>Voucher</span></a>
-      <a href="/admin/outlets.html" class="admin-only"><span>ðŸ“</span><span>Outlet</span></a>
-      <a href="/admin/users.html" class="admin-only"><span>ðŸ‘¥</span><span>Pengguna</span></a>
-      <a href="/admin/settings.html" class="admin-only"><span>âš™ï¸</span><span>Pengaturan</span></a>
+      <a href="/admin/index.html"><span>🏠</span><span>Dashboard</span></a>
+      <a href="/admin/orders.html"><span>📋</span><span>Pesanan</span></a>
+      <a href="/admin/menu.html"><span>🌯</span><span>Menu</span></a>
+      <a href="/admin/reports.html"><span>📊</span><span>Laporan</span></a>
+      <a href="/admin/customers.html" class="admin-only"><span>🧑‍🤝‍🧑</span><span>Pelanggan</span></a>
+      <a href="/admin/vouchers.html" class="admin-only active"><span>🎟️</span><span>Voucher</span></a>
+      <a href="/admin/outlets.html" class="admin-only"><span>📍</span><span>Outlet</span></a>
+      <a href="/admin/users.html" class="admin-only"><span>👥</span><span>Pengguna</span></a>
+      <a href="/admin/settings.html" class="admin-only"><span>⚙️</span><span>Pengaturan</span></a>
     </nav>
     <div class="admin-sidebar-footer">
-      <button onclick="adminSignOut()">ðŸšª Keluar</button>
+      <button onclick="adminSignOut()">🚪 Keluar</button>
     </div>
   </aside>
 
   <!-- Topbar -->
   <div class="topbar">
-    <span class="topbar-title">ðŸŽŸï¸ Voucher</span>
+    <span class="topbar-title">🎟️ Voucher</span>
     <span id="adminName" style="font-size:12px;color:var(--muted)"></span>
   </div>
 
@@ -45,7 +45,7 @@
 
     <!-- Search + filter -->
     <div style="padding:8px 12px 4px;display:flex;gap:8px;align-items:center">
-      <input type="search" id="searchInput" class="form-input" placeholder="Cari kode / WA / namaâ€¦"
+      <input type="search" id="searchInput" class="form-input" placeholder="Cari kode / WA / nama…"
              style="flex:1;font-size:13px" oninput="renderTable()" />
     </div>
 
@@ -57,7 +57,7 @@
     </div>
 
     <!-- Summary bar -->
-    <div id="summaryBar" style="padding:4px 12px 8px;font-size:12px;color:var(--muted)">â€”</div>
+    <div id="summaryBar" style="padding:4px 12px 8px;font-size:12px;color:var(--muted)">—</div>
 
     <!-- Table -->
     <div style="overflow-x:auto;padding-bottom:80px">
@@ -71,7 +71,7 @@
           </tr>
         </thead>
         <tbody id="voucherBody">
-          <tr><td colspan="4" class="report-empty">Memuatâ€¦</td></tr>
+          <tr><td colspan="4" class="report-empty">Memuat…</td></tr>
         </tbody>
       </table>
     </div>
@@ -80,12 +80,12 @@
 
   <!-- Bottom nav -->
   <nav class="admin-nav">
-    <a href="/admin/index.html"><span>ðŸ </span><span>Dashboard</span></a>
-    <a href="/admin/orders.html"><span>ðŸ“‹</span><span>Pesanan</span></a>
-    <a href="/admin/menu.html"><span>ðŸŒ¯</span><span>Menu</span></a>
-    <a href="/admin/reports.html"><span>ðŸ“Š</span><span>Laporan</span></a>
-    <a href="/admin/vouchers.html" class="admin-only"><span>ðŸŽŸï¸</span><span>Voucher</span></a>
-    <a href="/admin/settings.html" class="admin-only"><span>âš™ï¸</span><span>Pengaturan</span></a>
+    <a href="/admin/index.html"><span>🏠</span><span>Dashboard</span></a>
+    <a href="/admin/orders.html"><span>📋</span><span>Pesanan</span></a>
+    <a href="/admin/menu.html"><span>🌯</span><span>Menu</span></a>
+    <a href="/admin/reports.html"><span>📊</span><span>Laporan</span></a>
+    <a href="/admin/vouchers.html" class="admin-only"><span>🎟️</span><span>Voucher</span></a>
+    <a href="/admin/settings.html" class="admin-only"><span>⚙️</span><span>Pengaturan</span></a>
   </nav>
 
 </div>
@@ -98,12 +98,12 @@
 <script src="../assets/js/utils.js"></script>
 <script src="../assets/js/admin.js"></script>
 <script>
-// â”€â”€â”€ State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── State ────────────────────────────────────────────────────────────────────
 let allVouchers   = [];
 let currentFilter = 'all';
 let currentRole   = '';
 
-// â”€â”€â”€ Init â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Init ─────────────────────────────────────────────────────────────────────
 (async function init() {
   const u = await requireAuth();
   if (!u) return;
@@ -117,9 +117,9 @@ let currentRole   = '';
   await loadVouchers();
 })();
 
-// â”€â”€â”€ Load data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Load data ────────────────────────────────────────────────────────────────
 async function loadVouchers() {
-  const { data, error } = await window.db
+  const { data, error } = await db
     .from('vouchers')
     .select('*, customers(name)')
     .order('created_at', { ascending: false });
@@ -133,16 +133,16 @@ async function loadVouchers() {
   renderTable();
 }
 
-// â”€â”€â”€ Summary bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Summary bar ──────────────────────────────────────────────────────────────
 function updateSummary() {
   const total  = allVouchers.length;
   const active = allVouchers.filter(v => !v.is_used).length;
   const used   = allVouchers.filter(v =>  v.is_used).length;
   document.getElementById('summaryBar').textContent =
-    `${total} voucher Â· ${active} aktif Â· ${used} dipakai`;
+    `${total} voucher · ${active} aktif · ${used} dipakai`;
 }
 
-// â”€â”€â”€ Filter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Filter ───────────────────────────────────────────────────────────────────
 function setFilter(f) {
   currentFilter = f;
   document.querySelectorAll('.chips .chip').forEach(b => {
@@ -151,12 +151,12 @@ function setFilter(f) {
   renderTable();
 }
 
-// â”€â”€â”€ Escape HTML â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Escape HTML ──────────────────────────────────────────────────────────────
 function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-// â”€â”€â”€ Render table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Render table ─────────────────────────────────────────────────────────────
 function renderTable() {
   const q = (document.getElementById('searchInput').value || '').toLowerCase();
   let rows = allVouchers.filter(v => {
@@ -180,7 +180,7 @@ function renderTable() {
     const statusBadge = v.is_used
       ? '<span style="font-size:11px;padding:2px 8px;border-radius:20px;background:#f3f4f6;color:var(--muted)">Dipakai</span>'
       : '<span style="font-size:11px;padding:2px 8px;border-radius:20px;background:#dcfce7;color:#16a34a">Aktif</span>';
-    const customerName = v.customers?.name || 'â€”';
+    const customerName = v.customers?.name || '—';
     return `
       <tr style="cursor:pointer" onclick="showVoucherDetail('${v.id}')">
         <td>
@@ -191,23 +191,23 @@ function renderTable() {
           <div style="font-size:13px">${escHtml(customerName)}</div>
           <div style="font-size:11px;color:var(--muted)">${v.customer_wa}</div>
         </td>
-        <td style="text-align:center;font-weight:600">${v.milestone}Ã—</td>
+        <td style="text-align:center;font-weight:600">${v.milestone}×</td>
         <td style="text-align:center">${statusBadge}</td>
       </tr>`;
   }).join('');
 }
 
-// â”€â”€â”€ Detail modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Detail modal ─────────────────────────────────────────────────────────────
 async function showVoucherDetail(voucherId) {
   const v = allVouchers.find(x => x.id === voucherId);
   if (!v) return;
 
   const created = v.created_at
     ? new Date(v.created_at).toLocaleString('id-ID', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })
-    : 'â€”';
+    : '—';
   const usedAt = v.used_at
     ? new Date(v.used_at).toLocaleString('id-ID', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })
-    : 'â€”';
+    : '—';
 
   const statusBadge = v.is_used
     ? '<span style="padding:4px 12px;border-radius:20px;background:#f3f4f6;color:var(--muted);font-size:12px">Sudah Dipakai</span>'
@@ -215,12 +215,12 @@ async function showVoucherDetail(voucherId) {
 
   const markUsedBtn = !v.is_used ? `
     <button class="btn btn-primary" style="width:100%;margin-top:16px"
-            onclick="markVoucherUsed('${v.id}')">âœ… Tandai Sudah Dipakai</button>` : '';
+            onclick="markVoucherUsed('${v.id}')">✅ Tandai Sudah Dipakai</button>` : '';
 
   openAdminModal(`
     <div class="modal-header">
-      <span>ðŸŽŸï¸ Detail Voucher</span>
-      <button onclick="closeAdminModal()" class="btn-icon">âœ•</button>
+      <span>🎟️ Detail Voucher</span>
+      <button onclick="closeAdminModal()" class="btn-icon">✕</button>
     </div>
     <div class="modal-body">
       <div style="text-align:center;margin-bottom:16px">
@@ -234,11 +234,11 @@ async function showVoucherDetail(voucherId) {
         </div>
         <div class="info-row">
           <span class="label">Milestone</span>
-          <span class="val">${v.milestone}Ã— order</span>
+          <span class="val">${v.milestone}× order</span>
         </div>
         <div class="info-row">
           <span class="label">Pelanggan</span>
-          <span class="val">${escHtml(v.customers?.name || 'â€”')}</span>
+          <span class="val">${escHtml(v.customers?.name || '—')}</span>
         </div>
         <div class="info-row">
           <span class="label">No. WA</span>
@@ -258,16 +258,16 @@ async function showVoucherDetail(voucherId) {
   `);
 }
 
-// â”€â”€â”€ Tandai voucher dipakai â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Tandai voucher dipakai ───────────────────────────────────────────────────
 async function markVoucherUsed(voucherId) {
-  const { error } = await window.db
+  const { error } = await db
     .from('vouchers')
     .update({ is_used: true, used_at: new Date().toISOString() })
     .eq('id', voucherId);
 
   if (error) { showToast('Gagal update voucher'); return; }
 
-  showToast('âœ… Voucher ditandai sudah dipakai');
+  showToast('✅ Voucher ditandai sudah dipakai');
   closeAdminModal();
   await loadVouchers();
 }
