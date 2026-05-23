@@ -171,3 +171,8 @@
 - ✅ 2026-05-22 — proof_rejected status + WA notif untuk bukti transfer ditolak
 - ✅ 2026-05-22 — Admin desktop/tablet responsive: sidebar nav, two-panel orders, centered modal [46360d6]
 - ✅ 2026-05-22 — Phase 9: Loyalty program — customers, vouchers, milestones, on-order-done Edge Function [6400565]
+- ✅ 2026-05-23 — Fix emoji double-encoded di customers.html & vouchers.html (BOM + Windows-1252 → UTF-8 tanpa BOM)
+- ✅ 2026-05-23 — Fix window.db ReferenceError di customers.html & vouchers.html (hilang saat encoding fix)
+- ✅ 2026-05-23 — Bump SW cache v5 → v6 + asset busting v=6 di 15 file HTML
+- ✅ 2026-05-23 — Fix toggle CSS conflict — scope .toggle-switch .toggle-slider agar tidak override global
+- ✅ 2026-05-23 — Seragamkan title tab semua halaman customer ke "Order Sukashawarma"
