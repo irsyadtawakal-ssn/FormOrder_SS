@@ -61,15 +61,15 @@ CREATE POLICY "vouchers_staff_update" ON public.vouchers
   WITH CHECK (is_used = true);
 
 -- ── app_settings defaults ─────────────────────────────────────────────────────
-INSERT INTO public.app_settings (key, value, description) VALUES
-  ('loyalty_enabled',      'false', 'Aktifkan program loyalty (true/false)'),
-  ('loyalty_notif_auto',   'false', 'Kirim WA otomatis saat dapat voucher (true/false)'),
-  ('loyalty_milestone_1',  '5',     'Jumlah order untuk milestone 1'),
-  ('loyalty_reward_1',     'Diskon 10% untuk order berikutnya', 'Reward milestone 1'),
-  ('loyalty_milestone_2',  '10',    'Jumlah order untuk milestone 2'),
-  ('loyalty_reward_2',     'Free 1 item Original Sapi Sedang',  'Reward milestone 2'),
-  ('loyalty_milestone_3',  '20',    'Jumlah order untuk milestone 3'),
-  ('loyalty_reward_3',     'Free 1 Shawarma ukuran apa saja',   'Reward milestone 3')
+INSERT INTO public.app_settings (key, value) VALUES
+  ('loyalty_enabled',     'false'),
+  ('loyalty_notif_auto',  'false'),
+  ('loyalty_milestone_1', '5'),
+  ('loyalty_reward_1',    '"Diskon 10% untuk order berikutnya"'),
+  ('loyalty_milestone_2', '10'),
+  ('loyalty_reward_2',    '"Free 1 item Original Sapi Sedang"'),
+  ('loyalty_milestone_3', '20'),
+  ('loyalty_reward_3',    '"Free 1 Shawarma ukuran apa saja"')
 ON CONFLICT (key) DO NOTHING;
 
 -- ── Verifikasi ────────────────────────────────────────────────────────────────
