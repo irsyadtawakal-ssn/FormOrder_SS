@@ -1065,7 +1065,7 @@ select.form-input { cursor: pointer; }
   flex-shrink: 0;
 }
 .toggle-switch input { opacity: 0; width: 0; height: 0; }
-.toggle-slider {
+.toggle-switch .toggle-slider {
   position: absolute;
   inset: 0;
   background: #ccc;
@@ -1073,7 +1073,7 @@ select.form-input { cursor: pointer; }
   cursor: pointer;
   transition: background .2s;
 }
-.toggle-slider::before {
+.toggle-switch .toggle-slider::before {
   content: '';
   position: absolute;
   width: 18px;
