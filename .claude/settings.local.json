@@ -38,7 +38,9 @@
       "mcp__Claude_Preview__preview_start",
       "Bash(not exist *)",
       "Bash(powershell -Command \"Select-String -Path \\(Get-ChildItem -Recurse -Filter '*.html'\\).FullName -Pattern 'css\\\\?v=4' | Select-Object -First 5\")",
-      "Bash(powershell -Command \"\\(Select-String -Path \\(Get-ChildItem -Recurse -Filter '*.html'\\).FullName -Pattern 'css\\\\?v=5'\\).Count\")"
+      "Bash(powershell -Command \"\\(Select-String -Path \\(Get-ChildItem -Recurse -Filter '*.html'\\).FullName -Pattern 'css\\\\?v=5'\\).Count\")",
+      "Bash(xxd /tmp/customers_orig.html)",
+      "Bash(xxd admin/orders.html)"
     ]
   }
 }

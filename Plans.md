@@ -126,6 +126,20 @@
 
 ---
 
+## Phase 9 — Loyalty Program ✅
+**Scope:** Customers + Vouchers + Milestones + WA notif toggle
+**Output:** Admin bisa manage pelanggan loyal + voucher diskon
+
+### Tasks
+- [x] 9.1 Migration SQL `20260522_loyalty.sql` — tabel customers, vouchers, customer_vouchers, milestones
+- [x] 9.2 Edge Function `on-order-done` — trigger poin + cek milestone + assign voucher otomatis
+- [x] 9.3 Admin Customers page (`admin/customers.html`) — list pelanggan, poin, histori
+- [x] 9.4 Admin Vouchers page (`admin/vouchers.html`) — CRUD voucher, assign manual
+- [x] 9.5 `assets/js/loyalty.js` — loyalty utilities (poin, voucher apply, milestone check)
+- [x] 9.6 Toggle notif WA per customer di admin settings
+
+---
+
 ## Pending Owner Input
 - [x] Foto menu items — semua sudah diupload ✅
 - [x] Nomor WA tiap outlet — SQL migration `20260521_outlet_phones.sql` siap, **jalankan di Supabase SQL Editor**
@@ -156,3 +170,4 @@
 - ✅ 2026-05-22 — Design system SUKA (warm palette + Plus Jakarta Sans) applied to all pages
 - ✅ 2026-05-22 — proof_rejected status + WA notif untuk bukti transfer ditolak
 - ✅ 2026-05-22 — Admin desktop/tablet responsive: sidebar nav, two-panel orders, centered modal [46360d6]
+- ✅ 2026-05-22 — Phase 9: Loyalty program — customers, vouchers, milestones, on-order-done Edge Function [6400565]
