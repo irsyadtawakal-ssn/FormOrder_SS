@@ -119,7 +119,7 @@ let currentRole   = '';
 
 // ─── Load data ────────────────────────────────────────────────────────────────
 async function loadVouchers() {
-  const { data, error } = await db
+  const { data, error } = await window.db
     .from('vouchers')
     .select('*, customers(name)')
     .order('created_at', { ascending: false });
@@ -260,7 +260,7 @@ async function showVoucherDetail(voucherId) {
 
 // ─── Tandai voucher dipakai ───────────────────────────────────────────────────
 async function markVoucherUsed(voucherId) {
-  const { error } = await db
+  const { error } = await window.db
     .from('vouchers')
     .update({ is_used: true, used_at: new Date().toISOString() })
     .eq('id', voucherId);
