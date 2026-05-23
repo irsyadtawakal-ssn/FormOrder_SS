@@ -118,7 +118,7 @@ let currentSort  = 'last_order_at';
 
 // â”€â”€â”€ Load data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function loadCustomers() {
-  const { data, error } = await db
+  const { data, error } = await window.db
     .from('customers')
     .select('*')
     .order('last_order_at', { ascending: false });
@@ -203,7 +203,7 @@ async function showCustomerDetail(waNumber) {
   if (!c) return;
 
   // Ambil voucher milik customer ini
-  const { data: vouchers } = await db
+  const { data: vouchers } = await window.db
     .from('vouchers')
     .select('*')
     .eq('customer_wa', waNumber)
