@@ -416,6 +416,11 @@ img { display: block; max-width: 100%; }
 .info-row .label { color: var(--muted); font-size: 13px; min-width: 90px; }
 .info-row .val { font-weight: 600; flex: 1; }
 
+/* ─── Payment method picker ──────────────────────────────────────────────────── */
+.pay-method-item { transition: border-color .15s, background .15s; }
+.pay-method-item.selected { border-color: var(--brand) !important; background: var(--brand-bg) !important; }
+.pay-method-item.selected div:last-child { border-color: var(--brand) !important; background: var(--brand) !important; }
+
 /* ─── Hint banner ─────────────────────────────────────────────────────────────── */
 .hint-banner {
   background: #fff8e1; border-radius: var(--radius-sm); padding: 10px 12px;

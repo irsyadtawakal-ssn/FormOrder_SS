@@ -157,6 +157,40 @@
 
 ---
 
+## Phase 11 — Multi Channel Payment (Virtual Account + E-Wallet)
+**Scope:** Tambah pilihan metode bayar selain QRIS — Virtual Account & E-Wallet via Xendit
+**Output:** Customer bisa pilih bayar via QRIS, VA bank, atau e-wallet
+
+### Architecture
+- Channel yang ditambah: **Virtual Account** (BCA, BNI, BRI, Mandiri) + **E-Wallet** (GoPay, OVO, DANA)
+- Semua pakai Xendit Payment Request API yang sama, beda di `payment_method.type`
+- Webhook sudah ada (`xendit-webhook`) — tinggal handle event baru
+- DB: tambah kolom `payment_channel` untuk simpan pilihan customer (QRIS/BCA/BNI/dll)
+- UI: tambah payment method picker di checkout sebelum konfirmasi
+
+### Struktur per channel
+| Channel | Type | Xendit field | UI yang tampil |
+|---------|------|-------------|----------------|
+| QRIS | QR_CODE | channel_code: QRIS | QR code |
+| BCA VA | VIRTUAL_ACCOUNT | channel_code: BCA | Nomor VA + bank |
+| BNI VA | VIRTUAL_ACCOUNT | channel_code: BNI | Nomor VA + bank |
+| BRI VA | VIRTUAL_ACCOUNT | channel_code: BRI | Nomor VA + bank |
+| Mandiri VA | VIRTUAL_ACCOUNT | channel_code: MANDIRI | Nomor VA + bank |
+| GoPay | EWALLET | channel_code: GOPAY | Deep link / QR |
+| OVO | EWALLET | channel_code: OVO | Deep link |
+| DANA | EWALLET | channel_code: DANA | Deep link |
+
+### Tasks
+- [x] 11.1 Migration SQL — tambah kolom `payment_channel`, `va_number`, `va_bank`, `ewallet_deeplink` di tabel `orders`
+- [x] 11.2 Update `create-xendit-payment` — support QRIS/VA/E-Wallet via CHANNEL_CONFIG
+- [x] 11.3 Update `xendit-webhook` — sudah handle semua channel via payment.capture
+- [x] 11.4 Checkout page — payment method picker (QRIS/VA/E-Wallet) dengan selectChannel()
+- [x] 11.5 Order page — pending_payment adaptif: QRIS=QR, VA=nomor+instruksi, E-Wallet=deeplink
+- [x] 11.6 Deploy create-xendit-payment + xendit-webhook, push frontend
+- [ ] 11.7 E2E test tiap channel
+
+---
+
 ## Pending Owner Input
 - [x] Foto menu items — semua sudah diupload ✅
 - [x] Nomor WA tiap outlet — SQL migration `20260521_outlet_phones.sql` siap, **jalankan di Supabase SQL Editor**

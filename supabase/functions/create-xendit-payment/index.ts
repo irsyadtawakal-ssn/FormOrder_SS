@@ -1,5 +1,6 @@
 // Edge Function: create-xendit-payment
-// Validasi order, hitung harga server-side, buat QRIS dinamis via Xendit Payment Request API
+// Validasi order, hitung harga server-side, buat payment via Xendit
+// Mendukung: QRIS, Virtual Account (BCA/BNI/BRI/MANDIRI), E-Wallet (GOPAY/OVO/DANA)
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -34,6 +35,120 @@ function json(data: unknown, status = 200) {
   });
 }
 
+// ─── Konfigurasi channel yang didukung ───────────────────────────────────────
+type ChannelType = "QRIS" | "BCA" | "BNI" | "BRI" | "MANDIRI" | "GOPAY" | "OVO" | "DANA";
+
+const CHANNEL_CONFIG: Record<ChannelType, {
+  type: "QR_CODE" | "VIRTUAL_ACCOUNT" | "EWALLET";
+  paymentMethod: string;   // nilai kolom payment_method di DB
+  label: string;           // label tampil ke user
+  expireMinutes: number;   // waktu kadaluarsa dalam menit
+}> = {
+  QRIS:    { type: "QR_CODE",         paymentMethod: "xendit_qris",    label: "QRIS",          expireMinutes: 15  },
+  BCA:     { type: "VIRTUAL_ACCOUNT", paymentMethod: "xendit_va",      label: "BCA",           expireMinutes: 1440 }, // 24 jam
+  BNI:     { type: "VIRTUAL_ACCOUNT", paymentMethod: "xendit_va",      label: "BNI",           expireMinutes: 1440 },
+  BRI:     { type: "VIRTUAL_ACCOUNT", paymentMethod: "xendit_va",      label: "BRI",           expireMinutes: 1440 },
+  MANDIRI: { type: "VIRTUAL_ACCOUNT", paymentMethod: "xendit_va",      label: "Mandiri",       expireMinutes: 1440 },
+  GOPAY:   { type: "EWALLET",         paymentMethod: "xendit_ewallet", label: "GoPay",         expireMinutes: 15  },
+  OVO:     { type: "EWALLET",         paymentMethod: "xendit_ewallet", label: "OVO",           expireMinutes: 15  },
+  DANA:    { type: "EWALLET",         paymentMethod: "xendit_ewallet", label: "DANA",          expireMinutes: 15  },
+};
+
+// ─── Build payment_method object untuk Xendit ────────────────────────────────
+function buildXenditPaymentMethod(
+  channel: ChannelType,
+  customerName: string,
+  expiredAt: Date,
+  frontendUrl: string,
+  orderNum: string,
+): Record<string, unknown> {
+  const cfg = CHANNEL_CONFIG[channel];
+
+  if (cfg.type === "QR_CODE") {
+    return {
+      type: "QR_CODE",
+      reusability: "ONE_TIME_USE",
+      qr_code: { channel_code: "QRIS" },
+    };
+  }
+
+  if (cfg.type === "VIRTUAL_ACCOUNT") {
+    return {
+      type: "VIRTUAL_ACCOUNT",
+      reusability: "ONE_TIME_USE",
+      virtual_account: {
+        channel_code: channel, // BCA/BNI/BRI/MANDIRI
+        channel_properties: {
+          customer_name: customerName.slice(0, 50), // Xendit max 50 char
+          expires_at: expiredAt.toISOString(),
+        },
+      },
+    };
+  }
+
+  // EWALLET
+  return {
+    type: "EWALLET",
+    reusability: "ONE_TIME_USE",
+    ewallet: {
+      channel_code: channel, // GOPAY/OVO/DANA
+      channel_properties: {
+        success_return_url: `${frontendUrl}/order.html?order=${orderNum}`,
+        failure_return_url: `${frontendUrl}/order.html?order=${orderNum}`,
+        cancel_return_url:  `${frontendUrl}/order.html?order=${orderNum}`,
+      },
+    },
+  };
+}
+
+// ─── Ekstrak data relevan dari response Xendit ────────────────────────────────
+function extractPaymentData(payload: Record<string, unknown>, channel: ChannelType): {
+  paymentRequestId: string | null;
+  qrisString: string | null;
+  vaNumber: string | null;
+  vaBank: string | null;
+  ewalletDeeplink: string | null;
+} {
+  const paymentRequestId = (payload.id as string) ?? null;
+  let qrisString: string | null = null;
+  let vaNumber: string | null = null;
+  let vaBank: string | null = null;
+  let ewalletDeeplink: string | null = null;
+
+  const cfg = CHANNEL_CONFIG[channel];
+
+  if (cfg.type === "QR_CODE") {
+    // Cari QR string di beberapa lokasi
+    const actions = (payload.actions as Record<string, string>[]) ?? [];
+    const qrAction = actions.find(
+      (a) => a.descriptor === "QR_STRING" || a.type === "QR_CODE",
+    );
+    qrisString = qrAction?.value ??
+      (payload.payment_method as Record<string, unknown>)?.qr_code?.channel_properties?.qr_string ??
+      (payload.payment_method as Record<string, unknown>)?.channel_properties?.qr_string ??
+      payload.qr_string ?? null;
+  }
+
+  if (cfg.type === "VIRTUAL_ACCOUNT") {
+    // Nomor VA ada di payment_method.virtual_account.channel_properties
+    const va = (payload.payment_method as Record<string, unknown>)?.virtual_account as Record<string, unknown>;
+    const channelProps = va?.channel_properties as Record<string, string>;
+    vaNumber = channelProps?.virtual_account_number ?? channelProps?.account_details ?? null;
+    vaBank = channel; // BCA/BNI/BRI/MANDIRI
+  }
+
+  if (cfg.type === "EWALLET") {
+    // Deep link untuk buka app e-wallet
+    const actions = (payload.actions as Record<string, string>[]) ?? [];
+    const redirectAction = actions.find(
+      (a) => a.type === "REDIRECT_CUSTOMER" || a.type === "MOBILE_DEEPLINK",
+    );
+    ewalletDeeplink = redirectAction?.value ?? redirectAction?.mobile_deeplink ?? null;
+  }
+
+  return { paymentRequestId, qrisString, vaNumber, vaBank, ewalletDeeplink };
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
@@ -57,8 +172,18 @@ serve(async (req: Request) => {
     return json({ error: "Request body tidak valid" }, 400);
   }
 
-  const { outlet_slug, items, customer_name, customer_wa, pickup_time, notes } =
-    body as Record<string, unknown>;
+  const {
+    outlet_slug, items, customer_name, customer_wa, pickup_time, notes,
+    payment_channel,  // ← baru: pilihan channel dari customer (default: QRIS)
+  } = body as Record<string, unknown>;
+
+  // ─── Validasi & normalisasi payment_channel ──────────────────────────────
+  const channel = (
+    typeof payment_channel === "string" &&
+    Object.keys(CHANNEL_CONFIG).includes(payment_channel.toUpperCase())
+      ? payment_channel.toUpperCase()
+      : "QRIS"
+  ) as ChannelType;
 
   // ─── Validasi input ──────────────────────────────────────────────────────
   if (!outlet_slug || typeof outlet_slug !== "string") {
@@ -124,9 +249,13 @@ serve(async (req: Request) => {
   for (const row of settingsRows ?? []) cfg[row.key] = row.value;
 
   const feePct = Number(cfg["service_fee_percent"] ?? 0) / 100;
-  const expireMin = Number(cfg["qris_expire_minutes"] ?? 15);
 
-  // ─── Server-side reprice — abaikan harga dari client ────────────────────
+  // Gunakan expiry dari CHANNEL_CONFIG, kecuali QRIS bisa override dari settings
+  const expireMin = channel === "QRIS"
+    ? Number(cfg["qris_expire_minutes"] ?? CHANNEL_CONFIG.QRIS.expireMinutes)
+    : CHANNEL_CONFIG[channel].expireMinutes;
+
+  // ─── Server-side reprice ─────────────────────────────────────────────────
   const itemIds = [
     ...new Set(
       (items as Record<string, unknown>[])
@@ -155,7 +284,6 @@ serve(async (req: Request) => {
     (overrideRows ?? []).map((o) => [o.menu_item_id, o]),
   );
 
-  // Kumpulkan semua option IDs untuk lookup price_modifier
   const allOptionIds = (items as Record<string, unknown>[])
     .flatMap((i) => (Array.isArray(i.option_ids) ? i.option_ids : []))
     .filter((id): id is string => typeof id === "string");
@@ -170,7 +298,6 @@ serve(async (req: Request) => {
 
   const optMap = Object.fromEntries((optionRows ?? []).map((o) => [o.id, o]));
 
-  // Validasi & hitung harga tiap item
   let subtotal = 0;
   const validatedItems: Array<{
     menu_item_id: string;
@@ -185,9 +312,7 @@ serve(async (req: Request) => {
   for (const item of items as Record<string, unknown>[]) {
     const menuItemId = item.menu_item_id as string;
     const quantity = item.quantity as number;
-    const optionIds = (
-      Array.isArray(item.option_ids) ? item.option_ids : []
-    ) as string[];
+    const optionIds = (Array.isArray(item.option_ids) ? item.option_ids : []) as string[];
     const selections = item.selections ?? {};
     const note = typeof item.note === "string" ? item.note : null;
 
@@ -225,46 +350,35 @@ serve(async (req: Request) => {
     });
   }
 
-  // Biaya layanan — ceiling agar total selalu integer
   const serviceFee = Math.ceil(subtotal * feePct);
   const total = subtotal + serviceFee;
 
-  // ─── Xendit credentials dari Supabase Secrets ─────────────────────────────
+  // ─── Xendit credentials ───────────────────────────────────────────────────
   const xenditSecretKey = Deno.env.get("XENDIT_SECRET_KEY");
   if (!xenditSecretKey) {
-    console.error("XENDIT_SECRET_KEY belum dikonfigurasi di Supabase Secrets");
-    return json(
-      { error: "Layanan pembayaran belum tersedia. Hubungi admin." },
-      503,
-    );
+    console.error("XENDIT_SECRET_KEY belum dikonfigurasi");
+    return json({ error: "Layanan pembayaran belum tersedia. Hubungi admin." }, 503);
   }
 
-  // ─── Generate reference ID unik ──────────────────────────────────────────
-  // reference_id dikirim ke Xendit & disimpan di DB untuk lookup webhook
-  const referenceId = `SUKA-${Date.now()}-${crypto
-    .randomUUID()
-    .replace(/-/g, "")
-    .slice(0, 8)
-    .toUpperCase()}`;
+  const frontendUrl = Deno.env.get("FRONTEND_URL") ?? "https://order.sukshawarma.com";
 
-  // Waktu kadaluarsa QR (default 15 menit dari settings)
+  // ─── Generate reference ID & order number ────────────────────────────────
+  const referenceId = `SUKA-${Date.now()}-${crypto
+    .randomUUID().replace(/-/g, "").slice(0, 8).toUpperCase()}`;
+
   const expiredAt = new Date(Date.now() + expireMin * 60 * 1000);
 
-  // ─── Generate order number: [KODE]-DDMMYY-NNN ───────────────────────────
   const outletCode = outlet_slug.split("-")[0].slice(0, 3).toUpperCase();
-  const now = new Date(Date.now() + 7 * 60 * 60 * 1000); // UTC → WIB
-  const dd = String(now.getUTCDate()).padStart(2, "0");
-  const mm = String(now.getUTCMonth() + 1).padStart(2, "0");
-  const yy = String(now.getUTCFullYear()).slice(2);
-  const today = `${dd}${mm}${yy}`;
+  const nowWib = new Date(Date.now() + 7 * 60 * 60 * 1000);
+  const dd = String(nowWib.getUTCDate()).padStart(2, "0");
+  const mo = String(nowWib.getUTCMonth() + 1).padStart(2, "0");
+  const yy = String(nowWib.getUTCFullYear()).slice(2);
 
   const startOfDay = new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) -
-      7 * 60 * 60 * 1000,
+    Date.UTC(nowWib.getUTCFullYear(), nowWib.getUTCMonth(), nowWib.getUTCDate()) - 7 * 3600000,
   ).toISOString();
   const endOfDay = new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1) -
-      7 * 60 * 60 * 1000,
+    Date.UTC(nowWib.getUTCFullYear(), nowWib.getUTCMonth(), nowWib.getUTCDate() + 1) - 7 * 3600000,
   ).toISOString();
 
   const { count: todayCount } = await supabase
@@ -275,9 +389,9 @@ serve(async (req: Request) => {
     .lt("created_at", endOfDay);
 
   const seq = String((todayCount ?? 0) + 1).padStart(3, "0");
-  const orderNum = `${outletCode}-${today}-${seq}`;
+  const orderNum = `${outletCode}-${dd}${mo}${yy}-${seq}`;
 
-  // ─── INSERT order sebelum call Xendit ────────────────────────────────────
+  // ─── INSERT order ─────────────────────────────────────────────────────────
   const { data: order, error: orderErr } = await supabase
     .from("orders")
     .insert({
@@ -290,11 +404,15 @@ serve(async (req: Request) => {
       service_fee: serviceFee,
       total,
       status: "pending_payment",
-      payment_method: "xendit_qris",
+      payment_method: CHANNEL_CONFIG[channel].paymentMethod,
+      payment_channel: channel,
       order_number: orderNum,
-      tripay_merchant_ref: referenceId, // pakai kolom existing untuk reference_id Xendit
-      tripay_reference: null,           // akan diisi dengan xendit payment_request_id
-      qris_url: null,                   // akan diisi dengan qr_string dari Xendit
+      tripay_merchant_ref: referenceId,
+      tripay_reference: null,
+      qris_url: null,
+      va_number: null,
+      va_bank: null,
+      ewallet_deeplink: null,
       expires_at: expiredAt.toISOString(),
     })
     .select("id, order_number")
@@ -311,24 +429,22 @@ serve(async (req: Request) => {
     .insert(validatedItems.map((it) => ({ order_id: order.id, ...it })));
 
   if (itemsErr) {
-    await supabase
-      .from("orders")
-      .update({
-        status: "cancelled",
-        cancel_reason: "Internal error — gagal simpan item",
-        cancelled_at: new Date().toISOString(),
-      })
-      .eq("id", order.id);
+    await supabase.from("orders").update({
+      status: "cancelled",
+      cancel_reason: "Internal error — gagal simpan item",
+      cancelled_at: new Date().toISOString(),
+    }).eq("id", order.id);
     console.error("Gagal insert order_items:", itemsErr);
     return json({ error: "Gagal menyimpan detail order. Silakan coba lagi." }, 500);
   }
 
   // ─── Call Xendit Payment Request API ─────────────────────────────────────
-  // Auth: Basic base64(secret_key + ":") — password kosong
   const xenditAuth = "Basic " + btoa(xenditSecretKey + ":");
+  const xenditPaymentMethod = buildXenditPaymentMethod(
+    channel, customer_name.trim(), expiredAt, frontendUrl, orderNum,
+  );
 
-  let xenditPaymentRequestId: string | null = null;
-  let qrisString: string | null = null;
+  let xenditResponse: Record<string, unknown> | null = null;
 
   try {
     const res = await fetch("https://api.xendit.co/payment_requests", {
@@ -342,87 +458,81 @@ serve(async (req: Request) => {
         currency: "IDR",
         amount: total,
         country: "ID",
-        payment_method: {
-          type: "QR_CODE",
-          reusability: "ONE_TIME_USE",
-          qr_code: {
-            channel_code: "QRIS",
-          },
-        },
+        payment_method: xenditPaymentMethod,
         description: `Order ${orderNum} - SUKA Shawarma ${outlet.name}`,
         metadata: {
           order_id: order.id,
           order_number: orderNum,
           outlet_slug,
+          payment_channel: channel,
         },
       }),
     });
 
-    const payload = await res.json();
+    xenditResponse = await res.json() as Record<string, unknown>;
 
     if (!res.ok) {
       throw new Error(
-        payload.message ?? payload.error_code ?? `Xendit HTTP ${res.status}`,
+        (xenditResponse.message as string) ??
+        (xenditResponse.error_code as string) ??
+        `Xendit HTTP ${res.status}`,
       );
     }
 
-    xenditPaymentRequestId = payload.id ?? null;
-
-    // QR string ada di actions[] — cari yang descriptor === "QR_STRING"
-    const qrAction = (payload.actions ?? []).find(
-      (a: Record<string, string>) => a.descriptor === "QR_STRING",
-    );
-    qrisString = qrAction?.value ?? null;
-
-    console.info("Xendit payment request dibuat:", {
-      payment_request_id: xenditPaymentRequestId,
-      order_number: orderNum,
-    });
+    console.info("Xendit response:", JSON.stringify({
+      id: xenditResponse.id,
+      status: xenditResponse.status,
+      channel,
+      actions: xenditResponse.actions,
+    }));
   } catch (err) {
-    // Xendit gagal — batalkan order agar tidak menggantung
-    await supabase
-      .from("orders")
-      .update({
-        status: "cancelled",
-        cancel_reason: `Xendit error: ${(err as Error).message}`,
-        cancelled_at: new Date().toISOString(),
-      })
-      .eq("id", order.id);
+    await supabase.from("orders").update({
+      status: "cancelled",
+      cancel_reason: `Xendit error: ${(err as Error).message}`,
+      cancelled_at: new Date().toISOString(),
+    }).eq("id", order.id);
     console.error("Xendit API error:", err);
-    return json(
-      { error: "Gagal menghubungi layanan pembayaran. Silakan coba lagi." },
-      502,
-    );
+    return json({ error: "Gagal menghubungi layanan pembayaran. Silakan coba lagi." }, 502);
   }
 
-  // ─── UPDATE order dengan data Xendit ─────────────────────────────────────
-  await supabase
-    .from("orders")
-    .update({
-      tripay_reference: xenditPaymentRequestId, // payment_request_id Xendit
-      qris_url: qrisString,                      // QR string untuk di-render di frontend
-    })
-    .eq("id", order.id);
+  // ─── Ekstrak data dari response Xendit ───────────────────────────────────
+  const { paymentRequestId, qrisString, vaNumber, vaBank, ewalletDeeplink } =
+    extractPaymentData(xenditResponse, channel);
 
-  // ─── Trigger notifikasi WA new_order (fire-and-forget) ───────────────────
+  // ─── UPDATE order dengan data payment ────────────────────────────────────
+  await supabase.from("orders").update({
+    tripay_reference: paymentRequestId,
+    qris_url: qrisString,
+    va_number: vaNumber,
+    va_bank: vaBank,
+    ewallet_deeplink: ewalletDeeplink,
+  }).eq("id", order.id);
+
+  // ─── Trigger WA notif new_order (fire-and-forget) ────────────────────────
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   fetch(`${supabaseUrl}/functions/v1/send-wa-notifications`, {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${serviceKey}`,
-      "Content-Type": "application/json",
-    },
+    headers: { Authorization: `Bearer ${serviceKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({ order_id: order.id, event: "new_order" }),
-  }).catch((err) => console.error("Gagal trigger WA notif new_order:", err));
+  }).catch((err) => console.error("Gagal trigger WA notif:", err));
 
   // ─── Response ke frontend ─────────────────────────────────────────────────
   return json({
     success: true,
     order_number: order.order_number,
     order_id: order.id,
-    qris_string: qrisString,           // untuk di-render jadi QR code di frontend
-    payment_request_id: xenditPaymentRequestId,
+    payment_channel: channel,
+    payment_type: CHANNEL_CONFIG[channel].type,
+    // QRIS
+    qris_string: qrisString,
+    // Virtual Account
+    va_number: vaNumber,
+    va_bank: vaBank,
+    // E-Wallet
+    ewallet_deeplink: ewalletDeeplink,
+    // Common
+    payment_request_id: paymentRequestId,
     expires_at: expiredAt.toISOString(),
     total,
     subtotal,

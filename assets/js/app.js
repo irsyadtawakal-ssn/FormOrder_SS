@@ -50,7 +50,7 @@ async function submitCheckout(checkoutData) {
 // Mengembalikan: { order_number, order_id, qris_string, payment_request_id, expires_at, total, subtotal, service_fee }
 
 async function submitXenditPayment(checkoutData) {
-  const { outletSlug, cart, customerName, customerWA, pickupTime, notes } = checkoutData;
+  const { outletSlug, cart, customerName, customerWA, pickupTime, notes, paymentChannel } = checkoutData;
 
   const items = cart.map(item => ({
     menu_item_id: item.menuItemId,
@@ -61,12 +61,13 @@ async function submitXenditPayment(checkoutData) {
   }));
 
   return await callEdgeFunction('create-xendit-payment', {
-    outlet_slug:   outletSlug,
+    outlet_slug:     outletSlug,
     items,
-    customer_name: customerName,
-    customer_wa:   customerWA,
-    pickup_time:   pickupTime,
-    notes:         notes || null,
+    customer_name:   customerName,
+    customer_wa:     customerWA,
+    pickup_time:     pickupTime,
+    notes:           notes || null,
+    payment_channel: paymentChannel || 'QRIS',
   });
 }
 

@@ -1,5 +1,7 @@
 // Edge Function: xendit-webhook
 // Menerima callback Xendit, verifikasi x-callback-token, update status order
+// Mendukung: QRIS, Virtual Account (BCA/BNI/BRI/MANDIRI), E-Wallet (GOPAY/OVO/DANA)
+// Semua channel menggunakan event payment.capture / payment.failure yang sama
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -59,7 +61,12 @@ serve(async (req: Request) => {
     return new Response("Payload tidak lengkap", { status: 400 });
   }
 
-  console.info("Xendit webhook diterima:", { event, reference_id: data.reference_id });
+  console.info("Xendit webhook diterima:", {
+    event,
+    reference_id: data.reference_id,
+    channel_code: data.channel_code,
+    payment_method_type: data.type,
+  });
 
   // ─── Hanya proses event payment yang relevan ─────────────────────────────
   // payment.capture → pembayaran berhasil (SUCCEEDED)

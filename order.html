@@ -101,15 +101,22 @@ async function loadOrder(cached) {
 
   // Merge data tambahan dari cache jika belum ada di DB row
   if (cached) {
-    order._qris_url = order.qris_url || cached.qris_url;
-    order._pay_url  = order.tripay_pay_url || cached.pay_url;
-    // Gunakan items dari cache jika DB tidak return (kemungkinan RLS)
+    order._qris_url        = order.qris_url        || cached.qris_url;
+    order._va_number       = order.va_number        || cached.va_number;
+    order._va_bank         = order.va_bank          || cached.va_bank;
+    order._ewallet_deeplink= order.ewallet_deeplink || cached.ewallet_deeplink;
+    order._payment_channel = order.payment_channel  || cached.payment_channel || 'QRIS';
+    order._expires_at      = order.expires_at       || cached.expires_at;
     if (!order.order_items?.length && cached.order_items?.length) {
       order.order_items = cached.order_items;
     }
   } else {
-    order._qris_url = order.qris_url;
-    order._pay_url  = order.tripay_pay_url;
+    order._qris_url        = order.qris_url;
+    order._va_number       = order.va_number;
+    order._va_bank         = order.va_bank;
+    order._ewallet_deeplink= order.ewallet_deeplink;
+    order._payment_channel = order.payment_channel || 'QRIS';
+    order._expires_at      = order.expires_at;
   }
 
   // Simpan order aktif ke localStorage supaya bisa dipulihkan kalau tab hilang
@@ -193,60 +200,135 @@ function renderStatus(o) {
   switch (o.status) {
 
     case 'pending_payment': {
-      const qrisStr = o._qris_url || o.qris_url || '';
+      const channel       = o._payment_channel || o.payment_channel || 'QRIS';
+      const isQris        = channel === 'QRIS';
+      const isVA          = ['BCA','BNI','BRI','MANDIRI'].includes(channel);
+      const isEwallet     = ['GOPAY','OVO','DANA'].includes(channel);
+      const qrisStr       = o._qris_url        || o.qris_url        || '';
+      const vaNumber      = o._va_number       || o.va_number       || '';
+      const vaBank        = o._va_bank         || o.va_bank         || channel;
+      const ewalletLink   = o._ewallet_deeplink|| o.ewallet_deeplink|| '';
+
+      const heroIcon  = isQris ? '📱' : isVA ? '🏦' : '💳';
+      const heroTitle = isQris ? 'Scan QRIS untuk Bayar'
+                      : isVA   ? `Transfer ke Virtual Account ${vaBank}`
+                      :          `Bayar via ${channel}`;
+      const heroSub   = isQris ? 'Buka m-banking atau e-wallet, pilih Bayar QRIS, lalu scan'
+                      : isVA   ? `Salin nomor VA di bawah dan transfer dari m-banking mana saja`
+                      :          `Tap tombol di bawah untuk buka aplikasi ${channel}`;
+
       heroHtml = `
         <div class="status-hero">
-          <div class="status-icon">📱</div>
-          <div class="status-title">Scan QRIS untuk Bayar</div>
-          <div class="status-sub">Buka m-banking atau e-wallet, pilih Bayar QRIS, lalu scan</div>
+          <div class="status-icon">${heroIcon}</div>
+          <div class="status-title">${heroTitle}</div>
+          <div class="status-sub">${heroSub}</div>
           <span class="status-chip status-pending">BELUM BAYAR</span>
         </div>`;
 
-      extraHtml = `
-        <!-- QR Code box -->
-        <div class="info-card" style="text-align:center">
-          <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:12px">Scan QR Code di bawah</div>
+      // ── Konten per channel ──
+      let paymentContent = '';
 
-          ${qrisStr
-            ? `<div id="qrisCanvas" style="display:flex;justify-content:center;margin-bottom:12px"></div>`
-            : `<div style="padding:24px 0;color:var(--muted);font-size:13px">QR tidak tersedia.<br/>Silakan tunggu atau muat ulang.</div>`
-          }
+      if (isQris) {
+        paymentContent = `
+          <div class="info-card" style="text-align:center">
+            <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:12px">Scan QR Code di bawah</div>
+            ${qrisStr
+              ? `<div id="qrisCanvas" style="display:flex;justify-content:center;margin-bottom:12px"></div>`
+              : `<div style="padding:24px 0;color:var(--muted);font-size:13px">QR tidak tersedia.<br/>Silakan muat ulang halaman.</div>`
+            }
+            <div style="font-size:22px;font-weight:800;color:var(--brand);margin-bottom:4px">${formatRupiah(o.total)}</div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:12px" id="countdown">Menghitung waktu…</div>
+            <button id="btnCekStatus" class="btn-add-big" onclick="doCekStatus()"
+              style="background:var(--brand-bg);color:var(--brand);font-weight:700;margin-bottom:0">
+              Sudah Bayar? Cek Status
+            </button>
+          </div>
+          <div style="margin:0 12px 10px;padding:10px 14px;background:#fef9c3;border-radius:10px;font-size:12px;line-height:1.8;color:#854d0e">
+            📱 <b>Cara bayar:</b> Buka m-banking / GoPay / OVO / DANA → Scan QR → Konfirmasi <b>${formatRupiah(o.total)}</b>
+          </div>`;
+      }
 
-          <div style="font-size:22px;font-weight:800;color:var(--brand);margin-bottom:4px">${formatRupiah(o.total)}</div>
-          <div style="font-size:12px;color:var(--muted);margin-bottom:12px" id="countdown">Menghitung waktu…</div>
+      if (isVA) {
+        const bankInstructions: Record<string, string> = {
+          BCA:     'ATM / m-Banking BCA → Transfer → BCA Virtual Account',
+          BNI:     'ATM / m-Banking BNI → Virtual Account Billing → Bayar Tagihan',
+          BRI:     'ATM / m-Banking BRImo → Pembayaran → Virtual Account',
+          MANDIRI: 'ATM / Livin → Bayar → Multi Payment → kode 70012',
+        };
+        paymentContent = `
+          <div class="info-card">
+            <div style="font-weight:700;font-size:14px;margin-bottom:10px">🏦 Virtual Account ${vaBank}</div>
+            <div class="info-row">
+              <span class="label">Bank</span>
+              <span class="val" style="font-weight:700">${vaBank}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Nomor VA</span>
+              <div style="display:flex;align-items:center;gap:8px;flex:1">
+                <span style="font-weight:800;font-family:monospace;font-size:16px;letter-spacing:1px">${vaNumber || '—'}</span>
+                ${vaNumber ? `<button onclick="copyVA('${vaNumber}')" id="btnCopyVA"
+                  style="flex-shrink:0;background:var(--brand-bg);color:var(--brand);border:0;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer">
+                  Salin</button>` : ''}
+              </div>
+            </div>
+            <div class="info-row" style="border-top:1px dashed var(--line2);margin-top:6px;padding-top:10px">
+              <span class="label" style="font-weight:700">Total Transfer</span>
+              <span class="val" style="font-size:18px;font-weight:800;color:var(--brand)">${formatRupiah(o.total)}</span>
+            </div>
+            <div style="margin-top:12px;font-size:12px;color:var(--muted);line-height:1.6;background:var(--bg);padding:10px;border-radius:8px">
+              📋 <b>Cara bayar:</b> ${bankInstructions[vaBank] || `m-Banking ${vaBank} → Virtual Account`}
+            </div>
+          </div>
+          <div style="margin:0 12px 10px;padding:10px 14px;background:var(--brand-bg);border-radius:10px;font-size:12px;line-height:1.6;color:var(--ink2)">
+            ⚠️ Transfer <b>tepat ${formatRupiah(o.total)}</b> — nominal harus sama persis
+          </div>
+          <div style="margin:0 12px 10px">
+            <div style="font-size:12px;color:var(--muted);margin-bottom:6px" id="countdown">Menghitung waktu…</div>
+            <button id="btnCekStatus" class="btn-add-big" onclick="doCekStatus()"
+              style="background:var(--brand-bg);color:var(--brand);font-weight:700">
+              Sudah Transfer? Cek Status
+            </button>
+          </div>`;
+      }
 
-          <button id="btnCekStatus" class="btn-add-big" onclick="doCekStatus()"
-            style="background:var(--brand-bg);color:var(--brand);font-weight:700;margin-bottom:0">
-            Sudah Bayar? Cek Status
-          </button>
-        </div>
+      if (isEwallet) {
+        paymentContent = `
+          <div class="info-card" style="text-align:center">
+            <div style="font-size:48px;margin-bottom:8px">${channel === 'GOPAY' ? '💚' : channel === 'OVO' ? '💜' : '💙'}</div>
+            <div style="font-size:22px;font-weight:800;color:var(--brand);margin-bottom:4px">${formatRupiah(o.total)}</div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:16px" id="countdown">Menghitung waktu…</div>
+            ${ewalletLink
+              ? `<a href="${ewalletLink}" class="btn-add-big" style="display:block;text-decoration:none;text-align:center;margin-bottom:10px">
+                   Buka ${channel} untuk Bayar
+                 </a>`
+              : `<div style="color:var(--muted);font-size:13px;padding:12px 0">Link pembayaran tidak tersedia.<br/>Hubungi admin.</div>`
+            }
+            <button id="btnCekStatus" class="btn-add-big" onclick="doCekStatus()"
+              style="background:var(--brand-bg);color:var(--brand);font-weight:700;margin-bottom:0">
+              Sudah Bayar? Cek Status
+            </button>
+          </div>`;
+      }
 
-        <!-- Petunjuk singkat -->
-        <div style="margin:0 12px 10px;padding:10px 14px;background:#fef9c3;border-radius:10px;font-size:12px;line-height:1.8;color:#854d0e">
-          📱 <b>Cara bayar QRIS:</b><br/>
-          1. Buka m-banking / GoPay / OVO / DANA / dll<br/>
-          2. Pilih menu <b>Bayar / Scan QR</b><br/>
-          3. Scan QR di atas<br/>
-          4. Konfirmasi nominal <b>${formatRupiah(o.total)}</b><br/>
-          5. Halaman ini otomatis update setelah bayar ✅
-        </div>
-
-        <!-- Warning jangan tutup tab -->
+      extraHtml = paymentContent + `
         <div style="margin:0 12px 12px;padding:10px 14px;background:#e0f2fe;border-radius:10px;font-size:12px;line-height:1.5;color:#075985">
           🔒 <b>Jangan tutup tab ini</b> sampai status berubah jadi "Pembayaran Dikonfirmasi"
         </div>`;
       break;
     }
 
-    case 'paid':
+    case 'paid': {
+      const channel = o._payment_channel || o.payment_channel || '';
+      const payLabel = channel === 'QRIS' ? 'QRIS' : ['BCA','BNI','BRI','MANDIRI'].includes(channel) ? `VA ${channel}` : channel || 'digital';
       heroHtml = `
         <div class="status-hero">
           <div class="status-icon">✅</div>
           <div class="status-title">Pembayaran Dikonfirmasi!</div>
-          <div class="status-sub">Pembayaran QRIS berhasil — outlet sedang menyiapkan pesananmu</div>
+          <div class="status-sub">Pembayaran ${payLabel} berhasil — outlet sedang menyiapkan pesananmu</div>
           <span class="status-chip status-paid">DIKONFIRMASI</span>
         </div>`;
       break;
+    }
 
     case 'preparing':
       heroHtml = `
@@ -397,24 +479,47 @@ function renderStatus(o) {
     renderOrderQR(o.order_number);
   }
   if (o.status === 'pending_payment') {
-    // Render QRIS QR code
-    const qrisStr = o._qris_url || o.qris_url || '';
-    if (qrisStr) {
-      const canvas = document.getElementById('qrisCanvas');
-      if (canvas) {
-        try {
-          new QRCode(canvas, {
-            text: qrisStr,
-            width: 220,
-            height: 220,
-            correctLevel: QRCode.CorrectLevel.M,
-          });
-        } catch (e) { console.warn('QR render error:', e); }
+    const channel = o._payment_channel || o.payment_channel || 'QRIS';
+    const isQris  = channel === 'QRIS';
+
+    // Render QRIS QR code (hanya untuk channel QRIS)
+    if (isQris) {
+      const qrisStr = o._qris_url || o.qris_url || '';
+      if (qrisStr) {
+        const canvas = document.getElementById('qrisCanvas');
+        if (canvas) {
+          try {
+            new QRCode(canvas, {
+              text: qrisStr,
+              width: 220,
+              height: 220,
+              correctLevel: QRCode.CorrectLevel.M,
+            });
+          } catch (e) { console.warn('QR render error:', e); }
+        }
       }
     }
-    // Mulai countdown
-    if (o.expires_at) startCountdownUI(o.expires_at);
+
+    // Mulai countdown untuk semua channel
+    const expiresAt = o._expires_at || o.expires_at;
+    if (expiresAt) startCountdownUI(expiresAt);
   }
+}
+
+// ─── Salin nomor VA ke clipboard ──────────────────────────────────────────────
+function copyVA(vaNumber) {
+  navigator.clipboard.writeText(vaNumber).then(() => {
+    const btn = document.getElementById('btnCopyVA');
+    if (!btn) return;
+    btn.textContent = '✅ Disalin!';
+    btn.style.background = '#f0fdf4';
+    btn.style.color = '#16a34a';
+    setTimeout(() => {
+      btn.textContent = 'Salin';
+      btn.style.background = 'var(--brand-bg)';
+      btn.style.color = 'var(--brand)';
+    }, 2000);
+  }).catch(() => showToast('Salin manual: ' + vaNumber));
 }
 
 // loadSignedProofUrl tidak lagi dipakai — upload bukti transfer diganti QRIS
