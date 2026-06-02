@@ -175,7 +175,7 @@ function renderPage() {
           <div>✅ <b>Menu & jumlah</b> pesanan sudah sesuai</div>
         </div>
         <div style="margin-top:10px;font-size:11px;color:var(--muted);line-height:1.5">
-          Info rekening dan jumlah transfer akan tampil di halaman berikutnya setelah kamu konfirmasi.
+          QR Code QRIS akan muncul di halaman berikutnya — scan pakai aplikasi m-banking atau e-wallet apapun.
         </div>
       </div>
     </div>
@@ -197,21 +197,24 @@ async function doCheckout() {
   document.getElementById('loadingOverlay').style.display = 'flex';
 
   try {
-    const result = await submitManualOrder(checkoutData);
+    const result = await submitXenditPayment(checkoutData);
 
     // Simpan data order di sessionStorage untuk dibaca order.html
     sessionStorage.setItem('suka_order', JSON.stringify({
-      order_number:   result.order_number,
-      order_id:       result.order_id,
-      total:          result.total,
-      subtotal:       result.subtotal,
-      service_fee:    result.service_fee,
-      outlet_name:    checkoutData.outletName,
-      outlet_address: checkoutData.outletAddress,
-      customer_name:  checkoutData.customerName,
-      pickup_time:    checkoutData.pickupTime,
-      payment_method: 'manual',
-      status:         'pending_payment', // ← wajib ada agar order.html tampil form upload
+      order_number:        result.order_number,
+      order_id:            result.order_id,
+      total:               result.total,
+      subtotal:            result.subtotal,
+      service_fee:         result.service_fee,
+      outlet_name:         checkoutData.outletName,
+      outlet_address:      checkoutData.outletAddress,
+      customer_name:       checkoutData.customerName,
+      pickup_time:         checkoutData.pickupTime,
+      payment_method:      'xendit_qris',
+      status:              'pending_payment',
+      qris_url:            result.qris_string,        // QRIS string untuk render QR
+      payment_request_id:  result.payment_request_id, // Xendit PR ID untuk fallback poll
+      expires_at:          result.expires_at,          // waktu kadaluarsa QR
       // Simpan item cart agar order.html bisa tampil items sebelum DB query selesai
       order_items:    checkoutData.cart.map(item => ({
         item_name:  item.name,

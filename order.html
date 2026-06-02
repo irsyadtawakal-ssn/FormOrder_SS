@@ -113,7 +113,7 @@ async function loadOrder(cached) {
   }
 
   // Simpan order aktif ke localStorage supaya bisa dipulihkan kalau tab hilang
-  if (['pending_payment', 'awaiting_verification', 'proof_rejected'].includes(order.status)) {
+  if (['pending_payment'].includes(order.status)) {
     localStorage.setItem('suka_last_order', JSON.stringify({
       order_number: order.order_number,
       url: window.location.href,
@@ -179,29 +179,6 @@ function subscribeRealtime(orderId) {
 }
 
 // ─── Render UI berdasarkan status ─────────────────────────────────────────────
-function uploadFormHtml(orderNum) {
-  return `<div class="info-card" id="uploadCard">
-    <div style="font-weight:700;font-size:14px;margin-bottom:4px">📸 Upload Bukti Transfer</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Screenshot struk m-banking kamu</div>
-    <div id="proofPreview" style="display:none;margin-bottom:10px;text-align:center">
-      <img id="proofImg" style="max-width:100%;border-radius:8px;max-height:200px;object-fit:cover" />
-      <div style="font-size:12px;color:var(--muted);margin-top:6px">Pastikan nominal terlihat jelas</div>
-    </div>
-    <label id="proofLabel" style="display:flex;align-items:center;gap:10px;padding:14px 12px;border:2px dashed var(--line2);border-radius:10px;cursor:pointer;margin-bottom:10px;background:var(--bg)">
-      <span style="font-size:28px">🖼️</span>
-      <div>
-        <div style="font-weight:700;font-size:14px">Pilih Screenshot / Foto</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:2px">Galeri atau kamera • JPG/PNG maks 5MB</div>
-      </div>
-      <input type="file" id="proofFile" accept="image/*" style="display:none" onchange="previewProof(this)" />
-    </label>
-    <button class="btn-add-big" id="btnUpload" data-order-num="${orderNum}" disabled style="opacity:0.5">
-      Pilih foto dulu di atas
-    </button>
-    <div id="uploadErr" style="color:var(--brand);font-size:12px;margin-top:8px;display:none"></div>
-  </div>`;
-}
-
 function renderStatus(o) {
   // Stop countdown lama jika ada
   if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
@@ -215,103 +192,58 @@ function renderStatus(o) {
 
   switch (o.status) {
 
-    case 'proof_rejected':
+    case 'pending_payment': {
+      const qrisStr = o._qris_url || o.qris_url || '';
       heroHtml = `
         <div class="status-hero">
-          <div class="status-icon">❌</div>
-          <div class="status-title">Bukti Ditolak</div>
-          <div class="status-sub">Bukti transfer kamu tidak valid. Silakan upload ulang yang benar.</div>
-          <span class="status-chip status-preparing">UPLOAD ULANG</span>
-        </div>`;
-      extraHtml = `
-        <div style="margin:0 0 10px;padding:12px 14px;background:#fbe7df;border-radius:10px;font-size:13px;line-height:1.6;color:var(--accent-ink)">
-          ⚠️ <b>Bukti transfer kamu ditolak admin.</b><br/>
-          Pastikan foto terlihat jelas — nominal, nama rekening penerima, dan tanggal transfer harus terbaca.
-        </div>
-        ${uploadFormHtml(o.order_number)}`;
-      break;
-
-    case 'pending_payment':
-      heroHtml = `
-        <div class="status-hero">
-          <div class="status-icon">💳</div>
-          <div class="status-title">Transfer Dulu Yuk!</div>
-          <div class="status-sub">Ikuti 2 langkah di bawah untuk konfirmasi pesanan</div>
-          <span class="status-chip status-pending">BELUM TRANSFER</span>
+          <div class="status-icon">📱</div>
+          <div class="status-title">Scan QRIS untuk Bayar</div>
+          <div class="status-sub">Buka m-banking atau e-wallet, pilih Bayar QRIS, lalu scan</div>
+          <span class="status-chip status-pending">BELUM BAYAR</span>
         </div>`;
 
       extraHtml = `
-        <!-- Step indicator -->
-        <div style="display:flex;align-items:center;padding:0 12px 14px;gap:0">
-          <div style="flex:0 0 auto;text-align:center">
-            <div style="width:32px;height:32px;border-radius:50%;background:var(--brand);color:#fff;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto 4px">1</div>
-            <div style="font-size:10px;font-weight:700;color:var(--brand)">Transfer</div>
-          </div>
-          <div style="flex:1;height:2px;background:var(--line2);margin:0 8px 16px"></div>
-          <div style="flex:0 0 auto;text-align:center">
-            <div style="width:32px;height:32px;border-radius:50%;background:var(--line2);color:var(--muted);font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto 4px">2</div>
-            <div style="font-size:10px;font-weight:700;color:var(--muted)">Upload Bukti</div>
-          </div>
+        <!-- QR Code box -->
+        <div class="info-card" style="text-align:center">
+          <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:12px">Scan QR Code di bawah</div>
+
+          ${qrisStr
+            ? `<div id="qrisCanvas" style="display:flex;justify-content:center;margin-bottom:12px"></div>`
+            : `<div style="padding:24px 0;color:var(--muted);font-size:13px">QR tidak tersedia.<br/>Silakan tunggu atau muat ulang.</div>`
+          }
+
+          <div style="font-size:22px;font-weight:800;color:var(--brand);margin-bottom:4px">${formatRupiah(o.total)}</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:12px" id="countdown">Menghitung waktu…</div>
+
+          <button id="btnCekStatus" class="btn-add-big" onclick="doCekStatus()"
+            style="background:var(--brand-bg);color:var(--brand);font-weight:700;margin-bottom:0">
+            Sudah Bayar? Cek Status
+          </button>
         </div>
 
-        <!-- Rekening tujuan -->
-        <div class="info-card">
-          <div style="font-weight:700;font-size:14px;margin-bottom:10px">🏦 Langkah 1 — Transfer ke Rekening</div>
-          <div class="info-row">
-            <span class="label">Bank</span>
-            <span class="val" style="font-weight:700">BCA</span>
-          </div>
-          <div class="info-row">
-            <span class="label">No. Rekening</span>
-            <div style="display:flex;align-items:center;gap:8px;flex:1">
-              <span style="font-weight:700;font-family:monospace;font-size:15px">0955193763</span>
-              <button onclick="copyRek()" id="btnCopyRek"
-                style="flex-shrink:0;background:var(--brand-bg);color:var(--brand);border:0;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer">
-                Salin
-              </button>
-            </div>
-          </div>
-          <div class="info-row">
-            <span class="label">Atas Nama</span>
-            <span class="val">PT Suka Profit Berkah</span>
-          </div>
-          <div class="info-row" style="border-top:1px dashed var(--line2);margin-top:6px;padding-top:10px">
-            <span class="label" style="font-weight:700;color:var(--ink)">Transfer</span>
-            <span class="val" style="font-weight:800;color:var(--brand);font-size:18px">${formatRupiah(o.total)}</span>
-          </div>
+        <!-- Petunjuk singkat -->
+        <div style="margin:0 12px 10px;padding:10px 14px;background:#fef9c3;border-radius:10px;font-size:12px;line-height:1.8;color:#854d0e">
+          📱 <b>Cara bayar QRIS:</b><br/>
+          1. Buka m-banking / GoPay / OVO / DANA / dll<br/>
+          2. Pilih menu <b>Bayar / Scan QR</b><br/>
+          3. Scan QR di atas<br/>
+          4. Konfirmasi nominal <b>${formatRupiah(o.total)}</b><br/>
+          5. Halaman ini otomatis update setelah bayar ✅
         </div>
 
         <!-- Warning jangan tutup tab -->
-        <div style="margin:0 12px 10px;padding:10px 14px;background:#fef9c3;border-radius:10px;font-size:12px;line-height:1.6;color:#854d0e">
-          📱 <b>Jangan tutup tab ini</b> — setelah transfer di m-banking, kembali ke sini dan upload buktinya.
-        </div>
-
-        <!-- Upload form -->
-        ${uploadFormHtml(o.order_number)}`;
-      break;
-
-    case 'awaiting_verification':
-      heroHtml = `
-        <div class="status-hero">
-          <div class="status-icon">🔍</div>
-          <div class="status-title">Menunggu Verifikasi</div>
-          <div class="status-sub">Bukti transfer sudah diterima, admin sedang mengecek</div>
-          <span class="status-chip status-preparing">CEK ADMIN</span>
+        <div style="margin:0 12px 12px;padding:10px 14px;background:#e0f2fe;border-radius:10px;font-size:12px;line-height:1.5;color:#075985">
+          🔒 <b>Jangan tutup tab ini</b> sampai status berubah jadi "Pembayaran Dikonfirmasi"
         </div>`;
-
-      extraHtml = o.proof_url ? `
-        <div class="info-card" style="text-align:center">
-          <div style="font-size:13px;color:var(--muted);margin-bottom:8px">Bukti transfer yang kamu kirim:</div>
-          <img id="proofDisplayImg" data-path="${o.proof_url}" style="max-width:100%;border-radius:8px;max-height:220px;object-fit:cover;background:var(--line)" />
-        </div>` : '';
       break;
+    }
 
     case 'paid':
       heroHtml = `
         <div class="status-hero">
           <div class="status-icon">✅</div>
           <div class="status-title">Pembayaran Dikonfirmasi!</div>
-          <div class="status-sub">Transfer kamu sudah diverifikasi — outlet sedang menyiapkan pesanan</div>
+          <div class="status-sub">Pembayaran QRIS berhasil — outlet sedang menyiapkan pesananmu</div>
           <span class="status-chip status-paid">DIKONFIRMASI</span>
         </div>`;
       break;
@@ -386,7 +318,7 @@ function renderStatus(o) {
         <div class="status-hero">
           <div class="status-icon">⌛</div>
           <div class="status-title">Pesanan Kedaluwarsa</div>
-          <div class="status-sub">Bukti transfer tidak diterima dalam 2 jam. Silakan pesan ulang.</div>
+          <div class="status-sub">QR Code QRIS sudah kedaluwarsa. Silakan pesan ulang.</div>
           <span class="status-chip status-expired">KEDALUWARSA</span>
         </div>`;
 
@@ -464,56 +396,30 @@ function renderStatus(o) {
   if (o.status === 'ready') {
     renderOrderQR(o.order_number);
   }
-  if (o.status === 'awaiting_verification' && o.proof_url) {
-    loadSignedProofUrl(o.proof_url);
-  }
-  if (o.status === 'pending_payment' || o.status === 'proof_rejected') {
-    const btn = document.getElementById('btnUpload');
-    if (btn) btn.addEventListener('click', () => doUploadProof(btn.dataset.orderNum));
-  }
-}
-
-// ─── Load public URL untuk tampil foto bukti transfer ─────────────────────────
-function loadSignedProofUrl(pathOrUrl) {
-  const img = document.getElementById('proofDisplayImg');
-  if (!img || !pathOrUrl) return;
-  // Jika sudah full URL, pakai langsung
-  if (pathOrUrl.startsWith('http')) { img.src = pathOrUrl; return; }
-  // Jika hanya path, generate public URL
-  const { data } = window.db.storage.from('transfer-proofs').getPublicUrl(pathOrUrl);
-  if (data?.publicUrl) img.src = data.publicUrl;
-}
-
-// ─── QR code QRIS (untuk state pending_payment) ───────────────────────────────
-function buildQrisBox(o) {
-  const qrisUrl = o._qris_url;
-  let qrisContent = '';
-
-  if (qrisUrl) {
-    if (qrisUrl.startsWith('http')) {
-      // URL gambar QR dari Tripay
-      qrisContent = `<div class="qris-img"><img src="${qrisUrl}" alt="QRIS" /></div>`;
-    } else {
-      // Raw QRIS string — render canvas via QRCode.js
-      qrisContent = `<div id="qrisCanvas" style="display:flex;justify-content:center;margin-bottom:10px"></div>`;
+  if (o.status === 'pending_payment') {
+    // Render QRIS QR code
+    const qrisStr = o._qris_url || o.qris_url || '';
+    if (qrisStr) {
+      const canvas = document.getElementById('qrisCanvas');
+      if (canvas) {
+        try {
+          new QRCode(canvas, {
+            text: qrisStr,
+            width: 220,
+            height: 220,
+            correctLevel: QRCode.CorrectLevel.M,
+          });
+        } catch (e) { console.warn('QR render error:', e); }
+      }
     }
-  } else {
-    qrisContent = `
-      <div style="padding:20px 0;color:var(--accent-ink);font-size:13px">
-        QR tidak tersedia. Gunakan tombol "Buka Halaman Tripay" di bawah.
-      </div>`;
+    // Mulai countdown
+    if (o.expires_at) startCountdownUI(o.expires_at);
   }
-
-  return `
-    <div class="qris-box" style="margin:0 12px 12px">
-      <div class="qris-title">Scan QRIS untuk Membayar</div>
-      ${qrisContent}
-      <div class="qris-amount">${formatRupiah(o.total)}</div>
-      <div class="qris-info">
-        <span class="countdown" id="countdown">—</span>
-      </div>
-    </div>`;
 }
+
+// loadSignedProofUrl tidak lagi dipakai — upload bukti transfer diganti QRIS
+
+// buildQrisBox tidak lagi dipakai — QR render langsung di renderStatus case pending_payment
 
 // ─── Render QR untuk order number (state ready) ───────────────────────────────
 function renderOrderQR(orderNum) {
@@ -533,20 +439,6 @@ function renderOrderQR(orderNum) {
 
 // ─── Countdown timer ──────────────────────────────────────────────────────────
 function startCountdownUI(expiresAt) {
-  // Render raw QRIS string jika perlu (setelah DOM tersedia)
-  const qrisUrl = order?._qris_url;
-  if (qrisUrl && !qrisUrl.startsWith('http')) {
-    const canvas = document.getElementById('qrisCanvas');
-    if (canvas) {
-      try {
-        new QRCode(canvas, {
-          text: qrisUrl, width: 240, height: 240,
-          correctLevel: QRCode.CorrectLevel.M,
-        });
-      } catch { /* fallback: tidak tampil */ }
-    }
-  }
-
   function tick() {
     const el = document.getElementById('countdown');
     if (!el) return;
@@ -601,120 +493,7 @@ async function doCekStatus() {
   }
 }
 
-// ─── Salin nomor rekening ke clipboard ────────────────────────────────────────
-function copyRek() {
-  navigator.clipboard.writeText('0955193763').then(() => {
-    const btn = document.getElementById('btnCopyRek');
-    if (!btn) return;
-    btn.textContent = '✅ Disalin!';
-    btn.style.background = 'var(--green-bg)';
-    btn.style.color = 'var(--green)';
-    setTimeout(() => {
-      btn.textContent = 'Salin';
-      btn.style.background = 'var(--brand-bg)';
-      btn.style.color = 'var(--brand)';
-    }, 2000);
-  }).catch(() => showToast('Salin manual: 0955193763'));
-}
-
-// ─── Preview foto bukti transfer ─────────────────────────────────────────────
-function previewProof(input) {
-  if (!input.files || !input.files[0]) return;
-  const file = input.files[0];
-  if (file.size > 5 * 1024 * 1024) {
-    showToast('❌ File terlalu besar (maks 5MB)');
-    input.value = '';
-    return;
-  }
-  const reader = new FileReader();
-  reader.onload = e => {
-    document.getElementById('proofImg').src = e.target.result;
-    document.getElementById('proofPreview').style.display = '';
-    const btn = document.getElementById('btnUpload');
-    if (btn) {
-      btn.disabled = false;
-      btn.style.opacity = '1';
-      btn.textContent = 'Kirim Bukti Transfer';
-    }
-  };
-  reader.readAsDataURL(file);
-}
-
-// ─── Upload bukti transfer + update status ────────────────────────────────────
-let isUploading = false;
-
-async function doUploadProof(orderNum) {
-  if (isUploading) return;
-  const fileInput = document.getElementById('proofFile');
-  if (!fileInput || !fileInput.files[0]) { showToast('Pilih foto dulu'); return; }
-
-  isUploading = true;
-  const btn = document.getElementById('btnUpload');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Mengirim…'; }
-
-  try {
-    const file     = fileInput.files[0];
-    const ext      = file.name.split('.').pop().toLowerCase() || 'jpg';
-    const path     = `${orderNum}/${Date.now()}.${ext}`;
-
-    // Upload ke Supabase Storage
-    const { data: upData, error: upErr } = await window.db.storage
-      .from('transfer-proofs')
-      .upload(path, file, { upsert: true, contentType: file.type });
-
-    if (upErr) throw new Error('Upload gagal: ' + upErr.message);
-
-    // Ambil public URL (bucket harus public di Supabase Storage settings)
-    const { data: urlData } = window.db.storage
-      .from('transfer-proofs')
-      .getPublicUrl(path);
-    const proofUrl = urlData?.publicUrl || path;
-
-    // Panggil RPC untuk update status
-    const { data: ok, error: rpcErr } = await window.db
-      .rpc('submit_transfer_proof', {
-        p_order_number: orderNum,
-        p_proof_url:    proofUrl,
-      });
-
-    if (rpcErr) throw new Error(rpcErr.message);
-    if (!ok) throw new Error('Order tidak ditemukan atau status sudah berubah');
-
-    // Kirim notif WA ke admin
-    fetch(`${window.SUKA_CONFIG.supabaseUrl}/functions/v1/send-wa-notifications`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${window.SUKA_CONFIG.supabaseAnonKey}`,
-        'apikey': window.SUKA_CONFIG.supabaseAnonKey,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ order_id: order?.id, event: 'transfer_submitted' }),
-    }).catch(() => {});
-
-    // Panggil AI verifikasi di background (tidak blokir UI)
-    if (order?.id) {
-      fetch(`${window.SUKA_CONFIG.supabaseUrl}/functions/v1/verify-transfer-proof`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${window.SUKA_CONFIG.supabaseAnonKey}`,
-          'apikey': window.SUKA_CONFIG.supabaseAnonKey,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ order_id: order.id }),
-      }).catch(() => {});
-    }
-
-    showToast('✅ Bukti transfer terkirim!');
-    await loadOrder(null);
-
-  } catch (e) {
-    const errEl = document.getElementById('uploadErr');
-    if (errEl) { errEl.textContent = '❌ ' + e.message; errEl.style.display = ''; }
-    if (btn) { btn.disabled = false; btn.textContent = 'Kirim Bukti Transfer'; btn.style.opacity = '1'; }
-  } finally {
-    isUploading = false;
-  }
-}
+// copyRek, previewProof, doUploadProof — dihapus, tidak dipakai di flow QRIS
 
 // ─── Error display ────────────────────────────────────────────────────────────
 function renderError(msg) {

@@ -10,7 +10,7 @@ Dibangun terpisah dari WordPress utama (`sukshawarma.com`).
 ## Stack
 - **Frontend:** Vanilla HTML/CSS/JS — no framework, no build step
 - **Backend:** Supabase (Postgres + Auth + Storage + Realtime + Edge Functions/Deno)
-- **Payment:** Tripay (QRIS dinamis, auto-confirm via webhook)
+- **Payment:** Xendit (QRIS dinamis Indonesia, auto-confirm via webhook)
 - **Notifications:** Fonnte (WhatsApp gateway)
 - **Hosting:** Hostinger — static files di `/public_html/order/`
 
@@ -41,10 +41,10 @@ Dibangun terpisah dari WordPress utama (`sukshawarma.com`).
 ├── supabase/
 │   ├── migrations/     — SQL schema files
 │   └── functions/      — Edge Functions (Deno)
-│       ├── create-tripay-payment/
-│       ├── tripay-webhook/
+│       ├── create-xendit-payment/
+│       ├── xendit-webhook/
 │       ├── send-wa-notifications/
-│       ├── check-tripay-status/
+│       ├── check-xendit-status/
 │       └── auto-cancel-expired-orders/
 ├── manifest.json
 ├── sw.js               — Service Worker (PWA)
@@ -60,21 +60,21 @@ Dibangun terpisah dari WordPress utama (`sukshawarma.com`).
 - D1: Subdomain (not WP page) — zero conflict, < 100kb
 - D2: Vanilla JS — ringan, no build tooling
 - D3: Supabase — familiar, free tier cukup
-- D4: Tripay — auto-confirm, KYC ringan, akun sudah ada
+- D4: Xendit — QRIS dinamis Indonesia, auto-confirm, webhook reliable, akun dibuat baru
 - D5: Fonnte WA — murah, komunitas besar Indonesia
 - D6: 2 roles: super_admin + outlet_staff (RLS enforced)
 - D7: Shared menu + outlet_menu_overrides per outlet
-- D8: 1 Tripay account pusat
+- D8: 1 Xendit account pusat (business_id tunggal)
 - D9: Service fee pass-through ke customer
 - D13: Pickup only (no delivery, no dine-in, no customer login)
 
 ## Security Requirements (WAJIB)
-- Tripay webhook: verify HMAC-SHA256 signature
-- Idempotency check pada webhook handler
-- Amount verification di webhook
+- Xendit webhook: verify `x-callback-token` header (bukan HMAC, tapi token statis dari dashboard)
+- Idempotency check pada webhook handler (gunakan `payment_id` dari Xendit)
+- Amount verification di webhook: bandingkan `request_amount` vs server price
 - Server-side price recalculation (ignore client prices)
-- Rate limit: 10 req/min per IP untuk create-tripay-payment
-- Semua credentials di Supabase Secrets, bukan di kode
+- Rate limit: 10 req/min per IP untuk create-xendit-payment
+- Semua credentials di Supabase Secrets, bukan di kode (XENDIT_SECRET_KEY, XENDIT_CALLBACK_TOKEN)
 
 ## Coding Conventions
 - Semua komentar & log dalam Bahasa Indonesia

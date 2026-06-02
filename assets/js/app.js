@@ -46,7 +46,31 @@ async function submitCheckout(checkoutData) {
   });
 }
 
-// ─── Submit manual order — tanpa payment gateway ─────────────────────────────
+// ─── Submit order via Xendit QRIS ────────────────────────────────────────────
+// Mengembalikan: { order_number, order_id, qris_string, payment_request_id, expires_at, total, subtotal, service_fee }
+
+async function submitXenditPayment(checkoutData) {
+  const { outletSlug, cart, customerName, customerWA, pickupTime, notes } = checkoutData;
+
+  const items = cart.map(item => ({
+    menu_item_id: item.menuItemId,
+    quantity:     item.qty,
+    option_ids:   Array.isArray(item.optionIds) ? item.optionIds : [],
+    selections:   item.selections || {},
+    note:         item.note || null,
+  }));
+
+  return await callEdgeFunction('create-xendit-payment', {
+    outlet_slug:   outletSlug,
+    items,
+    customer_name: customerName,
+    customer_wa:   customerWA,
+    pickup_time:   pickupTime,
+    notes:         notes || null,
+  });
+}
+
+// ─── Submit manual order — fallback tanpa payment gateway ────────────────────
 // Mengembalikan: { order_number, order_id, total, subtotal, service_fee }
 
 async function submitManualOrder(checkoutData) {
@@ -70,11 +94,11 @@ async function submitManualOrder(checkoutData) {
   });
 }
 
-// ─── Cek status order — panggil check-tripay-status ──────────────────────────
+// ─── Cek status order — panggil check-xendit-status ──────────────────────────
 // Mengembalikan: { success, status, synced }
 
 async function checkOrderStatus(orderNumber) {
-  return await callEdgeFunction('check-tripay-status', {
+  return await callEdgeFunction('check-xendit-status', {
     order_number: orderNumber,
   });
 }

@@ -140,6 +140,23 @@
 
 ---
 
+## Phase 10 — Xendit QRIS Integration
+**Scope:** Ganti transfer manual dengan QRIS dinamis via Xendit
+**Output:** Customer scan QR → bayar → auto-confirm → proses otomatis
+
+### Tasks
+- [ ] 10.1 Daftar & setup akun Xendit — dapatkan API Key, Secret Key, Callback Token, Business ID
+- [ ] 10.2 Simpan credentials ke Supabase Secrets: `XENDIT_SECRET_KEY`, `XENDIT_CALLBACK_TOKEN`
+- [x] 10.3 Edge Function `create-xendit-payment` — POST /payment_requests, channel_code QRIS, currency IDR, server-side reprice, return qr_string
+- [x] 10.4 Edge Function `xendit-webhook` — verify x-callback-token, idempotency via payment_id, update order status jika payment.capture sukses
+- [x] 10.5 Edge Function `check-xendit-status` — fallback polling GET /payment_requests/{id} (untuk timeout recovery)
+- [x] 10.6 Checkout page — ganti manual transfer ke Xendit QRIS (simpan qris_string di sessionStorage)
+- [x] 10.7 Order page — pending_payment tampil QR code + countdown, auto-update via Supabase realtime
+- [x] 10.8 Admin orders — hapus flow verifikasi manual, chip Verifikasi, tombol Approve/Tolak
+- [ ] 10.9 E2E test: QRIS scan → payment.capture webhook → order auto-confirmed
+
+---
+
 ## Pending Owner Input
 - [x] Foto menu items — semua sudah diupload ✅
 - [x] Nomor WA tiap outlet — SQL migration `20260521_outlet_phones.sql` siap, **jalankan di Supabase SQL Editor**

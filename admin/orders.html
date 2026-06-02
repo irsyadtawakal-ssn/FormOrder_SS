@@ -48,13 +48,12 @@
 
   <!-- Filter status -->
   <div class="chips" id="filterChips" style="padding-bottom:8px">
-    <button class="chip active" data-status="active"               onclick="setFilter('active')">Aktif</button>
-    <button class="chip"        data-status="awaiting_verification" onclick="setFilter('awaiting_verification')">💳 Verifikasi</button>
-    <button class="chip"        data-status="paid"                 onclick="setFilter('paid')">Dibayar</button>
-    <button class="chip"        data-status="preparing"            onclick="setFilter('preparing')">Disiapkan</button>
-    <button class="chip"        data-status="ready"                onclick="setFilter('ready')">Siap Ambil</button>
-    <button class="chip"        data-status="done"                 onclick="setFilter('done')">Selesai</button>
-    <button class="chip"        data-status="all"                  onclick="setFilter('all')">Semua</button>
+    <button class="chip active" data-status="active"     onclick="setFilter('active')">Aktif</button>
+    <button class="chip"        data-status="paid"       onclick="setFilter('paid')">Dibayar</button>
+    <button class="chip"        data-status="preparing"  onclick="setFilter('preparing')">Disiapkan</button>
+    <button class="chip"        data-status="ready"      onclick="setFilter('ready')">Siap Ambil</button>
+    <button class="chip"        data-status="done"       onclick="setFilter('done')">Selesai</button>
+    <button class="chip"        data-status="all"        onclick="setFilter('all')">Semua</button>
   </div>
 
   <!-- Outlet filter — hanya super_admin -->
@@ -99,7 +98,7 @@ let allOrders     = [];
 let currentFilter = 'active';
 let currentRole   = '';
 
-const ACTIVE_STATUSES = ['pending_payment', 'proof_rejected', 'awaiting_verification', 'paid', 'preparing', 'ready'];
+const ACTIVE_STATUSES = ['pending_payment', 'paid', 'preparing', 'ready'];
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 (async function init() {
@@ -119,9 +118,6 @@ const ACTIVE_STATUSES = ['pending_payment', 'proof_rejected', 'awaiting_verifica
       sel.appendChild(opt);
     });
     document.getElementById('outletFilterWrap').style.display = '';
-  } else {
-    // outlet_staff: sembunyikan chip filter Verifikasi (bukan urusan mereka)
-    document.querySelector('[data-status="awaiting_verification"]')?.remove();
   }
 
   await loadOrders();
@@ -133,7 +129,7 @@ async function loadOrders() {
   let q = window.db
     .from('orders')
     .select(`id, order_number, customer_name, customer_wa, total, status,
-             created_at, pickup_time, notes, outlet_id, proof_url, ai_verification_result,
+             created_at, pickup_time, notes, outlet_id,
              outlets(name),
              order_items(item_name, quantity, unit_price, selections, note)`)
     .order('created_at', { ascending: false })
@@ -207,16 +203,9 @@ function orderCard(o) {
     ${o.pickup_time ? `<div style="font-size:12px;color:var(--ink2)">⏰ Ambil: ${o.pickup_time}</div>` : ''}
     ${o.notes ? `<div style="font-size:12px;color:var(--muted);margin-top:2px">📝 ${o.notes}</div>` : ''}
     <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
-      ${o.status === 'awaiting_verification' && currentRole === 'super_admin' ? `
-        <button class="action-btn action-primary" onclick="doVerifyTransfer('${o.id}','approve')" style="background:var(--green,#22c55e)">✅ Verifikasi</button>
-        <button class="action-btn action-danger"  onclick="doVerifyTransfer('${o.id}','reject')">❌ Tolak</button>
-      ` : o.status === 'awaiting_verification' && currentRole !== 'super_admin' ? `
-        <span style="font-size:12px;color:var(--muted)">⏳ Menunggu verifikasi admin pusat</span>
-      ` : action ? `<button class="action-btn action-primary" onclick="doUpdateStatus('${o.id}','${action.next}')">${action.label}</button>` : ''}
-      <button class="action-btn action-secondary" onclick="showDetail('${o.id}')">
-        ${o.status === 'awaiting_verification' ? '🖼 Lihat Bukti' : 'Detail'}
-      </button>
-      ${['pending_payment','awaiting_verification','proof_rejected','paid','preparing','ready'].includes(o.status)
+      ${action ? `<button class="action-btn action-primary" onclick="doUpdateStatus('${o.id}','${action.next}')">${action.label}</button>` : ''}
+      <button class="action-btn action-secondary" onclick="showDetail('${o.id}')">Detail</button>
+      ${['pending_payment','paid','preparing','ready'].includes(o.status)
         ? `<button class="action-btn action-danger" onclick="doCancel('${o.id}')">Batalkan</button>` : ''}
     </div>
   </div>`;
@@ -275,89 +264,7 @@ async function doCancel(orderId) {
   adminToast('✅ Pesanan dibatalkan');
 }
 
-async function doVerifyTransfer(orderId, action) {
-  const label = action === 'approve' ? 'Verifikasi' : 'Tolak';
-  if (!confirm(`${label} pembayaran pesanan ini?`)) return;
-
-  const { error } = await window.db.rpc('verify_transfer', {
-    p_order_id: orderId,
-    p_action:   action,
-  });
-
-  if (error) { adminToast('❌ ' + error.message); return; }
-
-  const idx = allOrders.findIndex(o => o.id === orderId);
-  if (idx >= 0) {
-    const newStatus = action === 'approve' ? 'paid' : 'proof_rejected';
-    allOrders[idx] = { ...allOrders[idx], status: newStatus };
-    renderOrders();
-  }
-
-  adminToast(action === 'approve' ? '✅ Pembayaran diverifikasi' : '❌ Bukti transfer ditolak');
-
-  // Kirim WA notif ke customer
-  const waEvent = action === 'approve' ? 'transfer_verified' : 'transfer_rejected';
-  fetch(`${window.SUKA_CONFIG.supabaseUrl}/functions/v1/send-wa-notifications`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${window.SUKA_CONFIG.supabaseAnonKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ order_id: orderId, event: waEvent }),
-  }).catch(() => {});
-}
-
-// ─── Helper: bangun bagian AI & bukti transfer ────────────────────────────────
-function _buildProofSection(o) {
-  const ai = o.ai_verification_result;
-  const aiHtml = ai ? (() => {
-    const badge = {
-      high:   { color: '#16a34a', bg: '#f0fdf4', label: '✅ Tinggi' },
-      medium: { color: '#d97706', bg: '#fffbeb', label: '⚠️ Sedang' },
-      low:    { color: '#dc2626', bg: '#fef2f2', label: '❌ Rendah' },
-      error:  { color: '#6b7280', bg: '#f9fafb', label: '⚠️ Error' },
-    }[ai.confidence] || { color: '#6b7280', bg: '#f9fafb', label: ai.confidence };
-    const ext = ai.extracted || {};
-    return `
-      <div style="padding:10px 12px;background:${badge.bg};border-radius:8px;margin-bottom:10px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <span style="font-weight:700;font-size:13px">🤖 Analisis AI</span>
-          <span style="font-size:12px;font-weight:700;color:${badge.color}">${badge.label}</span>
-        </div>
-        ${ext.nominal   ? `<div style="font-size:12px">💰 Nominal: <b>Rp ${Number(ext.nominal).toLocaleString('id-ID')}</b></div>` : ''}
-        ${ext.penerima  ? `<div style="font-size:12px">👤 Penerima: <b>${ext.penerima}</b></div>` : ''}
-        ${ext.bank_penerima ? `<div style="font-size:12px">🏦 Bank: <b>${ext.bank_penerima}</b></div>` : ''}
-        ${ext.status    ? `<div style="font-size:12px">📋 Status: <b>${ext.status}</b></div>` : ''}
-        ${ai.reason     ? `<div style="font-size:11px;color:${badge.color};margin-top:4px">${ai.reason}</div>` : ''}
-        ${ai.auto_approved ? `<div style="font-size:12px;font-weight:700;color:#16a34a;margin-top:4px">✅ Auto-approved oleh AI</div>` : ''}
-      </div>`;
-  })() : '';
-
-  if (o.proof_url) return `
-    <hr style="border:0;border-top:1px dashed var(--line2);margin:10px 0"/>
-    <div style="font-weight:600;font-size:13px;margin-bottom:8px">📸 Bukti Transfer</div>
-    ${aiHtml}
-    <img id="adminProofImg" data-path="${o.proof_url}" style="width:100%;border-radius:8px;max-height:250px;object-fit:cover;background:var(--line)" />
-    ${o.status === 'awaiting_verification' && currentRole === 'super_admin' ? `
-      <div style="display:flex;gap:8px;margin-top:10px">
-        <button class="action-btn action-primary" style="flex:1;background:var(--green,#22c55e)"
-          onclick="closeModal();doVerifyTransfer('${o.id}','approve')">✅ Verifikasi</button>
-        <button class="action-btn action-danger" style="flex:1"
-          onclick="closeModal();doVerifyTransfer('${o.id}','reject')">❌ Tolak</button>
-      </div>` : o.status === 'awaiting_verification' ? `
-      <div style="margin-top:10px;padding:10px;background:#fef9c3;border-radius:8px;font-size:13px;color:#854d0e">
-        ⏳ Menunggu verifikasi oleh admin pusat
-      </div>` : ''}
-  `;
-  if (o.status === 'proof_rejected') return `
-    <hr style="border:0;border-top:1px dashed var(--line2);margin:10px 0"/>
-    <div style="padding:10px 12px;background:#fbe7df;border-radius:10px;font-size:13px;line-height:1.6">
-      ❌ <b>Bukti transfer ditolak.</b><br/>
-      Menunggu customer upload ulang bukti yang benar.
-    </div>
-  `;
-  return '';
-}
+// doVerifyTransfer & _buildProofSection dihapus — tidak dipakai di flow QRIS
 
 // ─── Helper: bangun body HTML detail order ────────────────────────────────────
 function _buildDetailBody(o) {
@@ -384,7 +291,6 @@ function _buildDetailBody(o) {
       <span class="val" style="font-weight:800;color:var(--brand);font-size:16px">${formatRupiah(o.total)}</span>
     </div>
     ${o.notes ? `<div style="margin-top:8px;font-size:13px;color:var(--muted);background:var(--bg);padding:8px 10px;border-radius:8px">📝 ${o.notes}</div>` : ''}
-    ${_buildProofSection(o)}
   `;
 }
 
@@ -393,15 +299,6 @@ function showDetail(orderId) {
   const o = allOrders.find(x => x.id === orderId);
   if (!o) return;
   openModal(`📋 ${o.order_number}`, _buildDetailBody(o));
-  if (o.proof_url) loadSignedAdminProofUrl(o.proof_url);
-}
-
-function loadSignedAdminProofUrl(pathOrUrl) {
-  const img = document.getElementById('adminProofImg');
-  if (!img || !pathOrUrl) return;
-  if (pathOrUrl.startsWith('http')) { img.src = pathOrUrl; return; }
-  const { data } = window.db.storage.from('transfer-proofs').getPublicUrl(pathOrUrl);
-  if (data?.publicUrl) img.src = data.publicUrl;
 }
 
 // ─── Realtime ─────────────────────────────────────────────────────────────────
@@ -426,7 +323,7 @@ async function handleRealtime(payload) {
     const { data } = await window.db
       .from('orders')
       .select(`id, order_number, customer_name, customer_wa, total, status,
-               created_at, pickup_time, notes, outlet_id, proof_url, ai_verification_result,
+               created_at, pickup_time, notes, outlet_id,
                outlets(name),
                order_items(item_name, quantity, unit_price, selections, note)`)
       .eq('id', payload.new.id)
