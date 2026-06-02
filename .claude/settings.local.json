@@ -40,7 +40,24 @@
       "Bash(powershell -Command \"Select-String -Path \\(Get-ChildItem -Recurse -Filter '*.html'\\).FullName -Pattern 'css\\\\?v=4' | Select-Object -First 5\")",
       "Bash(powershell -Command \"\\(Select-String -Path \\(Get-ChildItem -Recurse -Filter '*.html'\\).FullName -Pattern 'css\\\\?v=5'\\).Count\")",
       "Bash(xxd /tmp/customers_orig.html)",
-      "Bash(xxd admin/orders.html)"
+      "Bash(xxd admin/orders.html)",
+      "Bash(sed -i 's|<title>Konfirmasi Pesanan — SUKA Shawarma</title>|<title>Order Sukashawarma</title>|' checkout.html)",
+      "Bash(sed -i 's|<title>Status Pesanan — SUKA Shawarma</title>|<title>Order Sukashawarma</title>|' order.html)",
+      "Bash(sed -i 's|<title>SUKA Shawarma</title>|<title>Order Sukashawarma</title>|' menu.html)",
+      "Bash(ls \"D:\\\\MIT\\\\CLAUDE CODE PROJECT\\\\POS SS\\\\shared\")",
+      "Bash(New-Item -ItemType Directory -Force -Path \"D:\\\\MIT\\\\CLAUDE CODE PROJECT\\\\POS SS\\\\assets\\\\css\")",
+      "Bash(Out-Null)",
+      "Bash(New-Item -ItemType Directory -Force -Path \"D:\\\\MIT\\\\CLAUDE CODE PROJECT\\\\POS SS\\\\assets\\\\js\")",
+      "Bash(New-Item -ItemType Directory -Force -Path \"D:\\\\MIT\\\\CLAUDE CODE PROJECT\\\\POS SS\\\\assets\\\\img\")",
+      "Bash(New-Item -ItemType Directory -Force -Path \"D:\\\\MIT\\\\CLAUDE CODE PROJECT\\\\POS SS\\\\admin\")",
+      "Bash(New-Item -ItemType Directory -Force -Path \"D:\\\\MIT\\\\CLAUDE CODE PROJECT\\\\POS SS\\\\supabase\\\\migrations\")",
+      "Bash(New-Item -ItemType Directory -Force -Path \"D:\\\\MIT\\\\CLAUDE CODE PROJECT\\\\POS SS\\\\supabase\\\\functions\")",
+      "Bash(New-Item -ItemType Directory -Force -Path \"D:\\\\MIT\\\\CLAUDE CODE PROJECT\\\\POS SS\\\\docs\")",
+      "Bash(Write-Output \"Folders created\")",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__query-docs",
+      "Bash(powershell -Command \"Get-ChildItem -Recurse -Include *.html | Select-String 'v=6' | Select-Object -ExpandProperty Path | Sort-Object -Unique\")",
+      "Bash(xargs sed -i \"s/v=6/v=7/g\")"
     ]
   }
 }

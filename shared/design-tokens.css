@@ -1,0 +1,49 @@
+/*
+ * SUKA Shawarma — Design Tokens
+ * Salin file ini ke project baru sebagai starting point.
+ * Ubah nilai sesuai kebutuhan brand, tapi jaga nama variabelnya.
+ */
+@import url('https://fonts.googleapis.com/css2?family=Lilita+One&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+  /* ── Warna utama ── */
+  --bg:         #fff7ed;   /* krim hangat */
+  --card:       #ffffff;
+  --ink:        #400a07;   /* hitam kecoklatan */
+  --ink2:       #6b3a31;
+  --muted:      #8a6b5e;
+  --faint:      #b39a8a;
+  --line:       #f2e6d8;   /* divider */
+  --line2:      #e6d4bf;   /* border */
+
+  /* ── Brand ── */
+  --brand:      #f29744;   /* orange utama */
+  --brand-dk:   #ee8a2c;   /* orange gelap */
+  --brand-bg:   #fff1e0;   /* orange soft */
+  --accent:     #fbe7df;
+  --accent-ink: #701604;
+
+  /* ── Status ── */
+  --green:      #0a7d2c;
+  --green-bg:   #f0fdf4;
+  --orange:     #f29744;
+  --blue:       #2563eb;
+  --red:        #dc2626;
+  --red-bg:     #fef2f2;
+
+  /* ── Shape ── */
+  --radius:     14px;
+  --radius-sm:  10px;
+  --radius-xs:  8px;
+
+  /* ── Shadow ── */
+  --shadow:     0 1px 2px rgba(64,10,7,.04), 0 4px 16px rgba(64,10,7,.07);
+  --shadow-lg:  0 8px 30px rgba(64,10,7,.18);
+
+  /* ── Layout ── */
+  --container:  480px;
+
+  /* ── Tipografi ── */
+  --font:         "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Lilita One", system-ui, sans-serif;
+}
