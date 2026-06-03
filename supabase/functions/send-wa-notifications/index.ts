@@ -113,56 +113,31 @@ Deno.serve(async (req: Request) => {
       results.customer = await kirimWA(FONNTE_TOKEN, order.customer_wa, msgCancel);
     }
 
-  } else if (event === "transfer_submitted") {
-    // Notif ke admin + outlet saat customer upload bukti transfer
-    const msgProof = `💳 *BUKTI TRANSFER MASUK — ${outlet.name}*\n\n` +
-      `📋 No: ${order.order_number}\n` +
-      `👤 ${order.customer_name} (${order.customer_wa})\n` +
-      `💰 Total: *${totalText}*\n\n` +
-      `Cek admin panel untuk verifikasi pembayaran.`;
-    if (ADMIN_WA) results.admin = await kirimWA(FONNTE_TOKEN, ADMIN_WA, msgProof);
-    if (outlet.phone_wa) results.outlet = await kirimWA(FONNTE_TOKEN, outlet.phone_wa, msgProof);
-
-  } else if (event === "transfer_rejected") {
-    // Notif ke customer saat bukti transfer ditolak
+  } else if (event === "paid") {
+    // Notif ke customer — pembayaran QRIS dikonfirmasi otomatis
     if (order.customer_wa) {
-      const msgRejected =
-        `❌ *Bukti Transfer Ditolak*\n\n` +
-        `Halo ${order.customer_name},\n` +
-        `Maaf, bukti transfer untuk pesanan *${order.order_number}* tidak dapat diverifikasi.\n\n` +
-        `Kemungkinan penyebab:\n` +
-        `• Foto buram / tidak terbaca\n` +
-        `• Nominal tidak sesuai (${totalText})\n` +
-        `• Rekening tujuan salah\n\n` +
-        `Silakan buka kembali halaman pesananmu dan upload ulang bukti yang benar 📲`;
-      results.customer = await kirimWA(FONNTE_TOKEN, order.customer_wa, msgRejected);
-    }
-
-  } else if (event === "transfer_verified") {
-    // Notif ke customer — pembayaran dikonfirmasi, pesanan mulai disiapkan
-    if (order.customer_wa) {
-      const msgVerified =
+      const msgPaid =
         `🎉 *Pembayaran Dikonfirmasi!*\n\n` +
-        `Halo ${order.customer_name}! Transfer kamu sudah kami terima ✅\n\n` +
+        `Halo ${order.customer_name}! Pembayaran QRIS kamu berhasil ✅\n\n` +
         `📋 No: *${order.order_number}*\n` +
         `🏪 Outlet: ${outlet.name}\n` +
         `⏰ Ambil: ${order.pickup_time || "-"}\n\n` +
         `${itemsText}\n\n` +
         `💰 Total: *${totalText}*\n\n` +
         `Pesanan sedang disiapkan. Datang sesuai waktu pickup ya! 🙏`;
-      results.customer = await kirimWA(FONNTE_TOKEN, order.customer_wa, msgVerified);
+      results.customer = await kirimWA(FONNTE_TOKEN, order.customer_wa, msgPaid);
     }
     // Notif ke outlet — mulai siapkan pesanan
     if (outlet.phone_wa) {
-      const msgOutletVerified =
-        `✅ *PEMBAYARAN TERVERIFIKASI — SIAPKAN PESANAN*\n\n` +
+      const msgOutlet =
+        `✅ *PEMBAYARAN DITERIMA — SIAPKAN PESANAN*\n\n` +
         `📋 No: ${order.order_number}\n` +
         `👤 ${order.customer_name}\n` +
         `⏰ Ambil: ${order.pickup_time || "-"}\n\n` +
         `${itemsText}\n\n` +
         `💰 Total: *${totalText}*` +
         (order.notes ? `\n📝 Catatan: ${order.notes}` : "");
-      results.outlet = await kirimWA(FONNTE_TOKEN, outlet.phone_wa, msgOutletVerified);
+      results.outlet = await kirimWA(FONNTE_TOKEN, outlet.phone_wa, msgOutlet);
     }
   }
 

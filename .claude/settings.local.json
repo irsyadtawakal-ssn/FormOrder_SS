@@ -62,7 +62,8 @@
       "Bash(gh api *)",
       "WebFetch(domain:raw.githubusercontent.com)",
       "WebFetch(domain:cdn.statically.io)",
-      "WebFetch(domain:plugins.svn.wordpress.org)"
+      "WebFetch(domain:plugins.svn.wordpress.org)",
+      "Bash(grep -v \"//\\\\|test\")"
     ]
   }
 }

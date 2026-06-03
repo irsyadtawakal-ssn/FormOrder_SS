@@ -103,46 +103,7 @@ function val(key, fallback = '') {
 
 function renderPage() {
   const pc   = document.getElementById('pageContent');
-  const mode = val('verification_mode', 'manual');
-
   pc.innerHTML = `
-
-    <!-- ── Verifikasi Transfer ───────────────────────────────── -->
-    <div class="info-card" style="margin-bottom:12px">
-      <div style="font-weight:700;font-size:14px;margin-bottom:12px">🤖 Verifikasi Bukti Transfer</div>
-
-      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
-        <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:2px solid var(--line);border-radius:10px;cursor:pointer" id="lblManual">
-          <input type="radio" name="vMode" value="manual" style="accent-color:var(--brand);margin-top:2px"
-                 ${mode === 'manual' ? 'checked' : ''} onchange="onVerifModeChange()" />
-          <div>
-            <div style="font-weight:600;font-size:13px">👤 Manual</div>
-            <div style="font-size:11px;color:var(--muted);margin-top:2px">Admin cek foto dan verifikasi sendiri</div>
-          </div>
-        </label>
-        <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:2px solid var(--line);border-radius:10px;cursor:pointer" id="lblAI">
-          <input type="radio" name="vMode" value="ai" style="accent-color:var(--brand);margin-top:2px"
-                 ${mode === 'ai' ? 'checked' : ''} onchange="onVerifModeChange()" />
-          <div>
-            <div style="font-weight:600;font-size:13px">🤖 AI Otomatis</div>
-            <div style="font-size:11px;color:var(--muted);margin-top:2px">
-              Gemini baca nominal &amp; penerima — auto-approve jika cocok.<br/>
-              Perlu <b>OPENROUTER_API_KEY</b> di Supabase Secrets.
-            </div>
-          </div>
-        </label>
-      </div>
-
-      <div id="aiNote" style="display:${mode === 'ai' ? '' : 'none'};padding:10px 12px;background:#f0fdf4;border-radius:8px;font-size:12px;color:#166534;margin-bottom:12px;line-height:1.5">
-        ✅ Mode AI aktif. Setiap bukti transfer akan dianalisis otomatis.<br/>
-        Confidence <b>tinggi</b> → auto-approve + WA ke customer.<br/>
-        Confidence <b>rendah/medium</b> → tetap menunggu verifikasi manual.
-      </div>
-
-      <button class="btn-add-big" style="width:100%" onclick="saveVerifMode()">
-        Simpan Mode Verifikasi
-      </button>
-    </div>
 
     <!-- ── Biaya Layanan ──────────────────────────────────────── -->
     <div class="info-card" style="margin-bottom:12px">
@@ -292,25 +253,6 @@ function tmplCard(tmpl) {
     <button class="action-btn action-secondary" style="margin-top:8px;width:100%"
             onclick="saveTemplate('${tmpl.id}')">Simpan Template</button>
   </div>`;
-}
-
-// ─── Toggle verifikasi mode ───────────────────────────────────────────────────
-function onVerifModeChange() {
-  const isAI = document.querySelector('[name=vMode]:checked')?.value === 'ai';
-  document.getElementById('aiNote').style.display = isAI ? '' : 'none';
-  document.getElementById('lblAI').style.borderColor    = isAI ? 'var(--brand)' : 'var(--line)';
-  document.getElementById('lblManual').style.borderColor = isAI ? 'var(--line)' : 'var(--brand)';
-}
-
-async function saveVerifMode() {
-  const mode = document.querySelector('[name=vMode]:checked')?.value || 'manual';
-  const { error } = await window.db
-    .from('app_settings')
-    .upsert({ key: 'verification_mode', value: mode, updated_at: new Date().toISOString() },
-             { onConflict: 'key' });
-  if (error) { adminToast('❌ ' + error.message); return; }
-  settings['verification_mode'] = { value: mode };
-  adminToast(mode === 'ai' ? '✅ Mode AI aktif' : '✅ Mode manual aktif');
 }
 
 // ─── Simpan app_settings ──────────────────────────────────────────────────────
