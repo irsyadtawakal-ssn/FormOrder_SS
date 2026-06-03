@@ -87,20 +87,33 @@ let selectedChannel = 'QRIS'; // default
 
 const PAYMENT_CHANNELS = [
   { group: 'QRIS',            channels: [
-    { id: 'QRIS',    label: 'QRIS',    icon: '📱', desc: 'Scan QR — semua bank & e-wallet' },
+    { id: 'QRIS',    label: 'QRIS',    icon: '📱', desc: 'Scan QR — semua bank & e-wallet • Biaya admin 0.63%' },
   ]},
   { group: 'Virtual Account', channels: [
-    { id: 'BCA',     label: 'BCA',     icon: '🏦', desc: 'Virtual Account BCA' },
-    { id: 'BNI',     label: 'BNI',     icon: '🏦', desc: 'Virtual Account BNI' },
-    { id: 'BRI',     label: 'BRI',     icon: '🏦', desc: 'Virtual Account BRI' },
-    { id: 'MANDIRI', label: 'Mandiri', icon: '🏦', desc: 'Virtual Account Mandiri' },
+    { id: 'BCA',     label: 'BCA',     icon: '🏦', desc: 'Virtual Account BCA • Biaya admin Rp 4.000' },
+    { id: 'BNI',     label: 'BNI',     icon: '🏦', desc: 'Virtual Account BNI • Biaya admin Rp 4.000' },
+    { id: 'BRI',     label: 'BRI',     icon: '🏦', desc: 'Virtual Account BRI • Biaya admin Rp 4.000' },
+    { id: 'MANDIRI', label: 'Mandiri', icon: '🏦', desc: 'Virtual Account Mandiri • Biaya admin Rp 4.000' },
   ]},
   { group: 'E-Wallet',        channels: [
-    { id: 'GOPAY',   label: 'GoPay',   icon: '💚', desc: 'Bayar via GoPay' },
-    { id: 'OVO',     label: 'OVO',     icon: '💜', desc: 'Bayar via OVO' },
-    { id: 'DANA',    label: 'DANA',    icon: '💙', desc: 'Bayar via DANA' },
+    { id: 'GOPAY',   label: 'GoPay',   icon: '💚', desc: 'Bayar via GoPay • Biaya admin 5%' },
+    { id: 'OVO',     label: 'OVO',     icon: '💜', desc: 'Bayar via OVO • Biaya admin 1.5%' },
+    { id: 'DANA',    label: 'DANA',    icon: '💙', desc: 'Bayar via DANA • Biaya admin 1.5%' },
   ]},
 ];
+
+// Logo per channel — letakkan file di assets/img/payment/{id.toLowerCase()}.png
+// Jika file tidak ada, otomatis fallback ke emoji
+function channelLogoHtml(ch) {
+  return `
+    <div style="width:36px;height:36px;flex-shrink:0;display:flex;align-items:center;justify-content:center">
+      <img src="assets/img/payment/${ch.id.toLowerCase()}.png"
+           alt="${ch.label}"
+           style="width:36px;height:36px;object-fit:contain;border-radius:6px"
+           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
+      <span style="font-size:22px;display:none;align-items:center;justify-content:center;width:36px;height:36px">${ch.icon}</span>
+    </div>`;
+}
 
 function selectChannel(id) {
   selectedChannel = id;
@@ -199,7 +212,7 @@ function renderPage() {
               data-id="${ch.id}"
               onclick="selectChannel('${ch.id}')"
               style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:2px solid ${ch.id === 'QRIS' ? 'var(--brand)' : 'var(--line2)'};border-radius:10px;cursor:pointer;background:${ch.id === 'QRIS' ? 'var(--brand-bg)' : 'var(--card)'}">
-              <span style="font-size:20px">${ch.icon}</span>
+              ${channelLogoHtml(ch)}
               <div style="flex:1">
                 <div style="font-weight:700;font-size:13px">${ch.label}</div>
                 <div style="font-size:11px;color:var(--muted)">${ch.desc}</div>
