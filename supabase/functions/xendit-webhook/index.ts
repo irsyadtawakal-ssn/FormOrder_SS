@@ -81,19 +81,20 @@ serve(async (req: Request) => {
     return jsonOk({ success: true, message: `Event '${event}' diabaikan` });
   }
 
-  const paymentId = String(data.payment_id ?? "");        // untuk idempotency
-  const referenceId = String(data.reference_id ?? "");    // reference_id Xendit
+  const paymentId = String(data.payment_id ?? data.id ?? "");  // untuk idempotency
+  const referenceId = String(data.reference_id ?? "");          // reference_id Xendit
+  const paymentRequestId = String(data.payment_request_id ?? ""); // pr-... yang kita simpan
   const status = String(data.status ?? "").toUpperCase();
-  const requestAmount = Number(data.request_amount ?? 0);
+  const requestAmount = Number(data.amount ?? data.request_amount ?? 0);
 
   // Ambil order_id dari metadata yang kita set saat create payment
   const metadata = data.metadata as Record<string, unknown> | undefined;
   const orderIdFromMeta = String(metadata?.order_id ?? "");
 
-  console.info("Lookup order:", { referenceId, orderIdFromMeta });
+  console.info("Lookup order:", { referenceId, paymentRequestId, orderIdFromMeta });
 
-  if (!referenceId && !orderIdFromMeta) {
-    console.error("Tidak ada reference_id maupun metadata.order_id di payload Xendit");
+  if (!referenceId && !paymentRequestId && !orderIdFromMeta) {
+    console.error("Tidak ada identifier order di payload Xendit");
     return new Response("Payload tidak lengkap", { status: 400 });
   }
 
@@ -104,22 +105,35 @@ serve(async (req: Request) => {
     { auth: { persistSession: false } },
   );
 
-  // ─── Cari order: utamakan metadata.order_id, fallback ke tripay_merchant_ref
-  let orderQuery = supabase
-    .from("orders")
-    .select("id, order_number, status, total, outlet_id, customer_name, customer_wa");
+  // ─── Cari order dengan beberapa fallback strategy ─────────────────────────
+  // 1. metadata.order_id → lookup by id (paling reliable)
+  // 2. payment_request_id → lookup by tripay_reference (pr-xxx dari Xendit)
+  // 3. reference_id → lookup by tripay_merchant_ref (SUKA-... format)
+  let order: { id: string; order_number: string; status: string; total: number; outlet_id: string; customer_name: string; customer_wa: string } | null = null;
 
   if (orderIdFromMeta) {
-    orderQuery = orderQuery.eq("id", orderIdFromMeta);
-  } else {
-    orderQuery = orderQuery.eq("tripay_merchant_ref", referenceId);
+    const { data: o } = await supabase.from("orders")
+      .select("id, order_number, status, total, outlet_id, customer_name, customer_wa")
+      .eq("id", orderIdFromMeta).maybeSingle();
+    order = o;
   }
 
-  const { data: order, error: orderErr } = await orderQuery.maybeSingle();
+  if (!order && paymentRequestId) {
+    const { data: o } = await supabase.from("orders")
+      .select("id, order_number, status, total, outlet_id, customer_name, customer_wa")
+      .eq("tripay_reference", paymentRequestId).maybeSingle();
+    order = o;
+  }
 
-  if (orderErr || !order) {
-    console.error("Order tidak ditemukan:", { referenceId, orderIdFromMeta });
-    // Return 200 agar Xendit tidak retry — order mungkin tidak valid
+  if (!order && referenceId) {
+    const { data: o } = await supabase.from("orders")
+      .select("id, order_number, status, total, outlet_id, customer_name, customer_wa")
+      .eq("tripay_merchant_ref", referenceId).maybeSingle();
+    order = o;
+  }
+
+  if (!order) {
+    console.error("Order tidak ditemukan:", { referenceId, paymentRequestId, orderIdFromMeta });
     return jsonOk({ success: false, message: "Order tidak ditemukan" });
   }
 
