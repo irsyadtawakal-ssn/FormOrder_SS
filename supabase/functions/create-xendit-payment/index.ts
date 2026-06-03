@@ -117,29 +117,31 @@ function extractPaymentData(payload: Record<string, unknown>, channel: ChannelTy
 
   const cfg = CHANNEL_CONFIG[channel];
 
+  // deno-lint-ignore no-explicit-any
+  const p = payload as any;
+
   if (cfg.type === "QR_CODE") {
-    // Cari QR string di beberapa lokasi
-    const actions = (payload.actions as Record<string, string>[]) ?? [];
+    // Cari QR string di beberapa lokasi response Xendit
+    const actions: any[] = p.actions ?? [];
     const qrAction = actions.find(
       (a) => a.descriptor === "QR_STRING" || a.type === "QR_CODE",
     );
     qrisString = qrAction?.value ??
-      (payload.payment_method as Record<string, unknown>)?.qr_code?.channel_properties?.qr_string ??
-      (payload.payment_method as Record<string, unknown>)?.channel_properties?.qr_string ??
-      payload.qr_string ?? null;
+      p.payment_method?.qr_code?.channel_properties?.qr_string ??
+      p.payment_method?.channel_properties?.qr_string ??
+      p.qr_string ?? null;
   }
 
   if (cfg.type === "VIRTUAL_ACCOUNT") {
     // Nomor VA ada di payment_method.virtual_account.channel_properties
-    const va = (payload.payment_method as Record<string, unknown>)?.virtual_account as Record<string, unknown>;
-    const channelProps = va?.channel_properties as Record<string, string>;
+    const channelProps = p.payment_method?.virtual_account?.channel_properties;
     vaNumber = channelProps?.virtual_account_number ?? channelProps?.account_details ?? null;
-    vaBank = channel; // BCA/BNI/BRI/MANDIRI
+    vaBank = channel;
   }
 
   if (cfg.type === "EWALLET") {
     // Deep link untuk buka app e-wallet
-    const actions = (payload.actions as Record<string, string>[]) ?? [];
+    const actions: any[] = p.actions ?? [];
     const redirectAction = actions.find(
       (a) => a.type === "REDIRECT_CUSTOMER" || a.type === "MOBILE_DEEPLINK",
     );
