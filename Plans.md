@@ -188,7 +188,7 @@
 - [x] 11.5 Order page — pending_payment adaptif: QRIS=QR, VA=nomor+instruksi, E-Wallet=deeplink
 - [x] 11.6 Deploy create-xendit-payment + xendit-webhook, push frontend
 - [ ] 11.7 E2E test tiap channel
-- [ ] 11.8 Tambah logo tiap channel pembayaran (QRIS/BCA/BNI/BRI/Mandiri/GoPay/OVO/DANA) di payment picker checkout
+- [x] 11.8 Tambah logo tiap channel pembayaran (QRIS/BCA/BNI/BRI/Mandiri/BJB/BSI/CIMB) di payment picker checkout
 
 ---
 
@@ -228,3 +228,4 @@
 - ✅ 2026-05-23 — Bump SW cache v5 → v6 + asset busting v=6 di 15 file HTML
 - ✅ 2026-05-23 — Fix toggle CSS conflict — scope .toggle-switch .toggle-slider agar tidak override global
 - ✅ 2026-05-23 — Seragamkan title tab semua halaman customer ke "Order Sukashawarma"
+- ✅ 2026-06-03 — Logo payment channel lengkap: QRIS, BCA, BNI, BRI, Mandiri, BJB (webp), BSI, CIMB di assets/img/payment/
