@@ -63,7 +63,9 @@
       "WebFetch(domain:raw.githubusercontent.com)",
       "WebFetch(domain:cdn.statically.io)",
       "WebFetch(domain:plugins.svn.wordpress.org)",
-      "Bash(grep -v \"//\\\\|test\")"
+      "Bash(grep -v \"//\\\\|test\")",
+      "Bash(grep -n \"^\\\\/\\\\* ─\" assets/css/style.css)",
+      "Bash(git -C \"D:\\\\MIT\\\\CLAUDE CODE PROJECT\\\\TiktokGo SS\" status --short)"
     ]
   }
 }
