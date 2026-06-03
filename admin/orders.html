@@ -251,7 +251,7 @@ async function doCancel(orderId) {
   const btn = document.querySelector(`#ord-${orderId} .action-danger`);
   if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
   const { error } = await window.db.from('orders').update({
-    status:       'cancelled',
+    status:        'cancelled',
     cancel_reason: 'Dibatalkan oleh outlet',
     cancelled_at:  new Date().toISOString(),
   }).eq('id', orderId);
@@ -262,6 +262,12 @@ async function doCancel(orderId) {
   const idx = allOrders.findIndex(o => o.id === orderId);
   if (idx >= 0) { allOrders[idx] = { ...allOrders[idx], status: 'cancelled' }; renderOrders(); }
   adminToast('✅ Pesanan dibatalkan');
+  // Kirim WA notif cancelled ke customer
+  fetch(`${window.SUKA_CONFIG.supabaseUrl}/functions/v1/send-wa-notifications`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${window.SUKA_CONFIG.supabaseAnonKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ order_id: orderId, event: 'cancelled' }),
+  }).catch(() => {});
 }
 
 // doVerifyTransfer & _buildProofSection dihapus — tidak dipakai di flow QRIS

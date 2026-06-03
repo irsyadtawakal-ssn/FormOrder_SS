@@ -118,7 +118,7 @@ Deno.serve(async (req: Request) => {
     if (order.customer_wa) {
       const msgPaid =
         `🎉 *Pembayaran Dikonfirmasi!*\n\n` +
-        `Halo ${order.customer_name}! Pembayaran QRIS kamu berhasil ✅\n\n` +
+        `Halo ${order.customer_name}! Pembayaran kamu berhasil dikonfirmasi ✅\n\n` +
         `📋 No: *${order.order_number}*\n` +
         `🏪 Outlet: ${outlet.name}\n` +
         `⏰ Ambil: ${order.pickup_time || "-"}\n\n` +

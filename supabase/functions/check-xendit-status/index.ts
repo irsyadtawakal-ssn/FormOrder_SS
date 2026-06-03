@@ -90,7 +90,7 @@ serve(async (req: Request) => {
       .from("orders")
       .update({
         status: "expired",
-        cancel_reason: "QRIS expired (timeout lokal)",
+        cancel_reason: "Pembayaran expired (timeout lokal)",
         cancelled_at: new Date().toISOString(),
       })
       .eq("id", order.id)

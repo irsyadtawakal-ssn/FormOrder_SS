@@ -72,8 +72,8 @@ Deno.serve(async (req: Request) => {
       const pesan =
         `⏰ *Waktu Pembayaran Habis*\n\n` +
         `Halo ${order.customer_name},\n` +
-        `Pesanan *${order.order_number}* di ${outletName} sudah kedaluwarsa karena belum menerima ` +
-        `bukti transfer dalam 24 jam.\n\n` +
+        `Pesanan *${order.order_number}* di ${outletName} sudah kedaluwarsa karena pembayaran tidak ` +
+        `diselesaikan tepat waktu.\n\n` +
         `Silakan pesan ulang jika masih berminat. Terima kasih 🙏`;
 
       await fetch("https://api.fonnte.com/send", {

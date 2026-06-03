@@ -1,8 +1,6 @@
 // SUKA Shawarma — app.js
 // Logika checkout, pemanggilan Edge Functions, payment redirect
 
-const SERVICE_FEE_RATE = 0; // biaya layanan tidak ditampilkan ke customer
-
 // ─── Panggil Edge Function via Supabase SDK ───────────────────────────────────
 // Menggunakan window.db.functions.invoke agar auth header otomatis terpasang
 
