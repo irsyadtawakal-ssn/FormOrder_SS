@@ -182,16 +182,16 @@ function renderOrders() {
 
 function orderCard(o) {
   const items      = o.order_items || [];
-  const summary    = items.slice(0, 2).map(i => `${i.quantity}× ${i.item_name}`).join(', ')
+  const summary    = items.slice(0, 2).map(i => `${i.quantity}× ${escHtml(i.item_name)}`).join(', ')
     + (items.length > 2 ? ` +${items.length - 2} lagi` : '');
-  const outletName = (o.outlets || {}).name || '—';
+  const outletName = escHtml((o.outlets || {}).name || '—');
   const action     = STATUS_NEXT_ACTION[o.status];
 
   return `<div class="admin-order-row" id="ord-${o.id}">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
       <div>
         <span style="font-family:monospace;font-size:11px;color:var(--muted)">${o.order_number}</span>
-        <div style="font-weight:700;font-size:14px">${o.customer_name}</div>
+        <div style="font-weight:700;font-size:14px">${escHtml(o.customer_name)}</div>
         <div style="font-size:12px;color:var(--muted)">${outletName} · ${fmtTimeAgo(o.created_at)}</div>
       </div>
       <div style="text-align:right;flex-shrink:0;margin-left:8px">
@@ -200,8 +200,8 @@ function orderCard(o) {
       </div>
     </div>
     ${summary ? `<div style="font-size:12px;color:var(--muted);margin-bottom:4px">${summary}</div>` : ''}
-    ${o.pickup_time ? `<div style="font-size:12px;color:var(--ink2)">⏰ Ambil: ${o.pickup_time}</div>` : ''}
-    ${o.notes ? `<div style="font-size:12px;color:var(--muted);margin-top:2px">📝 ${o.notes}</div>` : ''}
+    ${o.pickup_time ? `<div style="font-size:12px;color:var(--ink2)">⏰ Ambil: ${escHtml(o.pickup_time)}</div>` : ''}
+    ${o.notes ? `<div style="font-size:12px;color:var(--muted);margin-top:2px">📝 ${escHtml(o.notes)}</div>` : ''}
     <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
       ${action ? `<button class="action-btn action-primary" onclick="doUpdateStatus('${o.id}','${action.next}')">${action.label}</button>` : ''}
       <button class="action-btn action-secondary" onclick="showDetail('${o.id}')">Detail</button>
@@ -270,18 +270,18 @@ async function doCancel(orderId) {
 function _buildDetailBody(o) {
   const itemsHtml = (o.order_items || []).map(i => `
     <div class="info-row" style="padding:4px 0;align-items:flex-start">
-      <span class="label">${i.quantity}× ${i.item_name}${i.note ? `<br><span style="font-size:11px;color:var(--muted);font-weight:400">📝 ${i.note}</span>` : ''}</span>
+      <span class="label">${i.quantity}× ${escHtml(i.item_name)}${i.note ? `<br><span style="font-size:11px;color:var(--muted);font-weight:400">📝 ${escHtml(i.note)}</span>` : ''}</span>
       <span class="val" style="text-align:right;flex-shrink:0;margin-left:8px">${formatRupiah(i.unit_price * i.quantity)}</span>
     </div>`).join('');
 
   return `
     <div class="info-row"><span class="label">Status</span><span class="val">${statusBadge(o.status)}</span></div>
-    <div class="info-row"><span class="label">Nama</span><span class="val">${o.customer_name}</span></div>
+    <div class="info-row"><span class="label">Nama</span><span class="val">${escHtml(o.customer_name)}</span></div>
     <div class="info-row"><span class="label">WhatsApp</span>
-      <span class="val"><a href="https://wa.me/${o.customer_wa}" target="_blank" style="color:var(--brand)">${o.customer_wa}</a></span>
+      <span class="val"><a href="https://wa.me/${escHtml(o.customer_wa)}" target="_blank" style="color:var(--brand)">${escHtml(o.customer_wa)}</a></span>
     </div>
-    <div class="info-row"><span class="label">Waktu Ambil</span><span class="val">${o.pickup_time || '—'}</span></div>
-    <div class="info-row"><span class="label">Outlet</span><span class="val">${(o.outlets || {}).name || '—'}</span></div>
+    <div class="info-row"><span class="label">Waktu Ambil</span><span class="val">${escHtml(o.pickup_time || '—')}</span></div>
+    <div class="info-row"><span class="label">Outlet</span><span class="val">${escHtml((o.outlets || {}).name || '—')}</span></div>
     <div class="info-row"><span class="label">Dibuat</span><span class="val">${fmtDateTime(o.created_at)}</span></div>
     <hr style="border:0;border-top:1px dashed var(--line2);margin:10px 0"/>
     ${itemsHtml}
@@ -290,7 +290,7 @@ function _buildDetailBody(o) {
       <span class="label" style="font-weight:700">Total</span>
       <span class="val" style="font-weight:800;color:var(--brand);font-size:16px">${formatRupiah(o.total)}</span>
     </div>
-    ${o.notes ? `<div style="margin-top:8px;font-size:13px;color:var(--muted);background:var(--bg);padding:8px 10px;border-radius:8px">📝 ${o.notes}</div>` : ''}
+    ${o.notes ? `<div style="margin-top:8px;font-size:13px;color:var(--muted);background:var(--bg);padding:8px 10px;border-radius:8px">📝 ${escHtml(o.notes)}</div>` : ''}
   `;
 }
 
