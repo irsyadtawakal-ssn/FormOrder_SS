@@ -78,33 +78,43 @@ serve(async (req: Request) => {
   }
 
   const paymentId = String(data.payment_id ?? "");        // untuk idempotency
-  const referenceId = String(data.reference_id ?? "");    // reference_id yang kita kirim ke Xendit
+  const referenceId = String(data.reference_id ?? "");    // reference_id Xendit
   const status = String(data.status ?? "").toUpperCase();
   const requestAmount = Number(data.request_amount ?? 0);
 
-  if (!referenceId) {
-    console.error("reference_id kosong di payload Xendit");
+  // Ambil order_id dari metadata yang kita set saat create payment
+  const metadata = data.metadata as Record<string, unknown> | undefined;
+  const orderIdFromMeta = String(metadata?.order_id ?? "");
+
+  console.info("Lookup order:", { referenceId, orderIdFromMeta });
+
+  if (!referenceId && !orderIdFromMeta) {
+    console.error("Tidak ada reference_id maupun metadata.order_id di payload Xendit");
     return new Response("Payload tidak lengkap", { status: 400 });
   }
 
-  // ─── Init Supabase service role ───────────────────────────────────────────
+  // ─── Init Supabase dengan service role key ────────────────────────────────
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     { auth: { persistSession: false } },
   );
 
-  // ─── Cari order by reference_id (disimpan di kolom tripay_merchant_ref) ──
-  const { data: order, error: orderErr } = await supabase
+  // ─── Cari order: utamakan metadata.order_id, fallback ke tripay_merchant_ref
+  let orderQuery = supabase
     .from("orders")
-    .select(
-      "id, order_number, status, total, outlet_id, customer_name, customer_wa",
-    )
-    .eq("tripay_merchant_ref", referenceId)
-    .maybeSingle();
+    .select("id, order_number, status, total, outlet_id, customer_name, customer_wa");
+
+  if (orderIdFromMeta) {
+    orderQuery = orderQuery.eq("id", orderIdFromMeta);
+  } else {
+    orderQuery = orderQuery.eq("tripay_merchant_ref", referenceId);
+  }
+
+  const { data: order, error: orderErr } = await orderQuery.maybeSingle();
 
   if (orderErr || !order) {
-    console.error("Order tidak ditemukan untuk reference_id:", referenceId);
+    console.error("Order tidak ditemukan:", { referenceId, orderIdFromMeta });
     // Return 200 agar Xendit tidak retry — order mungkin tidak valid
     return jsonOk({ success: false, message: "Order tidak ditemukan" });
   }
