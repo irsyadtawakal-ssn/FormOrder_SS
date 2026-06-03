@@ -71,9 +71,13 @@ serve(async (req: Request) => {
   });
 
   // ─── Hanya proses event payment yang relevan ─────────────────────────────
-  // payment.capture → pembayaran berhasil (SUCCEEDED)
-  // payment.failure → pembayaran gagal
-  if (event !== "payment.capture" && event !== "payment.failure") {
+  // payment.capture / payment.succeeded → pembayaran berhasil
+  // payment.failure / payment.failed → pembayaran gagal
+  const isSuccess = event === "payment.capture" || event === "payment.succeeded";
+  const isFailure = event === "payment.failure" || event === "payment.failed";
+
+  if (!isSuccess && !isFailure) {
+    console.info(`Event '${event}' diabaikan`);
     return jsonOk({ success: true, message: `Event '${event}' diabaikan` });
   }
 
@@ -119,8 +123,8 @@ serve(async (req: Request) => {
     return jsonOk({ success: false, message: "Order tidak ditemukan" });
   }
 
-  // ─── Handle payment.failure ───────────────────────────────────────────────
-  if (event === "payment.failure") {
+  // ─── Handle payment failure ───────────────────────────────────────────────
+  if (isFailure) {
     if (order.status === "pending_payment") {
       await supabase
         .from("orders")
@@ -137,11 +141,11 @@ serve(async (req: Request) => {
     return jsonOk({ success: true, message: "Order failure diproses" });
   }
 
-  // ─── Handle payment.capture ───────────────────────────────────────────────
+  // ─── Handle payment success (payment.capture / payment.succeeded) ──────────
 
-  // Hanya proses jika status SUCCEEDED
-  if (status !== "SUCCEEDED") {
-    console.info("payment.capture dengan status bukan SUCCEEDED — diabaikan:", status);
+  // Hanya proses jika status SUCCEEDED atau PAID (payment.succeeded bisa kirim "PAID")
+  if (status !== "SUCCEEDED" && status !== "PAID") {
+    console.info("Status bukan SUCCEEDED/PAID — diabaikan:", status);
     return jsonOk({ success: true, message: `Status '${status}' diabaikan` });
   }
 
