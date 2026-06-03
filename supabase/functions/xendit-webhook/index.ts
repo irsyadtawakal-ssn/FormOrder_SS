@@ -61,6 +61,8 @@ serve(async (req: Request) => {
     return new Response("Payload tidak lengkap", { status: 400 });
   }
 
+  console.log("Xendit webhook payload:", JSON.stringify(payload, null, 2));
+
   console.info("Xendit webhook diterima:", {
     event,
     reference_id: data.reference_id,
