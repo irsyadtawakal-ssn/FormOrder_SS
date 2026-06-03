@@ -82,12 +82,14 @@ const PAYMENT_CHANNELS = [
   ]},
 ];
 
-// Logo per channel — letakkan file di assets/img/payment/{id.toLowerCase()}.png
+// Logo per channel — letakkan file di assets/img/payment/{id.toLowerCase()}.png atau .webp
 // Jika file tidak ada, otomatis fallback ke emoji
+const CHANNEL_LOGO_EXT = { BJB: 'webp' };
 function channelLogoHtml(ch) {
+  const ext = CHANNEL_LOGO_EXT[ch.id] || 'png';
   return `
     <div style="width:36px;height:36px;flex-shrink:0;display:flex;align-items:center;justify-content:center">
-      <img src="assets/img/payment/${ch.id.toLowerCase()}.png"
+      <img src="assets/img/payment/${ch.id.toLowerCase()}.${ext}"
            alt="${ch.label}"
            style="width:36px;height:36px;object-fit:contain;border-radius:6px"
            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
