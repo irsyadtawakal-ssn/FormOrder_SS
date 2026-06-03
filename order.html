@@ -55,6 +55,14 @@ let pollTimer       = null;
 // Status terminal — tidak perlu poll lagi setelah ini
 const TERMINAL_STATUSES = ['paid', 'done', 'cancelled', 'expired'];
 
+// Channel groupings — satu sumber kebenaran, dipakai di renderStatus & post-render
+const VA_CHANNELS      = ['BCA', 'BNI', 'BRI', 'MANDIRI'];
+const EWALLET_CHANNELS = ['GOPAY', 'OVO', 'DANA'];
+const EWALLET_ICONS    = { GOPAY: '💚', OVO: '💜', DANA: '💙' };
+
+// Helper — derivasi channel dari order object (field DB atau cache)
+function getChannel(o) { return o._payment_channel || o.payment_channel || 'QRIS'; }
+
 // ─── Init ─────────────────────────────────────────────────────────────────────
 (async function init() {
   if (!orderNumber) {
@@ -99,24 +107,16 @@ async function loadOrder(cached) {
 
   order = data;
 
-  // Merge data tambahan dari cache jika belum ada di DB row
-  if (cached) {
-    order._qris_url        = order.qris_url        || cached.qris_url;
-    order._va_number       = order.va_number        || cached.va_number;
-    order._va_bank         = order.va_bank          || cached.va_bank;
-    order._ewallet_deeplink= order.ewallet_deeplink || cached.ewallet_deeplink;
-    order._payment_channel = order.payment_channel  || cached.payment_channel || 'QRIS';
-    order._expires_at      = order.expires_at       || cached.expires_at;
-    if (!order.order_items?.length && cached.order_items?.length) {
-      order.order_items = cached.order_items;
-    }
-  } else {
-    order._qris_url        = order.qris_url;
-    order._va_number       = order.va_number;
-    order._va_bank         = order.va_bank;
-    order._ewallet_deeplink= order.ewallet_deeplink;
-    order._payment_channel = order.payment_channel || 'QRIS';
-    order._expires_at      = order.expires_at;
+  // Merge display fields: DB wins, fallback ke cache, lalu default
+  const PAYMENT_FIELDS = ['qris_url', 'va_number', 'va_bank', 'ewallet_deeplink', 'payment_channel', 'expires_at'];
+  PAYMENT_FIELDS.forEach(f => {
+    order[`_${f}`] = order[f] ?? (cached ? cached[f] : null);
+  });
+  order._payment_channel = order._payment_channel || 'QRIS'; // default QRIS
+
+  // Items dari cache jika DB tidak return (kemungkinan RLS)
+  if (cached && !order.order_items?.length && cached.order_items?.length) {
+    order.order_items = cached.order_items;
   }
 
   // Simpan order aktif ke localStorage supaya bisa dipulihkan kalau tab hilang
@@ -200,14 +200,14 @@ function renderStatus(o) {
   switch (o.status) {
 
     case 'pending_payment': {
-      const channel       = o._payment_channel || o.payment_channel || 'QRIS';
-      const isQris        = channel === 'QRIS';
-      const isVA          = ['BCA','BNI','BRI','MANDIRI'].includes(channel);
-      const isEwallet     = ['GOPAY','OVO','DANA'].includes(channel);
-      const qrisStr       = o._qris_url        || o.qris_url        || '';
-      const vaNumber      = o._va_number       || o.va_number       || '';
-      const vaBank        = o._va_bank         || o.va_bank         || channel;
-      const ewalletLink   = o._ewallet_deeplink|| o.ewallet_deeplink|| '';
+      const channel    = getChannel(o);
+      const isQris     = channel === 'QRIS';
+      const isVA       = VA_CHANNELS.includes(channel);
+      const isEwallet  = EWALLET_CHANNELS.includes(channel);
+      const qrisStr    = o._qris_url         || '';
+      const vaNumber   = o._va_number        || '';
+      const vaBank     = o._va_bank          || channel;
+      const ewalletLink= o._ewallet_deeplink || '';
 
       const heroIcon  = isQris ? '📱' : isVA ? '🏦' : '💳';
       const heroTitle = isQris ? 'Scan QRIS untuk Bayar'
@@ -294,7 +294,7 @@ function renderStatus(o) {
       if (isEwallet) {
         paymentContent = `
           <div class="info-card" style="text-align:center">
-            <div style="font-size:48px;margin-bottom:8px">${channel === 'GOPAY' ? '💚' : channel === 'OVO' ? '💜' : '💙'}</div>
+            <div style="font-size:48px;margin-bottom:8px">${EWALLET_ICONS[channel] ?? '💳'}</div>
             <div style="font-size:22px;font-weight:800;color:var(--brand);margin-bottom:4px">${formatRupiah(o.total)}</div>
             <div style="font-size:12px;color:var(--muted);margin-bottom:16px" id="countdown">Menghitung waktu…</div>
             ${ewalletLink
@@ -318,8 +318,8 @@ function renderStatus(o) {
     }
 
     case 'paid': {
-      const channel = o._payment_channel || o.payment_channel || '';
-      const payLabel = channel === 'QRIS' ? 'QRIS' : ['BCA','BNI','BRI','MANDIRI'].includes(channel) ? `VA ${channel}` : channel || 'digital';
+      const channel  = getChannel(o);
+      const payLabel = channel === 'QRIS' ? 'QRIS' : VA_CHANNELS.includes(channel) ? `VA ${channel}` : channel || 'digital';
       heroHtml = `
         <div class="status-hero">
           <div class="status-icon">✅</div>
@@ -479,7 +479,7 @@ function renderStatus(o) {
     renderOrderQR(o.order_number);
   }
   if (o.status === 'pending_payment') {
-    const channel = o._payment_channel || o.payment_channel || 'QRIS';
+    const channel = getChannel(o);
     const isQris  = channel === 'QRIS';
 
     // Render QRIS QR code (hanya untuk channel QRIS)

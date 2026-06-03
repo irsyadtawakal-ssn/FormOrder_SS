@@ -87,15 +87,16 @@ function buildXenditPaymentMethod(
   }
 
   // EWALLET
+  const returnUrl = `${frontendUrl}/order.html?order=${orderNum}`;
   return {
     type: "EWALLET",
     reusability: "ONE_TIME_USE",
     ewallet: {
       channel_code: channel, // GOPAY/OVO/DANA
       channel_properties: {
-        success_return_url: `${frontendUrl}/order.html?order=${orderNum}`,
-        failure_return_url: `${frontendUrl}/order.html?order=${orderNum}`,
-        cancel_return_url:  `${frontendUrl}/order.html?order=${orderNum}`,
+        success_return_url: returnUrl,
+        failure_return_url: returnUrl,
+        cancel_return_url:  returnUrl,
       },
     },
   };
@@ -119,10 +120,9 @@ function extractPaymentData(payload: Record<string, unknown>, channel: ChannelTy
 
   // deno-lint-ignore no-explicit-any
   const p = payload as any;
+  const actions: any[] = p.actions ?? []; // hoist — dipakai di QR_CODE dan EWALLET
 
   if (cfg.type === "QR_CODE") {
-    // Cari QR string di beberapa lokasi response Xendit
-    const actions: any[] = p.actions ?? [];
     const qrAction = actions.find(
       (a) => a.descriptor === "QR_STRING" || a.type === "QR_CODE",
     );
@@ -133,15 +133,12 @@ function extractPaymentData(payload: Record<string, unknown>, channel: ChannelTy
   }
 
   if (cfg.type === "VIRTUAL_ACCOUNT") {
-    // Nomor VA ada di payment_method.virtual_account.channel_properties
     const channelProps = p.payment_method?.virtual_account?.channel_properties;
     vaNumber = channelProps?.virtual_account_number ?? channelProps?.account_details ?? null;
     vaBank = channel;
   }
 
   if (cfg.type === "EWALLET") {
-    // Deep link untuk buka app e-wallet
-    const actions: any[] = p.actions ?? [];
     const redirectAction = actions.find(
       (a) => a.type === "REDIRECT_CUSTOMER" || a.type === "MOBILE_DEEPLINK",
     );
@@ -269,34 +266,35 @@ serve(async (req: Request) => {
     return json({ error: "menu_item_id diperlukan di setiap item" }, 400);
   }
 
-  const [{ data: menuItems }, { data: overrideRows }] = await Promise.all([
-    supabase
-      .from("menu_items")
-      .select("id, name, base_price, is_active")
-      .in("id", itemIds),
-    supabase
-      .from("outlet_menu_overrides")
-      .select("menu_item_id, price_override, is_available")
-      .eq("outlet_id", outlet.id)
-      .in("menu_item_id", itemIds),
-  ]);
+  // allOptionIds derivable dari request body — tidak perlu tunggu DB queries
+  const allOptionIds = (items as Record<string, unknown>[])
+    .flatMap((i) => (Array.isArray(i.option_ids) ? i.option_ids : []))
+    .filter((id): id is string => typeof id === "string");
+
+  // Semua 3 queries dijalankan paralel
+  const [{ data: menuItems }, { data: overrideRows }, { data: optionRows }] =
+    await Promise.all([
+      supabase
+        .from("menu_items")
+        .select("id, name, base_price, is_active")
+        .in("id", itemIds),
+      supabase
+        .from("outlet_menu_overrides")
+        .select("menu_item_id, price_override, is_available")
+        .eq("outlet_id", outlet.id)
+        .in("menu_item_id", itemIds),
+      allOptionIds.length > 0
+        ? supabase
+            .from("menu_variant_options")
+            .select("id, name, price_modifier, variant_id")
+            .in("id", allOptionIds)
+        : Promise.resolve({ data: [] }),
+    ]);
 
   const menuMap = Object.fromEntries((menuItems ?? []).map((m) => [m.id, m]));
   const ovMap = Object.fromEntries(
     (overrideRows ?? []).map((o) => [o.menu_item_id, o]),
   );
-
-  const allOptionIds = (items as Record<string, unknown>[])
-    .flatMap((i) => (Array.isArray(i.option_ids) ? i.option_ids : []))
-    .filter((id): id is string => typeof id === "string");
-
-  const { data: optionRows } =
-    allOptionIds.length > 0
-      ? await supabase
-          .from("menu_variant_options")
-          .select("id, name, price_modifier, variant_id")
-          .in("id", allOptionIds)
-      : { data: [] };
 
   const optMap = Object.fromEntries((optionRows ?? []).map((o) => [o.id, o]));
 
@@ -525,6 +523,7 @@ serve(async (req: Request) => {
     order_number: order.order_number,
     order_id: order.id,
     payment_channel: channel,
+    payment_method: CHANNEL_CONFIG[channel].paymentMethod, // langsung pakai di frontend
     payment_type: CHANNEL_CONFIG[channel].type,
     // QRIS
     qris_string: qrisString,

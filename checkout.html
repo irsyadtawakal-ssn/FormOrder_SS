@@ -191,16 +191,16 @@ function renderPage() {
         <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:10px 0 6px">${group.group}</div>
         <div style="display:flex;flex-direction:column;gap:6px">
           ${group.channels.map(ch => `
-            <div class="pay-method-item${ch.id === 'QRIS' ? ' selected' : ''}"
+            <div class="pay-method-item"
               data-id="${ch.id}"
               onclick="selectChannel('${ch.id}')"
-              style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:2px solid ${ch.id === 'QRIS' ? 'var(--brand)' : 'var(--line2)'};border-radius:10px;cursor:pointer;background:${ch.id === 'QRIS' ? 'var(--brand-bg)' : 'var(--card)'}">
+              style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:2px solid var(--line2);border-radius:10px;cursor:pointer;background:var(--card)">
               ${channelLogoHtml(ch)}
               <div style="flex:1">
                 <div style="font-weight:700;font-size:13px">${ch.label}</div>
                 <div style="font-size:11px;color:var(--muted)">${ch.desc}</div>
               </div>
-              <div style="width:18px;height:18px;border-radius:50%;border:2px solid ${ch.id === 'QRIS' ? 'var(--brand)' : 'var(--line2)'};background:${ch.id === 'QRIS' ? 'var(--brand)' : 'transparent'};flex-shrink:0"></div>
+              <div style="width:18px;height:18px;border-radius:50%;border:2px solid var(--line2);background:transparent;flex-shrink:0"></div>
             </div>`).join('')}
         </div>`).join('')}
     </div>
@@ -225,8 +225,12 @@ function renderPage() {
     </div>
 
     <!-- Spacer agar konten tidak tertutup footer -->
+
     <div style="height:140px"></div>
   `;
+
+  // Terapkan state awal melalui selectChannel — konsisten dengan interaksi berikutnya
+  selectChannel(selectedChannel);
 }
 
 // ─── Submit ke Edge Function ──────────────────────────────────────────────────
@@ -255,7 +259,7 @@ async function doCheckout() {
       outlet_address:      checkoutData.outletAddress,
       customer_name:       checkoutData.customerName,
       pickup_time:         checkoutData.pickupTime,
-      payment_method:      result.payment_type === 'QR_CODE' ? 'xendit_qris' : result.payment_type === 'VIRTUAL_ACCOUNT' ? 'xendit_va' : 'xendit_ewallet',
+      payment_method:      result.payment_method,
       payment_channel:     result.payment_channel,
       payment_type:        result.payment_type,
       status:              'pending_payment',
