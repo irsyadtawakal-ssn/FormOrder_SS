@@ -65,23 +65,6 @@
 <script src="assets/js/utils.js"></script>
 <script src="assets/js/app.js"></script>
 <script>
-// ─── Baca data dari sessionStorage ───────────────────────────────────────────
-const raw = sessionStorage.getItem('suka_checkout');
-let checkoutData = null;
-
-try { checkoutData = raw ? JSON.parse(raw) : null; } catch { checkoutData = null; }
-
-if (!checkoutData || !checkoutData.cart || !checkoutData.cart.length) {
-  document.getElementById('pageContent').innerHTML = `
-    <div class="error-box" style="margin:24px 16px">
-      <p>Data pesanan tidak ditemukan.<br/>Silakan kembali dan coba lagi.</p>
-      <button class="btn-retry" onclick="window.location.href='index.html'">Ke Halaman Utama</button>
-    </div>`;
-} else {
-  renderPage();
-}
-
-// ─── Render halaman konfirmasi ────────────────────────────────────────────────
 // ─── Pilihan metode bayar ─────────────────────────────────────────────────────
 let selectedChannel = 'QRIS'; // default
 
@@ -306,6 +289,21 @@ async function doCheckout() {
     isSubmitting = false;
     showToast('❌ ' + (err.message || 'Gagal memproses pesanan. Coba lagi.'), 4000);
   }
+}
+
+// ─── Init — baca sessionStorage dan render halaman ───────────────────────────
+const raw = sessionStorage.getItem('suka_checkout');
+let checkoutData = null;
+try { checkoutData = raw ? JSON.parse(raw) : null; } catch { checkoutData = null; }
+
+if (!checkoutData || !checkoutData.cart || !checkoutData.cart.length) {
+  document.getElementById('pageContent').innerHTML = `
+    <div class="error-box" style="margin:24px 16px">
+      <p>Data pesanan tidak ditemukan.<br/>Silakan kembali dan coba lagi.</p>
+      <button class="btn-retry" onclick="window.location.href='index.html'">Ke Halaman Utama</button>
+    </div>`;
+} else {
+  renderPage();
 }
 </script>
 <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
