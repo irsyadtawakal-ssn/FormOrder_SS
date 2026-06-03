@@ -329,7 +329,7 @@ function renderOutletDropdownItems(outlets) {
   list.innerHTML = outlets.map(o => {
     const open   = isOutletOpen(o.open_hour, o.close_hour);
     const active = o.slug === outletSlug;
-    const name   = o.name.replace(/^Mitra\s+/i, '');
+    const name   = escHtml(o.name.replace(/^Mitra\s+/i, ''));
     const mapsUrl = o.maps_url || `https://www.google.com/maps/search/${encodeURIComponent(o.name + ' ' + (o.address || ''))}`;
     return `
       <div class="outlet-drop-item ${active ? 'active' : ''}" onclick="selectOutlet('${o.slug}')">
@@ -340,7 +340,7 @@ function renderOutletDropdownItems(outlets) {
         </div>
         ${o.address ? `
         <div class="outlet-drop-addr">
-          📍 ${o.address}
+          📍 ${escHtml(o.address)}
           <a class="outlet-drop-maps" href="${mapsUrl}" target="_blank"
              onclick="event.stopPropagation()">🗺 Maps</a>
         </div>` : ''}
@@ -536,7 +536,7 @@ function renderMenu() {
 
   document.getElementById('menuContent').innerHTML = sections.map(cat => `
     <div class="deal-section" id="section-${encodeURIComponent(cat.name)}">
-      <div class="deal-section-title">${cat.name}</div>
+      <div class="deal-section-title">${escHtml(cat.name)}</div>
       ${cat.items.map(item => {
         const hasDiscount = item.compare_price && item.compare_price > item.effectivePrice;
         const discountPct = hasDiscount
@@ -547,15 +547,15 @@ function renderMenu() {
         <div class="deal-card ${!item.isAvailable ? 'unavailable' : ''}" onclick="${clickFn}">
           <div class="deal-img-wrap">
             <div class="deal-img">
-              ${item.photo_url ? `<img src="${item.photo_url}" alt="${item.name}" loading="lazy" />` : '🌯'}
+              ${item.photo_url ? `<img src="${item.photo_url}" alt="${escHtml(item.name)}" loading="lazy" />` : '🌯'}
             </div>
             ${item.is_best_seller ? `<span class="deal-img-badge">BEST SELLER</span>` : ''}
             ${!item.isAvailable ? `<span class="deal-img-badge sold-out">HABIS</span>` : ''}
             ${hasDiscount ? `<span class="deal-img-badge" style="top:auto;bottom:5px;left:5px;background:#ff6b00">-${discountPct}%</span>` : ''}
           </div>
           <div class="deal-body">
-            <div class="deal-name">${item.name}</div>
-            ${item.description ? `<div class="deal-desc">${item.description}</div>` : ''}
+            <div class="deal-name">${escHtml(item.name)}</div>
+            ${item.description ? `<div class="deal-desc">${escHtml(item.description)}</div>` : ''}
             <div class="deal-price-row">
               <div>
                 <div class="deal-price">${formatRupiah(item.effectivePrice)}</div>
@@ -605,12 +605,12 @@ function renderItemSheet() {
     <div class="item-hero">
       ${currentItem.photo_url ? `<img src="${currentItem.photo_url}" alt="${currentItem.name}" />` : '🌯'}
     </div>
-    ${currentItem.description ? `<p style="color:var(--muted);font-size:14px;margin:0 0 18px">${currentItem.description}</p>` : ''}`;
+    ${currentItem.description ? `<p style="color:var(--muted);font-size:14px;margin:0 0 18px">${escHtml(currentItem.description)}</p>` : ''}`;
 
   currentVariants.forEach(v => {
     html += `<div class="variant-group">
       <div class="variant-label">
-        ${v.label}
+        ${escHtml(v.label)}
         ${v.is_required ? '<span class="variant-req">Wajib</span>' : '<span class="variant-opt-label">Opsional</span>'}
       </div>`;
     v.options.forEach(o => {
@@ -619,7 +619,7 @@ function renderItemSheet() {
         <label class="opt" onclick="event.stopPropagation();selectOpt('${v.id}',${v.is_multi},'${o.name.replace(/'/g, "\\'")}')">
           <span class="opt-left">
             <input type="${v.is_multi ? 'checkbox' : 'radio'}" name="v${v.id}" ${checked ? 'checked' : ''} />
-            ${o.name}
+            ${escHtml(o.name)}
           </span>
           <span class="opt-price">${o.price_modifier > 0 ? '+ ' + formatRupiah(o.price_modifier) : ''}</span>
         </label>`;

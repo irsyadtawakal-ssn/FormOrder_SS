@@ -122,11 +122,11 @@ function userRow(u) {
         👤
       </div>
       <div style="flex:1;min-width:0">
-        <div style="font-weight:700;font-size:14px">${u.full_name}</div>
-        <div style="font-size:12px;color:var(--muted)">${u.email}</div>
+        <div style="font-weight:700;font-size:14px">${escHtml(u.full_name)}</div>
+        <div style="font-size:12px;color:var(--muted)">${escHtml(u.email)}</div>
         <div style="margin-top:3px">
           <span style="font-size:11px;color:${roleColor};font-weight:600">${roleLabel}</span>
-          ${u.role === 'outlet_staff' ? `<span style="font-size:11px;color:var(--muted);margin-left:6px">· ${outletName(u.outlet_id)}</span>` : ''}
+          ${u.role === 'outlet_staff' ? `<span style="font-size:11px;color:var(--muted);margin-left:6px">· ${escHtml(outletName(u.outlet_id))}</span>` : ''}
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;flex-shrink:0">
@@ -241,10 +241,10 @@ function openEditUser(userId) {
   openModal('Edit Pengguna', `
     <div class="form-group">
       <label class="form-label">Nama Lengkap</label>
-      <input id="euName" class="form-input" value="${u.full_name}" />
+      <input id="euName" class="form-input" value="${escHtml(u.full_name)}" />
     </div>
     <div style="padding:8px 0;font-size:13px;color:var(--muted)">
-      Email: <b>${u.email}</b> (tidak bisa diubah)
+      Email: <b>${escHtml(u.email)}</b> (tidak bisa diubah)
     </div>
     <div style="padding:4px 0;font-size:13px;color:var(--muted)">
       Role: <b>${u.role === 'super_admin' ? 'Super Admin' : 'Staff Outlet'}</b> (tidak bisa diubah)

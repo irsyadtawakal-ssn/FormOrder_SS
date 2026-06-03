@@ -277,8 +277,8 @@ function _onNewOrder(order, user) {
   if (location.pathname.endsWith('orders.html')) return;
   const outletName = (order.outlets || {}).name || '';
   _showOrderNotifBanner(
-    `🆕 Pesanan baru — <b>${order.customer_name}</b>`,
-    `${order.order_number}${outletName ? ' · ' + outletName : ''} · ${formatRupiah(order.total)}`
+    `🆕 Pesanan baru — <b>${escHtml(order.customer_name)}</b>`,
+    `${order.order_number}${outletName ? ' · ' + escHtml(outletName) : ''} · ${formatRupiah(order.total)}`
   );
 }
 
@@ -287,8 +287,8 @@ function _onAwaitingVerif(order) {
   if (location.pathname.endsWith('orders.html')) return;
   const outletName = (order.outlets || {}).name || '';
   _showOrderNotifBanner(
-    `💳 Bukti transfer masuk — <b>${order.customer_name}</b>`,
-    `${order.order_number}${outletName ? ' · ' + outletName : ''} · ${formatRupiah(order.total)}`
+    `💳 Bukti transfer masuk — <b>${escHtml(order.customer_name)}</b>`,
+    `${order.order_number}${outletName ? ' · ' + escHtml(outletName) : ''} · ${formatRupiah(order.total)}`
   );
 }
 
