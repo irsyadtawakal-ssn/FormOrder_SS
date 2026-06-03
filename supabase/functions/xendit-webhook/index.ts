@@ -218,12 +218,12 @@ serve(async (req: Request) => {
 
   // ─── Trigger send-wa-notifications (async, fire-and-forget) ──────────────
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
   fetch(`${supabaseUrl}/functions/v1/send-wa-notifications`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${anonKey}`,
+      Authorization: `Bearer ${serviceKey}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ order_id: order.id, event: "paid" }),
