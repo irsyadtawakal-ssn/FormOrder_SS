@@ -51,8 +51,8 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
 
-  // Jangan cache request ke Supabase / API eksternal / Tripay
-  if (url.hostname.includes('supabase') || url.hostname.includes('cdn.jsdelivr') || url.hostname.includes('tripay')) {
+  // Jangan cache request ke Supabase / API eksternal / Xendit
+  if (url.hostname.includes('supabase') || url.hostname.includes('cdn.jsdelivr') || url.hostname.includes('xendit')) {
     return; // biarkan browser handle (network)
   }
 

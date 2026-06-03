@@ -21,30 +21,6 @@ async function callEdgeFunction(name, body) {
   return data;
 }
 
-// ─── Submit checkout — panggil create-tripay-payment ──────────────────────────
-// checkoutData: { outletSlug, cart, customerName, customerWA, pickupTime, notes }
-// Mengembalikan: { order_number, order_id, qris_url, pay_url, expires_at, total, subtotal, service_fee }
-
-async function submitCheckout(checkoutData) {
-  const { outletSlug, cart, customerName, customerWA, pickupTime, notes } = checkoutData;
-
-  const items = cart.map(item => ({
-    menu_item_id: item.menuItemId,
-    quantity:     item.qty,
-    option_ids:   Array.isArray(item.optionIds) ? item.optionIds : [],
-    selections:   item.selections || {},
-    note:         item.note || null,
-  }));
-
-  return await callEdgeFunction('create-tripay-payment', {
-    outlet_slug:   outletSlug,
-    items,
-    customer_name: customerName,
-    customer_wa:   customerWA,
-    pickup_time:   pickupTime,
-    notes:         notes || null,
-  });
-}
 
 // ─── Submit order via Xendit QRIS ────────────────────────────────────────────
 // Mengembalikan: { order_number, order_id, qris_string, payment_request_id, expires_at, total, subtotal, service_fee }
