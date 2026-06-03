@@ -57,7 +57,12 @@
       "mcp__context7__resolve-library-id",
       "mcp__context7__query-docs",
       "Bash(powershell -Command \"Get-ChildItem -Recurse -Include *.html | Select-String 'v=6' | Select-Object -ExpandProperty Path | Sort-Object -Unique\")",
-      "Bash(xargs sed -i \"s/v=6/v=7/g\")"
+      "Bash(xargs sed -i \"s/v=6/v=7/g\")",
+      "Bash(supabase functions *)",
+      "Bash(gh api *)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:cdn.statically.io)",
+      "WebFetch(domain:plugins.svn.wordpress.org)"
     ]
   }
 }

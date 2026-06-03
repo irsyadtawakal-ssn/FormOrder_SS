@@ -99,27 +99,23 @@ function fmtTimeAgo(iso) {
 // ─── Status helpers ───────────────────────────────────────────────────────────
 
 const STATUS_LABELS = {
-  pending_payment:        'Belum Transfer',
-  proof_rejected:         'Bukti Ditolak',
-  awaiting_verification:  'Cek Bukti',
-  paid:                   'Dikonfirmasi',
-  preparing:              'Disiapkan',
-  ready:                  'Siap Ambil',
-  done:                   'Selesai',
-  cancelled:              'Batal',
-  expired:                'Kedaluwarsa',
+  pending_payment: 'Menunggu Bayar',
+  paid:            'Dikonfirmasi',
+  preparing:       'Disiapkan',
+  ready:           'Siap Ambil',
+  done:            'Selesai',
+  cancelled:       'Batal',
+  expired:         'Kedaluwarsa',
 };
 
 const STATUS_COLORS = {
-  pending_payment:        '#f59e0b',
-  proof_rejected:         '#ef4444',
-  awaiting_verification:  '#f97316',
-  paid:                   '#3b82f6',
-  preparing:              '#8b5cf6',
-  ready:                  '#10b981',
-  done:                   '#6b7280',
-  cancelled:              '#ef4444',
-  expired:                '#9ca3af',
+  pending_payment: '#f59e0b',
+  paid:            '#3b82f6',
+  preparing:       '#8b5cf6',
+  ready:           '#10b981',
+  done:            '#6b7280',
+  cancelled:       '#ef4444',
+  expired:         '#9ca3af',
 };
 
 const STATUS_NEXT_ACTION = {
@@ -187,7 +183,7 @@ window.addEventListener('beforeunload', cleanupChannels);
 
 // ─── Order Notifications (berjalan di semua halaman admin) ───────────────────
 
-const _ACTIVE_STATUSES_NOTIF = ['pending_payment', 'awaiting_verification', 'paid', 'preparing', 'ready'];
+const _ACTIVE_STATUSES_NOTIF = ['pending_payment', 'paid', 'preparing', 'ready'];
 
 async function startOrderNotifications(user) {
   // Refresh badge awal
@@ -215,18 +211,7 @@ async function startOrderNotifications(user) {
       schema: 'public',
       table: 'orders',
       ...(outletFilter ? { filter: outletFilter } : {}),
-    }, async (payload) => {
-      // Saat bukti transfer masuk (→ awaiting_verification), beritahu super_admin
-      if (user.role === 'super_admin'
-          && payload.new.status === 'awaiting_verification'
-          && payload.old?.status !== 'awaiting_verification') {
-        const { data: order } = await window.db
-          .from('orders')
-          .select('id, order_number, customer_name, total, outlets(name)')
-          .eq('id', payload.new.id)
-          .single();
-        if (order) _onAwaitingVerif(order);
-      }
+    }, (payload) => {
       // Refresh badge setiap ada perubahan status
       _refreshNavBadge(user);
     })
@@ -278,16 +263,6 @@ function _onNewOrder(order, user) {
   const outletName = (order.outlets || {}).name || '';
   _showOrderNotifBanner(
     `🆕 Pesanan baru — <b>${escHtml(order.customer_name)}</b>`,
-    `${order.order_number}${outletName ? ' · ' + escHtml(outletName) : ''} · ${formatRupiah(order.total)}`
-  );
-}
-
-function _onAwaitingVerif(order) {
-  playDing();
-  if (location.pathname.endsWith('orders.html')) return;
-  const outletName = (order.outlets || {}).name || '';
-  _showOrderNotifBanner(
-    `💳 Bukti transfer masuk — <b>${escHtml(order.customer_name)}</b>`,
     `${order.order_number}${outletName ? ' · ' + escHtml(outletName) : ''} · ${formatRupiah(order.total)}`
   );
 }

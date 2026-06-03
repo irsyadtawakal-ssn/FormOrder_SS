@@ -207,7 +207,9 @@ function renderStatus(o) {
       const qrisStr    = o._qris_url         || '';
       const vaNumber   = o._va_number        || '';
       const vaBank     = o._va_bank          || channel;
-      const ewalletLink= o._ewallet_deeplink || '';
+      // Validasi protocol — hanya izinkan https:// dan deep link app resmi
+      const _rawLink   = o._ewallet_deeplink || '';
+      const ewalletLink= /^(https?:\/\/|gojek:\/\/|ovo:\/\/|dana:\/\/)/.test(_rawLink) ? _rawLink : '';
 
       const heroIcon  = isQris ? '📱' : isVA ? '🏦' : '💳';
       const heroTitle = isQris ? 'Scan QRIS untuk Bayar'
