@@ -491,10 +491,10 @@ Deno.serve(async (req) => {
 - [ ] **Step 3: Verifikasi** — panggil dari browser console saat login super_admin:
 ```js
 const { data:{ session } } = await window.db.auth.getSession();
-const r = await fetch(`${window.SUPABASE_URL}/functions/v1/system-health-check`, { headers:{ Authorization:`Bearer ${session.access_token}` }});
+const r = await fetch(`${window.SUKA_CONFIG.supabaseUrl}/functions/v1/system-health-check`, { headers:{ Authorization:`Bearer ${session.access_token}` }});
 console.log(await r.json());
 ```
-Expected: JSON berisi `fonnte`, `ping`, `reconcile`. (Sesuaikan `window.SUPABASE_URL` dengan konstanta di `supabase.js`.)
+Expected: JSON berisi `fonnte`, `ping`, `reconcile`. (Sesuaikan `window.SUKA_CONFIG.supabaseUrl` dengan konstanta di `supabase.js`.)
 
 - [ ] **Step 4: Commit**
 
@@ -513,15 +513,16 @@ git commit -m "Monitoring: Edge Function system-health-check (Fonnte device, pin
 - [ ] **Step 1: Implementasi cek rekonsiliasi** — Ganti blok `snap.reconcile`. Ambil order `pending_payment` > 15 menit yang punya `payment_id` (atau kolom Xendit id — verifikasi nama kolom di migrasi Xendit, mis. `xendit_payment_request_id`). Untuk tiap order, GET status ke Xendit; hitung yang sudah `SUCCEEDED`/`PAID`.
 ```ts
   const cut = new Date(Date.now() - 15*60000).toISOString();
+  // CATATAN: id payment_request Xendit disimpan di kolom `tripay_reference` (di-reuse dari era Tripay)
   const { data: stale } = await db.from("orders")
-    .select("id, order_number, xendit_payment_request_id")
+    .select("id, order_number, tripay_reference")
     .eq("status", "pending_payment").lt("created_at", cut)
-    .not("xendit_payment_request_id", "is", null);
+    .not("tripay_reference", "is", null);
   let mismatched: string[] = [];
   if (XENDIT && stale) {
     for (const o of stale) {
       try {
-        const r = await fetch(`https://api.xendit.co/payment_requests/${o.xendit_payment_request_id}`,
+        const r = await fetch(`https://api.xendit.co/payment_requests/${o.tripay_reference}`,
           { headers: { Authorization: "Basic " + btoa(XENDIT + ":") } });
         const j = await r.json();
         if (["SUCCEEDED","PAID","COMPLETED"].includes(j?.status)) mismatched.push(o.order_number);
@@ -530,7 +531,7 @@ git commit -m "Monitoring: Edge Function system-health-check (Fonnte device, pin
   }
   snap.reconcile = { stale_pending: stale?.length ?? 0, paid_but_unsynced: mismatched };
 ```
-Catatan: verifikasi nama kolom Xendit id di `supabase/migrations/` (Phase 10/11). Sesuaikan endpoint bila pakai Invoice API alih-alih Payment Requests.
+Catatan: kolom id Xendit = `tripay_reference` (sudah diverifikasi di `create-xendit-payment/index.ts:503`). Endpoint Payment Requests API benar (bukan Invoice).
 
 - [ ] **Step 2: Deploy & verifikasi** — `supabase functions deploy system-health-check`; panggil ulang dari console, pastikan `reconcile.paid_but_unsynced` array (kosong jika tidak ada mismatch).
 
@@ -554,7 +555,7 @@ git commit -m "Monitoring: rekonsiliasi Xendit (paid tapi belum tersinkron)"
 async function loadHealthCheck() {
   try {
     const { data:{ session } } = await window.db.auth.getSession();
-    const r = await fetch(`${window.SUPABASE_URL}/functions/v1/system-health-check`,
+    const r = await fetch(`${window.SUKA_CONFIG.supabaseUrl}/functions/v1/system-health-check`,
       { headers: { Authorization: `Bearer ${session.access_token}` } });
     if (!r.ok) throw new Error('health-check ' + r.status);
     return await r.json();
