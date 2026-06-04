@@ -233,6 +233,9 @@ function menuRow(item) {
           <button class="action-btn action-secondary"
                   style="font-size:11px;padding:4px 10px"
                   onclick="openVariantManager('${item.id}')">Varian</button>
+          <button class="action-btn"
+                  style="font-size:11px;padding:4px 10px;background:#fff0f0;color:var(--brand);border:none"
+                  onclick="hapusItem('${item.id}','${escHtml(item.name)}')">Hapus</button>
         ` : `
           <label class="toggle-wrap">
             <input type="checkbox" ${isAvail ? 'checked' : ''} onchange="toggleAvailability('${item.id}',this.checked)" />
@@ -243,6 +246,15 @@ function menuRow(item) {
       </div>
     </div>
   </div>`;
+}
+
+// ─── Hapus menu item (super_admin) ───────────────────────────────────────────
+async function hapusItem(itemId, itemName) {
+  if (!confirm(`Hapus menu "${itemName}"?\n\nAksi ini tidak bisa dibatalkan.`)) return;
+  const { error } = await sb.from('menu_items').delete().eq('id', itemId);
+  if (error) { alert('Gagal hapus: ' + error.message); return; }
+  showToast(`Menu "${itemName}" dihapus.`);
+  loadMenu();
 }
 
 // ─── Toggle aktif (super_admin — ubah is_active di menu_items) ────────────────
