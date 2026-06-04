@@ -1,23 +1,26 @@
 # Customer Journey Flow — SUKA Shawarma Order System
 
-**Tanggal:** 2026-06-04  
-**Scope:** Flow lengkap per-step untuk 3 role: Customer, Admin (super_admin), Outlet Staff  
+**Tanggal:** 2026-06-04 (update: Xendit multi-channel)
+**Scope:** Flow lengkap per-step untuk 3 role: Customer, Admin (super_admin), Outlet Staff
 **Referensi:** `docs/superpowers/specs/2026-05-19-sukshawarma-order-design.md`
+**Payment:** Xendit QRIS + Virtual Account (BCA/BNI/BRI/Mandiri) + E-Wallet (GoPay/OVO/DANA)
 
 ---
 
 ## Ringkasan Alur
 
 ```
-CUSTOMER ──────────────────────────────────────────────────────►
-   │                                              ▲
-   │ order baru                    notif WA status│
-   ▼                                              │
-ADMIN (super_admin) ─── verifikasi transfer ─────┤
-   │                                              │
-   │ order verified → masuk ke outlet             │
-   ▼                                              │
-OUTLET STAFF ─── update status ──────────────────┘
+CUSTOMER ─── pilih menu → bayar (Xendit) ──────────────────────►
+   │                              │ webhook auto-confirm          ▲
+   │                              ▼                     notif WA  │
+   │                         SISTEM (Xendit webhook)              │
+   │                              │ status → paid                 │
+   │                              ▼                               │
+   │                    OUTLET STAFF ─── update status ───────────┘
+   │                                                              │
+   └──────── notif WA per event ◄─────────────────────────────────┘
+
+Admin berperan sebagai supervisor & manager — bukan di jalur utama order
 ```
 
 ---
@@ -48,56 +51,61 @@ OUTLET STAFF ─── update status ──────────────�
 [7] Isi nama + nomor WA
      │
      ▼
-[8] Submit order → server reprice → status: pending_payment
+[8] Pilih metode pembayaran:
+     ├── 📱 QRIS         — scan QR, semua bank & e-wallet, biaya 0.63%
+     ├── 🏦 Virtual Account — BCA / BNI / BRI / Mandiri
+     └── 💳 E-Wallet     — GoPay / OVO / DANA
      │
      ▼
-[9] Redirect ke order.html → lihat info rekening BCA + nominal transfer
+[9] Submit order → server reprice → Xendit payment dibuat
+     → status: pending_payment
      │
      ▼
-[10] Transfer manual ke rekening BCA → tap "Upload Bukti Transfer" → pilih foto
+[10] Redirect ke order.html — tampilan adaptif per channel:
+     │
+     ├── QRIS      → QR code + countdown 30 menit → scan dengan HP
+     ├── VA        → nomor VA + nama bank + instruksi transfer
+     └── E-Wallet  → deep link / QR → tap untuk buka app
      │
      ▼
-[11] Status berubah: awaiting_verification
-     │  (banner: "jangan tutup tab ini")
+[11] Customer bayar (scan QR / transfer ke VA / buka e-wallet)
+     │
      ▼
-[12] Menunggu verifikasi admin/AI...
+[12] Xendit webhook otomatis terima konfirmasi pembayaran
+     → status: paid (otomatis, tanpa aksi manual)
      │
-     ├── ✅ APPROVED → status: confirmed
-     │        │
-     │        ▼
-     │   [13a] Notif WA: "Order dikonfirmasi, sedang diproses"
-     │        │
-     │        ▼
-     │   [14a] Status update: preparing → ready
-     │        │
-     │        ▼
-     │   [15a] Notif WA: "Pesananmu siap diambil di [nama outlet]!"
-     │        │
-     │        ▼
-     │   [16a] Customer datang pickup ✅ SELESAI
+     ▼
+[13] Notif WA ke customer: "Pembayaran diterima, pesananmu sedang diproses"
      │
-     └── ❌ REJECTED → status: payment_rejected
-              │
-              ▼
-         [13b] Notif WA: "Bukti transfer ditolak, silakan upload ulang"
-              │
-              ▼
-         [14b] Customer buka order.html → upload bukti baru → kembali ke step [10]
+     ▼
+[14] Outlet siapkan pesanan:
+     → status: preparing
+     → status: ready
+     │
+     ▼
+[15] Notif WA ke customer: "Pesananmu siap diambil di [nama outlet]!"
+     │
+     ▼
+[16] Customer datang pickup ✅ SELESAI
+     → status: done
 ```
 
 ### Error States
 
 | Kondisi | Trigger | Aksi Sistem |
 |---------|---------|-------------|
-| Lupa tutup tab | Customer buka halaman lain | Recovery banner muncul di `index.html` |
-| Order expired | >30 menit tidak upload bukti | `auto-cancel-expired-orders` pg_cron → status: `cancelled` → notif WA |
-| Outlet tidak aktif | Outlet dimatikan admin | Item tidak muncul di menu |
+| Tidak bayar dalam 30 menit | Xendit payment expired | Status → `expired`, notif WA, order tidak bisa dilanjutkan |
+| Lupa tutup tab | Customer buka halaman lain | Recovery banner muncul di `index.html` (localStorage) |
+| Outlet tidak aktif | Admin matikan outlet | Item tidak muncul di menu customer |
+| Xendit down | Payment gagal dibuat | Error di checkout, customer diminta coba lagi |
 
 ---
 
 ## 2. Admin (super_admin) Journey
 
-### Happy Path
+Admin bukan di jalur utama order — sistem berjalan otomatis via Xendit webhook. Admin berperan sebagai supervisor dan manager.
+
+### Daily Operations
 
 ```
 [1] Buka admin/login.html → login email + password
@@ -109,37 +117,19 @@ OUTLET STAFF ─── update status ──────────────�
      ▼
 [3] Buka admin/orders.html
      → realtime list semua order dari semua outlet
+     → filter: Aktif | Dibayar | Disiapkan | Siap Ambil | Selesai | Semua
      │
      ▼
-[4] Filter chip "💳 Verifikasi" → lihat order berstatus awaiting_verification
+[4] Monitor alur order (no action needed untuk flow normal):
+     pending_payment → paid (auto via Xendit) → preparing → ready → done
      │
      ▼
-[5] Tap order → modal detail terbuka
-     → lihat: foto bukti transfer, AI confidence score, nominal extracted, nama bank
-     │
-     ├── Mode AI Otomatis (confidence HIGH ≥ threshold)
-     │        → sistem auto-approve, admin hanya monitor
-     │        → status langsung: confirmed
-     │
-     └── Mode Manual (atau confidence LOW)
-              │
-              ▼
-         [6] Admin review foto secara manual
-              │
-              ├── ✅ Tap "Verifikasi" → status: confirmed
-              │        → notif WA dikirim ke customer + outlet
-              │
-              └── ❌ Tap "Tolak" → status: payment_rejected
-                       → notif WA dikirim ke customer
+[5] Aksi manual jika dibutuhkan:
+     └── Batalkan order (tombol "Batalkan" di setiap order aktif)
+          → status: cancelled → notif WA ke customer
      │
      ▼
-[7] Order confirmed → pindah ke filter "Aktif"
-     │
-     ▼
-[8] Monitor update status dari outlet: confirmed → preparing → ready → completed
-     │
-     ▼
-[9] Review laporan (kapan saja):
+[6] Review laporan (kapan saja):
      → admin/reports.html → revenue per outlet, top menu items, volume order
      → export CSV per outlet per date range
 ```
@@ -153,15 +143,15 @@ OUTLET STAFF ─── update status ──────────────�
 | `admin/users.html` | Manage akun outlet staff |
 | `admin/customers.html` | Lihat pelanggan, poin loyalti, histori order |
 | `admin/vouchers.html` | Buat voucher, assign ke customer |
-| `admin/settings.html` | Service fee, mode verifikasi (Manual/AI), toggle notif WA |
+| `admin/settings.html` | Service fee, toggle notif WA |
 
 ### Error States
 
 | Kondisi | Trigger | Aksi Sistem |
 |---------|---------|-------------|
-| AI service down | OpenRouter tidak merespons | Fallback otomatis ke mode manual |
-| Order expired | pg_cron auto-cancel | Muncul di filter "Cancelled", admin tidak perlu action |
-| Confidence rendah | AI tidak yakin | Order tetap di antrian manual, tidak auto-approve |
+| Xendit webhook gagal | Network / timeout | `check-xendit-status` polling fallback tiap 5 detik |
+| Order expired tidak terbayar | 30 menit habis | Status otomatis `expired`, admin tidak perlu action |
+| Outlet tidak merespons order | Staff offline | Admin bisa cancel manual + hubungi outlet langsung |
 
 ---
 
@@ -181,31 +171,28 @@ OUTLET STAFF ─── update status ──────────────�
      → otomatis filter ke outlet sendiri saja
      │
      ▼
-[4] Order baru masuk → notifikasi 2 channel:
+[4] Order baru masuk (status: paid) → notifikasi 2 channel:
      → 🔔 suara "ding" di browser
      → 📱 WA notif ke nomor outlet
      │
      ▼
 [5] Tap order → lihat detail:
      → item list, varian, jumlah, nama customer, jam pickup yang diminta
+     → metode bayar yang digunakan customer
      │
      ▼
-[6] Tap "✅ Konfirmasi" → status: confirmed
-     → customer menerima notif WA "Order dikonfirmasi"
+[6] Tap "🔄 Disiapkan" → status: preparing
      │
      ▼
-[7] Mulai siapkan pesanan → tap "🔄 Preparing" → status: preparing
-     │
-     ▼
-[8] Pesanan selesai dibuat → tap "✅ Siap" → status: ready
+[7] Pesanan selesai dibuat → tap "✅ Siap Ambil" → status: ready
      → customer menerima notif WA: "Pesananmu siap diambil!"
      │
      ▼
-[9] Customer datang pickup → tap "✅ Selesai" → status: completed
+[8] Customer datang pickup → tap "✅ Selesai" → status: done
      → poin loyalti otomatis ditambah via Edge Function `on-order-done`
      │
      ▼
-[10] SELESAI ✅
+[9] SELESAI ✅
 ```
 
 ### Manajemen Menu Outlet
@@ -227,8 +214,8 @@ Lihat semua item menu
 
 | Kondisi | Trigger | Aksi Sistem |
 |---------|---------|-------------|
-| Lupa konfirmasi order | Order masuk tapi tidak direspons | pg_cron auto-cancel setelah expired, outlet dinotif WA |
-| Item habis setelah order masuk | Stok habis mendadak | Konfirmasi order dulu, lalu hubungi customer via WA langsung untuk negosiasi |
+| Order paid tapi tidak diproses | Staff tidak tap "Disiapkan" | Order tetap di filter "Dibayar", tidak ada auto-cancel |
+| Item habis setelah order masuk | Stok habis mendadak | Proses order, hubungi customer via WA langsung |
 | Koneksi browser terputus | Sinyal HP lemah | Realtime Supabase reconnect otomatis, suara notif aktif saat kembali online |
 
 ---
@@ -236,19 +223,21 @@ Lihat semua item menu
 ## Diagram Integrasi Antar Role
 
 ```
-Customer          Admin              Outlet Staff       Sistem
-   │                │                     │                │
-   │──submit order──►│                     │                │
-   │                │──verifikasi transfer─►│(notif)         │
-   │                │──approve────────────►│                │
-   │◄──notif WA─────│                     │                │
-   │                │                     │──konfirmasi────►│
-   │                │                     │──preparing─────►│
-   │                │                     │──ready──────────►│
-   │◄──notif WA siap─────────────────────────────────────────│
-   │──pickup──────────────────────────────►│                │
-   │                │                     │──completed─────►│
-   │                │                     │                │──poin loyalty
+Customer          Xendit            Sistem             Outlet Staff       Admin
+   │                │                  │                    │               │
+   │──submit order──►│                  │                    │               │
+   │◄──payment UI────│                  │                    │               │
+   │──bayar──────────►│                  │                    │               │
+   │                 │──webhook─────────►│                    │               │
+   │                 │                  │──status: paid──────►│               │
+   │                 │                  │──notif WA customer──►│(cc)           │
+   │◄──notif WA paid──────────────────────────────────────────│               │
+   │                 │                  │                    │──preparing─────►│
+   │                 │                  │                    │──ready──────────►│
+   │◄──notif WA siap──────────────────────────────────────────────────────────│
+   │──pickup──────────────────────────────────────────────────►│               │
+   │                 │                  │                    │──done───────────►│
+   │                 │                  │                    │──poin loyalty    │
 ```
 
 ---
@@ -256,25 +245,43 @@ Customer          Admin              Outlet Staff       Sistem
 ## Status Order — State Machine
 
 ```
-pending_payment
+pending_payment  (order dibuat, menunggu pembayaran)
      │
-     ▼ (customer upload bukti)
-awaiting_verification
+     │ Xendit webhook: payment.capture
+     ▼
+paid             (pembayaran dikonfirmasi otomatis)
      │
-     ├──► payment_rejected ──► (customer upload ulang) ──► awaiting_verification
+     │ Outlet staff tap "Disiapkan"
+     ▼
+preparing        (sedang dimasak/disiapkan)
      │
-     ▼ (admin/AI approve)
-confirmed
+     │ Outlet staff tap "Siap Ambil"
+     ▼
+ready            (siap diambil, notif WA ke customer)
      │
-     ▼ (outlet staff)
-preparing
-     │
-     ▼ (outlet staff)
-ready
-     │
-     ▼ (outlet staff)
-completed ✅
+     │ Outlet staff tap "Selesai" setelah customer pickup
+     ▼
+done ✅          (selesai, poin loyalty ditambah)
 
-(dari mana saja, jika expired)
-     └──► cancelled ❌
+─────────────────────────────────────────────────────────────
+(dari pending_payment, jika 30 menit tidak dibayar)
+     └──► expired ❌  (Xendit auto-expire)
+
+(dari pending_payment / paid / preparing / ready, jika dibatalkan)
+     └──► cancelled ❌ (admin/outlet cancel manual → notif WA customer)
 ```
+
+---
+
+## Metode Pembayaran yang Didukung
+
+| Channel | Tipe | Biaya | UI di order.html |
+|---------|------|-------|-----------------|
+| QRIS | QR_CODE | 0.63% | QR code + countdown |
+| BCA VA | VIRTUAL_ACCOUNT | flat | Nomor VA + instruksi |
+| BNI VA | VIRTUAL_ACCOUNT | flat | Nomor VA + instruksi |
+| BRI VA | VIRTUAL_ACCOUNT | flat | Nomor VA + instruksi |
+| Mandiri VA | VIRTUAL_ACCOUNT | flat | Nomor VA + instruksi |
+| GoPay | EWALLET | % | Deep link + QR |
+| OVO | EWALLET | % | Deep link |
+| DANA | EWALLET | % | Deep link |
