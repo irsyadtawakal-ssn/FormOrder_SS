@@ -240,4 +240,4 @@
 - ✅ 2026-05-23 — Fix toggle CSS conflict — scope .toggle-switch .toggle-slider agar tidak override global
 - ✅ 2026-05-23 — Seragamkan title tab semua halaman customer ke "Order Sukashawarma"
 - ✅ 2026-06-03 — Logo payment channel lengkap: QRIS, BCA, BNI, BRI, Mandiri, BJB (webp), BSI, CIMB di assets/img/payment/
-- ✅ 2026-06-04 — Customer journey flow diagram (Customer + Admin + Outlet Staff per-step + state machine)
+- ✅ 2026-06-04 — Customer journey flow diagram (Customer + Admin + Outlet Staff per-step + state machine, Xendit multi-channel)
