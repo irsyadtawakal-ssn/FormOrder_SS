@@ -43,24 +43,43 @@
 
   <div class="admin-content">
 
-    <!-- Search + stats row -->
-    <div style="padding:8px 12px 4px;display:flex;gap:8px;align-items:center">
-      <input type="search" id="searchInput" class="form-input" placeholder="Cari nama / WA…"
-             style="flex:1;font-size:13px" oninput="renderTable()" />
+    <!-- Tabs -->
+    <div class="chips" style="padding:8px 12px 4px;border-bottom:1px solid var(--border)">
+      <button class="chip active" data-tab="all" onclick="switchTab('all')">Semua Pelanggan</button>
+      <button class="chip" data-tab="today" onclick="switchTab('today')">Hari Ini</button>
     </div>
 
-    <!-- Sort chips -->
-    <div class="chips" style="padding-bottom:4px">
-      <button class="chip active" data-sort="last_order_at" onclick="setSort('last_order_at')">Terbaru</button>
-      <button class="chip" data-sort="total_orders" onclick="setSort('total_orders')">Order Terbanyak</button>
-      <button class="chip" data-sort="total_spent" onclick="setSort('total_spent')">Pengeluaran</button>
+    <!-- TAB: All Customers -->
+    <div id="tabAll" style="display:block">
+      <!-- Search + stats row -->
+      <div style="padding:8px 12px 4px;display:flex;gap:8px;align-items:center">
+        <input type="search" id="searchInput" class="form-input" placeholder="Cari nama / WA…"
+               style="flex:1;font-size:13px" oninput="renderTable()" />
+      </div>
+
+      <!-- Sort chips -->
+      <div class="chips" style="padding-bottom:4px">
+        <button class="chip active" data-sort="last_order_at" onclick="setSort('last_order_at')">Terbaru</button>
+        <button class="chip" data-sort="total_orders" onclick="setSort('total_orders')">Order Terbanyak</button>
+        <button class="chip" data-sort="total_spent" onclick="setSort('total_spent')">Pengeluaran</button>
+      </div>
     </div>
 
-    <!-- Summary bar -->
+    <!-- TAB: Today Orders -->
+    <div id="tabToday" style="display:none;padding:8px 12px 4px">
+      <div style="display:flex;gap:8px;align-items:center">
+        <select id="outletFilterToday" class="form-input" style="flex:0;font-size:13px" onchange="loadTodayOrders()">
+          <option value="">Semua Outlet</option>
+        </select>
+      </div>
+      <div id="todaySummaryBar" style="padding:4px 0 8px;font-size:12px;color:var(--muted)">—</div>
+    </div>
+
+    <!-- Summary bar (All Customers) -->
     <div id="summaryBar" style="padding:4px 12px 8px;font-size:12px;color:var(--muted)">—</div>
 
-    <!-- Table -->
-    <div style="overflow-x:auto;padding-bottom:80px">
+    <!-- Table (All Customers) -->
+    <div id="allCustomersTable" style="overflow-x:auto;padding-bottom:80px">
       <table class="report-table" id="custTable">
         <thead>
           <tr>
@@ -72,6 +91,22 @@
         </thead>
         <tbody id="custBody">
           <tr><td colspan="4" class="report-empty">Memuat…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Table (Today Orders) -->
+    <div id="todayOrdersTable" style="overflow-x:auto;padding-bottom:80px;display:none">
+      <table class="report-table" id="todayTable">
+        <thead>
+          <tr>
+            <th style="text-align:left">Pelanggan</th>
+            <th style="text-align:right">Order</th>
+            <th style="text-align:right">Total Belanja</th>
+          </tr>
+        </thead>
+        <tbody id="todayBody">
+          <tr><td colspan="3" class="report-empty">Memuat…</td></tr>
         </tbody>
       </table>
     </div>
@@ -102,6 +137,9 @@
 // ─── State ────────────────────────────────────────────────────────────────────
 let allCustomers = [];
 let currentSort  = 'last_order_at';
+let allOutlets   = [];
+let todayOrders  = [];
+let currentTab   = 'all';
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 (async function init() {
@@ -113,8 +151,37 @@ let currentSort  = 'last_order_at';
       '<p style="padding:32px;text-align:center;color:var(--muted)">Akses terbatas untuk Super Admin.</p>';
     return;
   }
+  await loadOutlets();
   await loadCustomers();
 })();
+
+// ─── Tab switching ────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('[data-tab]').forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === tab);
+  });
+  document.getElementById('tabAll').style.display = tab === 'all' ? 'block' : 'none';
+  document.getElementById('tabToday').style.display = tab === 'today' ? 'block' : 'none';
+  document.getElementById('allCustomersTable').style.display = tab === 'all' ? 'block' : 'none';
+  document.getElementById('todayOrdersTable').style.display = tab === 'today' ? 'block' : 'none';
+
+  if (tab === 'today') loadTodayOrders();
+}
+
+// ─── Load outlets for filter ───────────────────────────────────────────────────
+async function loadOutlets() {
+  const { data, error } = await window.db
+    .from('outlets')
+    .select('id, name')
+    .order('name');
+  if (error) return;
+  allOutlets = data || [];
+
+  const sel = document.getElementById('outletFilterToday');
+  sel.innerHTML = '<option value="">Semua Outlet</option>' +
+    allOutlets.map(o => `<option value="${o.id}">${escHtml(o.name)}</option>`).join('');
+}
 
 // ─── Load data ────────────────────────────────────────────────────────────────
 async function loadCustomers() {
@@ -130,6 +197,74 @@ async function loadCustomers() {
   allCustomers = data || [];
   updateSummary();
   renderTable();
+}
+
+// ─── Load today's orders ──────────────────────────────────────────────────────
+async function loadTodayOrders() {
+  const outletId = document.getElementById('outletFilterToday').value;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayStr = today.toISOString();
+
+  let q = window.db
+    .from('orders')
+    .select('customer_wa, customer_name, total, status')
+    .gte('created_at', todayStr)
+    .in('status', ['paid', 'preparing', 'ready', 'done']);
+
+  if (outletId) q = q.eq('outlet_id', outletId);
+
+  const { data, error } = await q;
+  if (error) {
+    showToast('Gagal memuat order hari ini');
+    return;
+  }
+
+  // Group by customer_wa
+  const grouped = {};
+  (data || []).forEach(o => {
+    if (!grouped[o.customer_wa]) {
+      grouped[o.customer_wa] = {
+        wa_number: o.customer_wa,
+        name: o.customer_name,
+        orders: 0,
+        total: 0
+      };
+    }
+    grouped[o.customer_wa].orders++;
+    grouped[o.customer_wa].total += o.total || 0;
+  });
+
+  todayOrders = Object.values(grouped).sort((a, b) => b.total - a.total);
+  renderTodayTable();
+}
+
+// ─── Render today orders table ─────────────────────────────────────────────────
+function renderTodayTable() {
+  const tbody = document.getElementById('todayBody');
+
+  // Update summary
+  const totalSpent = todayOrders.reduce((s, o) => s + o.total, 0);
+  document.getElementById('todaySummaryBar').textContent =
+    `${todayOrders.length} pelanggan · ${todayOrders.reduce((s, o) => s + o.orders, 0)} order · ${formatRupiah(totalSpent)} total belanja`;
+
+  if (!todayOrders.length) {
+    tbody.innerHTML = '<tr><td colspan="3" class="report-empty">Belum ada order hari ini.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = todayOrders.map(o => {
+    const wa = o.wa_number || '—';
+    return `
+      <tr style="cursor:pointer" onclick="showCustomerDetail('${o.wa_number}')">
+        <td>
+          <div style="font-weight:600;font-size:13px">${escHtml(o.name || '—')}</div>
+          <div style="font-size:11px;color:var(--muted)">📱 ${wa}</div>
+        </td>
+        <td style="text-align:right;font-weight:600">${o.orders}×</td>
+        <td style="text-align:right">${formatRupiah(o.total)}</td>
+      </tr>`;
+  }).join('');
 }
 
 // ─── Summary bar ──────────────────────────────────────────────────────────────
