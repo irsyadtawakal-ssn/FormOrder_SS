@@ -251,7 +251,7 @@ function menuRow(item) {
 // ─── Hapus menu item (super_admin) ───────────────────────────────────────────
 async function hapusItem(itemId, itemName) {
   if (!confirm(`Hapus menu "${itemName}"?\n\nAksi ini tidak bisa dibatalkan.`)) return;
-  const { error } = await sb.from('menu_items').delete().eq('id', itemId);
+  const { error } = await db.from('menu_items').delete().eq('id', itemId);
   if (error) { alert('Gagal hapus: ' + error.message); return; }
   showToast(`Menu "${itemName}" dihapus.`);
   loadMenu();
