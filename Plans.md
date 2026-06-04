@@ -192,6 +192,17 @@
 
 ---
 
+## Phase 12 — Dokumentasi & Training
+**Scope:** Flow diagram + docs untuk onboarding karyawan & referensi tim
+**Output:** Dokumen customer journey lengkap per role
+
+### Tasks
+- [x] 12.1 Customer journey flow — Customer, Admin, Outlet Staff per-step (`docs/superpowers/specs/2026-06-04-customer-journey-flow.md`)
+- [ ] 12.2 Training guide outlet staff — panduan singkat operasional harian
+- [ ] 12.3 Training guide admin — panduan verifikasi + manajemen
+
+---
+
 ## Pending Owner Input
 - [x] Foto menu items — semua sudah diupload ✅
 - [x] Nomor WA tiap outlet — SQL migration `20260521_outlet_phones.sql` siap, **jalankan di Supabase SQL Editor**
@@ -229,3 +240,4 @@
 - ✅ 2026-05-23 — Fix toggle CSS conflict — scope .toggle-switch .toggle-slider agar tidak override global
 - ✅ 2026-05-23 — Seragamkan title tab semua halaman customer ke "Order Sukashawarma"
 - ✅ 2026-06-03 — Logo payment channel lengkap: QRIS, BCA, BNI, BRI, Mandiri, BJB (webp), BSI, CIMB di assets/img/payment/
+- ✅ 2026-06-04 — Customer journey flow diagram (Customer + Admin + Outlet Staff per-step + state machine)
