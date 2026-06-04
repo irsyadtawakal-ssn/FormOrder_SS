@@ -254,7 +254,7 @@ async function hapusItem(itemId, itemName) {
   const { error } = await db.from('menu_items').delete().eq('id', itemId);
   if (error) { alert('Gagal hapus: ' + error.message); return; }
   showToast(`Menu "${itemName}" dihapus.`);
-  loadMenu();
+  loadItems();
 }
 
 // ─── Toggle aktif (super_admin — ubah is_active di menu_items) ────────────────
