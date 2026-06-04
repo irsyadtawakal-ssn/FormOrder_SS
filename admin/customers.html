@@ -225,7 +225,7 @@ async function loadTodayOrders() {
   (data || []).forEach(o => {
     if (!grouped[o.customer_wa]) {
       grouped[o.customer_wa] = {
-        wa_number: o.customer_wa,
+        customer_wa: o.customer_wa,
         name: o.customer_name,
         orders: 0,
         total: 0
@@ -254,9 +254,9 @@ function renderTodayTable() {
   }
 
   tbody.innerHTML = todayOrders.map(o => {
-    const wa = o.wa_number || '—';
+    const wa = o.customer_wa || '—';
     return `
-      <tr style="cursor:pointer" onclick="showCustomerDetail('${o.wa_number}')">
+      <tr style="cursor:pointer" onclick="showCustomerDetail('${o.customer_wa}')">
         <td>
           <div style="font-weight:600;font-size:13px">${escHtml(o.name || '—')}</div>
           <div style="font-size:11px;color:var(--muted)">📱 ${wa}</div>
