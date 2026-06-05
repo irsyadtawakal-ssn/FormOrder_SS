@@ -75,12 +75,7 @@ function toLocalInput(iso) {
 
 function openPromoForm(id) {
   const p = id ? allPromos.find(x => x.id === id) : null;
-  openAdminModal(`
-    <div class="modal-header">
-      <span>🏷️ ${p ? 'Edit' : 'Tambah'} Promo</span>
-      <button onclick="closeAdminModal()" class="btn-icon">✕</button>
-    </div>
-    <div class="modal-body">
+  openModal(`🏷️ ${p ? 'Edit' : 'Tambah'} Promo`, `
       <label class="form-label">Nama promo</label>
       <input id="pName" class="form-input" value="${p ? escHtml(p.name) : ''}" placeholder="mis. Diskon Gajian 20%" />
 
@@ -114,7 +109,6 @@ function openPromoForm(id) {
 
       <button class="btn btn-primary" style="width:100%;margin-top:16px" onclick="savePromo('${p ? p.id : ''}')">💾 Simpan</button>
       ${p ? `<button class="btn" style="width:100%;margin-top:8px;color:#dc2626" onclick="deletePromo('${p.id}')">🗑️ Hapus</button>` : ''}
-    </div>
   `);
 }
 
@@ -150,7 +144,7 @@ async function savePromo(id) {
   const { error } = await q;
   if (error) { showToast('Gagal menyimpan: ' + error.message); return; }
   showToast('Promo disimpan');
-  closeAdminModal();
+  closeModal();
   await loadPromos();
 }
 
@@ -159,6 +153,6 @@ async function deletePromo(id) {
   const { error } = await window.db.from('promos').delete().eq('id', id);
   if (error) { showToast('Gagal menghapus: ' + error.message); return; }
   showToast('Promo dihapus');
-  closeAdminModal();
+  closeModal();
   await loadPromos();
 }
