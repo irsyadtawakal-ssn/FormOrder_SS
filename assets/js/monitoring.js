@@ -27,8 +27,10 @@ async function refreshAll() {
     loadNotifFailCount(),
   ]);
 
+  const healthSnap = await loadHealthCheck();
+
   await Promise.all([
-    loadStatusBar(attentionRows, failCount),
+    loadStatusBar(attentionRows, failCount, healthSnap),
     loadMetrics(),
     loadVolume(),
     loadCron(),
@@ -125,20 +127,59 @@ function lamp(state) {
   return { green: '🟢', yellow: '🟡', red: '🔴', gray: '⚠️' }[state] || '⚠️';
 }
 
-async function loadStatusBar(attentionRows, failCount) {
+// Panggil Edge Function system-health-check, return snapshot atau null jika gagal
+async function loadHealthCheck() {
+  try {
+    const { data: { session } } = await window.db.auth.getSession();
+    if (!session) return null;
+    const r = await fetch(`${window.SUKA_CONFIG.supabaseUrl}/functions/v1/system-health-check`, {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    if (!r.ok) {
+      console.warn('health-check gagal:', r.status);
+      return null;
+    }
+    return await r.json();
+  } catch (e) {
+    console.warn('health-check error:', e);
+    return null;
+  }
+}
+
+// Analisis snapshot health-check, return status lampu per komponen
+function lampFromHealth(snap) {
+  if (!snap) return { pembayaran: 'gray', layanan: 'gray', wa_device: 'gray' };
+
+  const recon = snap.reconcile || {};
+  const pembayaran = (recon.paid_but_unsynced?.length) ? 'red' : 'green';
+  const pingOk = snap.ping?.site?.ok && snap.ping?.xendit?.ok;
+  const layanan = pingOk ? 'green' : 'red';
+  const wa_device = snap.fonnte?.connected === false ? 'red'
+                  : snap.fonnte?.connected === true ? 'green'
+                  : 'gray';
+
+  return { pembayaran, layanan, wa_device };
+}
+
+async function loadStatusBar(attentionRows, failCount, healthSnap) {
+  const health = lampFromHealth(healthSnap);
+
   // Order Flow: merah jika >3 nyangkut, kuning jika ada, hijau jika tidak ada
   const orderFlow = attentionRows.length === 0 ? 'green'
                   : attentionRows.length > 3   ? 'red'
                   : 'yellow';
 
-  // WA Notif: merah jika >3 gagal 60m, kuning jika ada, hijau jika tidak ada
-  const wa = failCount === 0 ? 'green' : failCount > 3 ? 'red' : 'yellow';
+  // WA Notif: gabung status device Fonnte + rasio notif failed
+  const wa = health.wa_device === 'red' ? 'red'
+           : failCount === 0 ? 'green'
+           : failCount > 3 ? 'red'
+           : 'yellow';
 
   const lamps = [
-    { key: 'Pembayaran', state: 'gray',    note: 'Menunggu health-check' },
-    { key: 'WA Notif',   state: wa,        note: `${failCount} gagal 60m` },
+    { key: 'Pembayaran', state: health.pembayaran, note: health.pembayaran === 'red' ? '⚠️ Mismatch Xendit' : '✓' },
+    { key: 'WA Notif',   state: wa,        note: health.wa_device === 'gray' ? 'Fonnte unknown' : (health.wa_device === 'red' ? 'Device disconnect' : `${failCount} gagal 60m`) },
     { key: 'Order Flow', state: orderFlow, note: `${attentionRows.length} nyangkut` },
-    { key: 'Layanan',    state: 'gray',    note: 'Menunggu health-check' },
+    { key: 'Layanan',    state: health.layanan, note: health.layanan === 'red' ? 'Ping gagal' : '✓' },
   ];
 
   const el = document.getElementById('statusBar');
