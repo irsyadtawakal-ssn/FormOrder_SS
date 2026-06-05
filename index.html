@@ -223,6 +223,7 @@
 <script src="config.js"></script>
 <script src="assets/js/supabase.js"></script>
 <script src="assets/js/utils.js"></script>
+<script src="assets/js/pixel.js"></script>
 <script>
 // ─── State ────────────────────────────────────────────────────────────────────
 const DEFAULT_OUTLET = 'kitchen';
@@ -475,6 +476,7 @@ async function loadMenu() {
 
   renderTabs();
   renderMenu();
+  sukaPixelTrack('ViewContent', { content_name: outlet.name, content_category: 'Menu Outlet' });
 }
 
 function showMenuSkeleton() {
@@ -716,6 +718,7 @@ function addToCart() {
   updateCartBar();
   closeAllSheets();
   showToast('✓ ' + currentItem.name + ' ditambahkan');
+  sukaPixelTrack('AddToCart', { content_name: currentItem.name, value: unitPrice * currentQty, currency: 'IDR' });
 }
 
 // ─── Cart bar ─────────────────────────────────────────────────────────────────

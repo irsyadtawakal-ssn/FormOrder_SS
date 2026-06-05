@@ -43,6 +43,7 @@
 <script src="config.js"></script>
 <script src="assets/js/supabase.js"></script>
 <script src="assets/js/utils.js"></script>
+<script src="assets/js/pixel.js"></script>
 <script src="assets/js/app.js"></script>
 <script>
 // ─── State ────────────────────────────────────────────────────────────────────
@@ -322,6 +323,10 @@ function renderStatus(o) {
     case 'paid': {
       const channel  = getChannel(o);
       const payLabel = channel === 'QRIS' ? 'QRIS' : VA_CHANNELS.includes(channel) ? `VA ${channel}` : channel || 'digital';
+      if (!sessionStorage.getItem('pixel_purchase_' + o.order_number)) {
+        sessionStorage.setItem('pixel_purchase_' + o.order_number, '1');
+        sukaPixelTrack('Purchase', { value: o.total, currency: 'IDR', order_id: o.order_number });
+      }
       heroHtml = `
         <div class="status-hero">
           <div class="status-icon">✅</div>

@@ -136,6 +136,38 @@ function renderPage() {
       </button>
     </div>
 
+    <!-- ── Tracking & Pixel ──────────────────────────────────────── -->
+    <div class="info-card" style="margin-bottom:12px">
+      <div style="font-weight:700;font-size:14px;margin-bottom:14px">📊 Tracking & Pixel</div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--line)">
+        <div>
+          <div style="font-weight:600;font-size:13px">Aktifkan Meta Pixel</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">Tracking iklan Facebook & Instagram</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="pixelEnabled"
+            ${val('meta_pixel_enabled','false') === 'true' ? 'checked' : ''}
+            onchange="savePixelEnabled(this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Meta Pixel ID</label>
+        <input id="pixelId" class="form-input" type="text" inputmode="numeric"
+               value="${val('meta_pixel_id', '')}"
+               placeholder="Contoh: 1234567890123456" maxlength="20" />
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">
+          Cek di <b>Meta Events Manager → Data Sources → Pixel ID</b>
+        </div>
+      </div>
+
+      <button class="btn-add-big" style="width:100%;margin-top:14px" onclick="savePixelId()">
+        Simpan Pixel ID
+      </button>
+    </div>
+
     <!-- ── Bulk Import ──────────────────────────────────────────── -->
     <div class="info-card" style="margin-bottom:12px">
       <div style="font-weight:700;font-size:14px;margin-bottom:8px">📥 Bulk Import</div>
@@ -253,6 +285,30 @@ function tmplCard(tmpl) {
     <button class="action-btn action-secondary" style="margin-top:8px;width:100%"
             onclick="saveTemplate('${tmpl.id}')">Simpan Template</button>
   </div>`;
+}
+
+// ─── Pixel ────────────────────────────────────────────────────────────────────
+async function savePixelEnabled(enabled) {
+  const val = enabled ? 'true' : 'false';
+  const { error } = await window.db
+    .from('app_settings')
+    .upsert({ key: 'meta_pixel_enabled', value: val, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+  if (error) { adminToast('❌ Gagal simpan'); return; }
+  settings['meta_pixel_enabled'] = { key: 'meta_pixel_enabled', value: val };
+  adminToast('✅ Tersimpan');
+}
+
+async function savePixelId() {
+  const pixelId = document.getElementById('pixelId').value.trim();
+  if (pixelId && !/^\d{10,20}$/.test(pixelId)) {
+    adminToast('❌ Pixel ID tidak valid (10–20 digit angka)'); return;
+  }
+  const { error } = await window.db
+    .from('app_settings')
+    .upsert({ key: 'meta_pixel_id', value: pixelId, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+  if (error) { adminToast('❌ ' + error.message); return; }
+  settings['meta_pixel_id'] = { key: 'meta_pixel_id', value: pixelId };
+  adminToast(pixelId ? '✅ Pixel ID disimpan' : '✅ Pixel ID dihapus');
 }
 
 // ─── Simpan app_settings ──────────────────────────────────────────────────────

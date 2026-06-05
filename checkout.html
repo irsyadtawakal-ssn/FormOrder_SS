@@ -63,6 +63,7 @@
 <script src="config.js"></script>
 <script src="assets/js/supabase.js"></script>
 <script src="assets/js/utils.js"></script>
+<script src="assets/js/pixel.js"></script>
 <script src="assets/js/app.js"></script>
 <script>
 // ─── Pilihan metode bayar ─────────────────────────────────────────────────────
@@ -314,6 +315,7 @@ if (!checkoutData || !checkoutData.cart || !checkoutData.cart.length) {
     </div>`;
 } else {
   renderPage();
+  sukaPixelTrack('InitiateCheckout', { value: checkoutData.total, currency: 'IDR' });
 }
 </script>
 <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
