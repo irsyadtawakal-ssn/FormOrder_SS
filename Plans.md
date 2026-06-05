@@ -218,6 +218,57 @@
 
 ---
 
+## Phase 13 — Monitoring Sistem ✅
+**Scope:** Dashboard kesehatan teknis + alert Telegram otomatis
+**Output:** Super admin bisa monitor sistem 24/7, alert otomatis saat ada masalah
+
+### Tasks
+- [x] 13.1 Migration: 3 tabel monitoring (`system_events`, `cron_heartbeat`, `alert_state`) + RLS
+- [x] 13.2 Dashboard `admin/monitoring.html` — 4 lampu status (Pembayaran, WA Notif, Order Flow, Layanan) + panel anomali
+- [x] 13.3 `assets/js/monitoring.js` — logika dashboard, realtime subscribe orders & system_events
+- [x] 13.4 Edge Function `system-health-check` — snapshot Fonnte device, rekonsiliasi Xendit, ping eksternal, kapasitas
+- [x] 13.5 Edge Function `system-health-monitor` — scan anomali (order nyangkut, cron mati, notif gagal, nol order), anti-spam, kirim Telegram
+- [x] 13.6 pg_cron migration — schedule health-monitor tiap 3 menit
+- [x] 13.7 Panel kapasitas — tampil DB & storage usage % (vs free tier limits)
+
+### Setup Manual (Owner)
+1. **Telegram Bot Token & Chat ID** — setup di Edge Function Secrets:
+   - `TELEGRAM_BOT_TOKEN` = token dari @BotFather
+   - `TELEGRAM_CHAT_ID` = chat ID dari bot (jalankan `/getUpdates`)
+   - ⚠️ **PENTING:** Token yang di-share di chat brainstorm sudah ter-expose. Regenerate via `@BotFather /revoke` sebelum produksi, gunakan token baru.
+
+2. **UptimeRobot** (eksternal, gratis) — monitor terpisah dari Supabase:
+   - Tambah HTTP monitor ke `https://order.sukashawarma.com`
+   - Integrasikan Telegram notification
+   - Inilah satu-satunya layer yang tahu kalau seluruh Supabase/Hostinger tumbang
+   - Setup: https://uptimerobot.com (5 menit)
+
+### Monitoring Alert Thresholds
+- Order `pending_payment` nyangkut: **> 15 menit**
+- Cron job dianggap mati: **> 5 menit** tanpa heartbeat
+- WA notif gagal trigger alert: **>= 5** dalam 60 menit
+- Nol order di jam buka (13:00-22:00): **dalam 60 menit terakhir**
+
+### Dashboard Features
+- **4 lampu status real-time**: Pembayaran (rekonsiliasi Xendit), WA Notif (device Fonnte + rasio), Order Flow (nyangkut), Layanan (ping eksternal)
+- **Panel Butuh Perhatian**: order pending > 15 mnt, order paid belum preparing > 20 mnt
+- **Metrik 60m/24j**: order bayar, expired/batal, notif gagal
+- **Volume chart**: order per jam (12 jam rolling, highlight jam buka)
+- **Heartbeat cron**: status `auto-cancel-expired-orders` & `on-order-done`
+- **Kapasitas**: DB & storage % (vs 500MB & 1GB free tier)
+- **Log Alert**: riwayat alert Telegram yang terkirim (realtime)
+- **Realtime**: subscribe orders & system_events → update otomatis
+- **Anti-spam**: alert dikirim sekali per masalah, "✅ Pulih" saat selesai
+
+### Catatan Teknis
+- Dashboard hanya untuk super_admin (RLS enforced)
+- Edge Functions pakai JWT verification (decode payload, check role = service_role)
+- Secrets di Edge Function Secrets (bukan Vault)
+- Cron job di-schedule dengan service role key hardcode (current_setting tidak accessible di cron context)
+- M3 fully async: function jalan status 200 meski tidak ada anomali (expected behavior)
+
+---
+
 ## Pending Owner Input
 - [x] Foto menu items — semua sudah diupload ✅
 - [x] Nomor WA tiap outlet — SQL migration `20260521_outlet_phones.sql` siap, **jalankan di Supabase SQL Editor**
