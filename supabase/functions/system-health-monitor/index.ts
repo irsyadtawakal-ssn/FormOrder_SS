@@ -128,5 +128,43 @@ Deno.serve(async (req: Request) => {
     }
   }
 
-  return Response.json({ ok: true, firing: issues.length }, { headers: CORS });
+  // ─── Kapasitas Supabase (estimasi, cek free tier limits) ────────────────────
+  // DB: 500MB = 500000000 bytes; Storage: 1GB = 1000000000 bytes
+  const FREE_TIER_DB = 500000000;
+  const FREE_TIER_STORAGE = 1000000000;
+
+  let dbSize = 0;
+  let storageSize = 0;
+
+  try {
+    // Query DB size menggunakan pg_database_size
+    const { data: dbResult } = await db.rpc("get_db_size_bytes");
+    if (dbResult) dbSize = dbResult;
+  } catch { /* abaikan error */ }
+
+  try {
+    // Query storage (list semua objects di semua buckets, hitung size)
+    const { data: buckets } = await db.storage.listBuckets();
+    for (const bucket of buckets || []) {
+      try {
+        const { data: files } = await db.storage.from(bucket.name).list("", { limit: 1000 });
+        for (const f of files || []) {
+          storageSize += f.metadata?.size || 0;
+        }
+      } catch { /* abaikan per-bucket */ }
+    }
+  } catch { /* abaikan */ }
+
+  const snap = {
+    ok: true,
+    firing: issues.length,
+    capacity: {
+      db_bytes: dbSize,
+      db_percent: Math.round((dbSize / FREE_TIER_DB) * 100),
+      storage_bytes: storageSize,
+      storage_percent: Math.round((storageSize / FREE_TIER_STORAGE) * 100),
+    },
+  };
+
+  return Response.json(snap, { headers: CORS });
 });

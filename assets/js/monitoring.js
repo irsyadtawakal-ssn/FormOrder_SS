@@ -35,6 +35,7 @@ async function refreshAll() {
     loadVolume(),
     loadCron(),
     loadAlertLog(),
+    loadCapacity(healthSnap),
   ]);
 }
 
@@ -276,6 +277,34 @@ async function loadAlertLog() {
       <span>${escHtml(e.message)}</span>
     </div>`;
   }).join('');
+}
+
+async function loadCapacity(healthSnap) {
+  if (!healthSnap || !healthSnap.capacity) {
+    document.getElementById('capacityPanel').innerHTML = '<p class="muted">Data tidak tersedia</p>';
+    return;
+  }
+
+  const cap = healthSnap.capacity;
+  const dbPct = cap.db_percent;
+  const storagePct = cap.storage_percent;
+  const dbColor = dbPct > 80 ? '#e53935' : dbPct > 50 ? '#ffa726' : '#66bb6a';
+  const storageColor = storagePct > 80 ? '#e53935' : storagePct > 50 ? '#ffa726' : '#66bb6a';
+
+  document.getElementById('capacityPanel').innerHTML = `
+    <div style="margin-bottom:12px">
+      <div style="font-size:12px;margin-bottom:4px">📊 Database: ${dbPct}% (${Math.round(cap.db_bytes/1000000)}MB / 500MB)</div>
+      <div style="width:100%;height:8px;background:#eee;border-radius:4px;overflow:hidden">
+        <div style="width:${dbPct}%;height:100%;background:${dbColor}"></div>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:12px;margin-bottom:4px">💾 Storage: ${storagePct}% (${Math.round(cap.storage_bytes/1000000)}MB / 1000MB)</div>
+      <div style="width:100%;height:8px;background:#eee;border-radius:4px;overflow:hidden">
+        <div style="width:${storagePct}%;height:100%;background:${storageColor}"></div>
+      </div>
+    </div>
+  `;
 }
 
 // ─── Realtime subscribe ───────────────────────────────────────────────────────
