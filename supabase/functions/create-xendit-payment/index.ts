@@ -350,8 +350,42 @@ serve(async (req: Request) => {
     });
   }
 
-  const serviceFee = Math.ceil(subtotal * feePct);
-  const total = subtotal + serviceFee;
+  // ─── Cari & terapkan promo otomatis ──────────────────────────────────────
+  let discount = 0;
+  let promoId: string | null = null;
+  let promoName: string | null = null;
+
+  const nowIso = new Date().toISOString();
+  const { data: promoRows } = await supabase
+    .from("promos")
+    .select("id, name, discount_type, discount_value, max_discount, min_purchase")
+    .eq("is_active", true)
+    .eq("applies_to", "all")
+    .lte("min_purchase", subtotal)
+    .or(`start_at.is.null,start_at.lte.${nowIso}`)
+    .or(`end_at.is.null,end_at.gte.${nowIso}`)
+    .order("priority", { ascending: false })
+    .order("discount_value", { ascending: false })
+    .limit(1);
+
+  const promo = promoRows?.[0];
+  if (promo) {
+    if (promo.discount_type === "percent") {
+      discount = Math.round(subtotal * Number(promo.discount_value) / 100);
+      if (promo.max_discount != null) {
+        discount = Math.min(discount, Number(promo.max_discount));
+      }
+    } else {
+      discount = Math.min(Number(promo.discount_value), subtotal);
+    }
+    discount = Math.max(0, discount);
+    promoId = promo.id;
+    promoName = promo.name;
+  }
+
+  const afterDiscount = subtotal - discount;
+  const serviceFee = Math.ceil(afterDiscount * feePct);
+  const total = afterDiscount + serviceFee;
 
   // ─── Xendit credentials ───────────────────────────────────────────────────
   const xenditSecretKey = Deno.env.get("XENDIT_SECRET_KEY");
@@ -401,6 +435,9 @@ serve(async (req: Request) => {
       pickup_time: String(pickup_time).trim(),
       notes: notes ? String(notes).trim() : null,
       subtotal,
+      discount,
+      promo_id: promoId,
+      promo_name: promoName,
       service_fee: serviceFee,
       total,
       status: "pending_payment",
@@ -537,6 +574,8 @@ serve(async (req: Request) => {
     expires_at: expiredAt.toISOString(),
     total,
     subtotal,
+    discount,
+    promo_name: promoName,
     service_fee: serviceFee,
   });
 });
