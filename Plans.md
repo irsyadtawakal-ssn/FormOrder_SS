@@ -309,3 +309,4 @@
 - ✅ 2026-06-04 — Customer journey flow diagram (Customer + Admin + Outlet Staff per-step + state machine, Xendit multi-channel)
 - ✅ 2026-06-05 — Meta Pixel dinamis: pixel.js + admin settings card + 5 standard events (PageView, ViewContent, AddToCart, InitiateCheckout, Purchase)
 - ✅ 2026-06-05 — Sistem promo diskon otomatis: tabel promos + diskon server-side (create-xendit-payment) + admin/promos.html CRUD + baris diskon di order.html [spec/plan 2026-06-05]
+- ✅ 2026-06-05 — Promo preview di checkout.html: fetch promo aktif client-side (fetchPromoPreview), tampil baris diskon + total sesudah diskon sebelum customer konfirmasi
