@@ -211,7 +211,31 @@ async function loadCron() {
     </div>`;
   }).join('');
 }
-async function loadAlertLog() {}
+async function loadAlertLog() {
+  const { data } = await window.db
+    .from('system_events')
+    .select('created_at, level, message, source')
+    .in('event_type', ['alert_sent', 'alert_resolved'])
+    .order('created_at', { ascending: false })
+    .limit(20);
+
+  const el = document.getElementById('alertLog');
+  if (!el) return;
+
+  if (!data || !data.length) {
+    el.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:8px 0">Belum ada alert terkirim</p>';
+    return;
+  }
+
+  el.innerHTML = data.map(e => {
+    const icon = e.level === 'error' ? '🔴' : e.level === 'warn' ? '🟡' : '✅';
+    return `<div style="padding:8px 12px;background:var(--card);border-radius:10px;margin-bottom:6px;font-size:12px">
+      <span>${icon}</span>
+      <span style="color:var(--muted);margin:0 6px">${fmtTimeAgo(e.created_at)}</span>
+      <span>${escHtml(e.message)}</span>
+    </div>`;
+  }).join('');
+}
 
 // ─── Realtime subscribe ───────────────────────────────────────────────────────
 function setupRealtime() {
