@@ -95,33 +95,39 @@ async function loadNotifFailCount() {
 }
 
 async function loadMetrics() {
-  const h24 = new Date(Date.now() - 86400000).toISOString();
-  const h1  = new Date(Date.now() - 3600000).toISOString();
+  try {
+    const h24 = new Date(Date.now() - 86400000).toISOString();
+    const h1  = new Date(Date.now() - 3600000).toISOString();
 
-  const [paid24, expired24, fail1] = await Promise.all([
-    window.db.from('orders').select('id', { count: 'exact', head: true })
-      .in('status', ['paid','preparing','ready','done']).gte('created_at', h24),
-    window.db.from('orders').select('id', { count: 'exact', head: true })
-      .in('status', ['expired','cancelled']).gte('created_at', h24),
-    window.db.from('notification_logs').select('id', { count: 'exact', head: true })
-      .eq('status', 'failed').gte('sent_at', h1),
-  ]);
+    const [paid24, expired24, fail1] = await Promise.all([
+      window.db.from('orders').select('id', { count: 'exact', head: true })
+        .in('status', ['paid','preparing','ready','done']).gte('created_at', h24),
+      window.db.from('orders').select('id', { count: 'exact', head: true })
+        .in('status', ['expired','cancelled']).gte('created_at', h24),
+      window.db.from('notification_logs').select('id', { count: 'exact', head: true })
+        .eq('status', 'failed').gte('sent_at', h1),
+    ]);
 
-  const cards = [
-    { icon: '✅', value: paid24.count ?? 0,   label: 'Order Bayar (24j)' },
-    { icon: '❌', value: expired24.count ?? 0, label: 'Expired/Batal (24j)' },
-    { icon: '📵', value: fail1.count ?? 0,     label: 'Notif Gagal (60m)' },
-  ];
+    const cards = [
+      { icon: '✅', value: paid24.count ?? 0,   label: 'Order Bayar (24j)' },
+      { icon: '❌', value: expired24.count ?? 0, label: 'Expired/Batal (24j)' },
+      { icon: '📵', value: fail1.count ?? 0,     label: 'Notif Gagal (60m)' },
+    ];
 
-  const el = document.getElementById('metricCards');
-  if (!el) return;
-  el.innerHTML = cards.map(c =>
-    `<div class="stat-card" style="text-align:center">
-      <div style="font-size:20px;margin-bottom:2px">${c.icon}</div>
-      <div style="font-weight:800;font-size:22px;color:var(--ink)">${c.value}</div>
-      <div style="font-size:11px;color:var(--muted);margin-top:2px">${c.label}</div>
-    </div>`
-  ).join('');
+    const el = document.getElementById('metricCards');
+    if (!el) return;
+    el.innerHTML = cards.map(c =>
+      `<div class="stat-card" style="text-align:center">
+        <div style="font-size:20px;margin-bottom:2px">${c.icon}</div>
+        <div style="font-weight:800;font-size:22px;color:var(--ink)">${c.value}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${c.label}</div>
+      </div>`
+    ).join('');
+  } catch (e) {
+    console.error('loadMetrics error:', e);
+    const el = document.getElementById('metricCards');
+    if (el) el.innerHTML = '<p style="color:var(--muted);font-size:12px;padding:8px">Data tidak tersedia</p>';
+  }
 }
 
 function lamp(state) {
