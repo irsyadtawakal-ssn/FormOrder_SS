@@ -81,9 +81,77 @@ async function loadAttention() {
 
   return rows;
 }
-async function loadNotifFailCount() { return 0; }
-async function loadStatusBar(rows, failCount) {}
-async function loadMetrics() {}
+async function loadNotifFailCount() {
+  const h1 = new Date(Date.now() - 3600000).toISOString();
+  const { count } = await window.db
+    .from('notification_logs')
+    .select('id', { count: 'exact', head: true })
+    .eq('status', 'failed')
+    .gte('sent_at', h1);
+  return count ?? 0;
+}
+
+async function loadMetrics() {
+  const h24 = new Date(Date.now() - 86400000).toISOString();
+  const h1  = new Date(Date.now() - 3600000).toISOString();
+
+  const [paid24, expired24, fail1] = await Promise.all([
+    window.db.from('orders').select('id', { count: 'exact', head: true })
+      .in('status', ['paid','preparing','ready','done']).gte('created_at', h24),
+    window.db.from('orders').select('id', { count: 'exact', head: true })
+      .in('status', ['expired','cancelled']).gte('created_at', h24),
+    window.db.from('notification_logs').select('id', { count: 'exact', head: true })
+      .eq('status', 'failed').gte('sent_at', h1),
+  ]);
+
+  const cards = [
+    { icon: '✅', value: paid24.count ?? 0,   label: 'Order Bayar (24j)' },
+    { icon: '❌', value: expired24.count ?? 0, label: 'Expired/Batal (24j)' },
+    { icon: '📵', value: fail1.count ?? 0,     label: 'Notif Gagal (60m)' },
+  ];
+
+  const el = document.getElementById('metricCards');
+  if (!el) return;
+  el.innerHTML = cards.map(c =>
+    `<div class="stat-card" style="text-align:center">
+      <div style="font-size:20px;margin-bottom:2px">${c.icon}</div>
+      <div style="font-weight:800;font-size:22px;color:var(--ink)">${c.value}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">${c.label}</div>
+    </div>`
+  ).join('');
+}
+
+function lamp(state) {
+  return { green: '🟢', yellow: '🟡', red: '🔴', gray: '⚠️' }[state] || '⚠️';
+}
+
+async function loadStatusBar(attentionRows, failCount) {
+  // Order Flow: merah jika >3 nyangkut, kuning jika ada, hijau jika tidak ada
+  const orderFlow = attentionRows.length === 0 ? 'green'
+                  : attentionRows.length > 3   ? 'red'
+                  : 'yellow';
+
+  // WA Notif: merah jika >3 gagal 60m, kuning jika ada, hijau jika tidak ada
+  const wa = failCount === 0 ? 'green' : failCount > 3 ? 'red' : 'yellow';
+
+  const lamps = [
+    { key: 'Pembayaran', state: 'gray',    note: 'Menunggu health-check' },
+    { key: 'WA Notif',   state: wa,        note: `${failCount} gagal 60m` },
+    { key: 'Order Flow', state: orderFlow, note: `${attentionRows.length} nyangkut` },
+    { key: 'Layanan',    state: 'gray',    note: 'Menunggu health-check' },
+  ];
+
+  const el = document.getElementById('statusBar');
+  if (!el) return;
+  el.innerHTML = lamps.map(l =>
+    `<div style="display:flex;flex-direction:column;align-items:center;background:var(--card);border-radius:12px;padding:10px 14px;min-width:72px;gap:3px">
+      <span style="font-size:22px">${lamp(l.state)}</span>
+      <span style="font-size:11px;font-weight:700;color:var(--ink)">${l.key}</span>
+      <span style="font-size:10px;color:var(--muted)">${l.note}</span>
+    </div>`
+  ).join('');
+}
+
 async function loadVolume() {}
 async function loadCron() {}
 async function loadAlertLog() {}
