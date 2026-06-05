@@ -152,8 +152,65 @@ async function loadStatusBar(attentionRows, failCount) {
   ).join('');
 }
 
-async function loadVolume() {}
-async function loadCron() {}
+async function loadVolume() {
+  const since = new Date(Date.now() - 12 * 3600000).toISOString();
+  const { data } = await window.db
+    .from('orders')
+    .select('created_at')
+    .gte('created_at', since);
+
+  const buckets = {};
+  (data || []).forEach(o => {
+    const h = new Date(o.created_at).getHours();
+    buckets[h] = (buckets[h] || 0) + 1;
+  });
+
+  const currentHour = new Date().getHours();
+  const hours = Array.from({ length: 12 }, (_, i) => (currentHour - 11 + i + 24) % 24);
+  const max   = Math.max(1, ...hours.map(h => buckets[h] || 0));
+
+  const el = document.getElementById('volumeChart');
+  if (!el) return;
+
+  el.innerHTML = hours.map(h => {
+    const v    = buckets[h] || 0;
+    const open = h >= 13 && h <= 22;
+    const zero = open && v === 0;
+    const pct  = Math.round((v / max) * 56); // max bar height 56px (container 70px - label)
+    const bg   = zero ? '#e53935' : 'var(--brand)';
+    return `<div style="display:flex;flex-direction:column;align-items:center;flex:1;gap:2px">
+      <div style="font-size:9px;color:var(--muted)">${v || ''}</div>
+      <div style="width:100%;height:${Math.max(2, pct)}px;background:${bg};border-radius:3px 3px 0 0;min-height:2px"></div>
+      <div style="font-size:9px;color:${open ? 'var(--ink)' : 'var(--muted)'}">${h}</div>
+    </div>`;
+  }).join('');
+}
+async function loadCron() {
+  const { data } = await window.db
+    .from('cron_heartbeat')
+    .select('*')
+    .order('job_name');
+
+  const el = document.getElementById('cronPanel');
+  if (!el) return;
+
+  if (!data || !data.length) {
+    el.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:8px 0">⏳ Belum ada heartbeat (deploy fungsi dulu)</p>';
+    return;
+  }
+
+  el.innerHTML = data.map(c => {
+    const ageMin = (Date.now() - new Date(c.last_run).getTime()) / 60000;
+    const dead   = ageMin > 5;
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--card);border-radius:10px;margin-bottom:6px">
+      <div>
+        <span style="font-size:16px">${dead ? '🔴' : '🟢'}</span>
+        <span style="font-weight:600;font-size:13px;margin-left:8px">${escHtml(c.job_name)}</span>
+      </div>
+      <div style="font-size:11px;color:var(--muted)">${fmtTimeAgo(c.last_run)}</div>
+    </div>`;
+  }).join('');
+}
 async function loadAlertLog() {}
 
 // ─── Realtime subscribe ───────────────────────────────────────────────────────
