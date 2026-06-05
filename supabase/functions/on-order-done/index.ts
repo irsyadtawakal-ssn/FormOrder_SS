@@ -74,6 +74,13 @@ Deno.serve(async (req: Request) => {
   });
 
   if (settings["loyalty_enabled"] !== "true") {
+    // Catat heartbeat — bukti cron masih hidup (best-effort)
+    try {
+      await db.from("cron_heartbeat").upsert(
+        { job_name: "on-order-done", last_run: new Date().toISOString() },
+        { onConflict: "job_name" },
+      );
+    } catch { /* abaikan agar tidak gagalkan fungsi */ }
     return Response.json({ ok: true, skipped: "loyalty disabled" }, { headers: CORS });
   }
 
@@ -178,6 +185,14 @@ Deno.serve(async (req: Request) => {
     results:  JSON.stringify({ voucher_code: voucherCode, auto_notif: autoNotif }),
     sent_at:  new Date().toISOString(),
   }).select();
+
+  // Catat heartbeat — bukti cron masih hidup (best-effort)
+  try {
+    await db.from("cron_heartbeat").upsert(
+      { job_name: "on-order-done", last_run: new Date().toISOString() },
+      { onConflict: "job_name" },
+    );
+  } catch { /* abaikan agar tidak gagalkan fungsi */ }
 
   return Response.json({
     ok:           true,

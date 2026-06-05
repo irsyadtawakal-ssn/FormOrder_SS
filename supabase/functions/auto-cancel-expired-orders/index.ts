@@ -42,6 +42,13 @@ Deno.serve(async (req: Request) => {
   }
 
   if (!expiredOrders || expiredOrders.length === 0) {
+    // Catat heartbeat — bukti cron masih hidup (best-effort, tidak gagalkan response)
+    try {
+      await db.from("cron_heartbeat").upsert(
+        { job_name: "auto-cancel-expired-orders", last_run: new Date().toISOString() },
+        { onConflict: "job_name" },
+      );
+    } catch { /* abaikan agar tidak gagalkan cron */ }
     return Response.json({ ok: true, expired_count: 0 }, { headers: CORS });
   }
 
@@ -83,6 +90,14 @@ Deno.serve(async (req: Request) => {
       }).catch(() => {/* abaikan error WA agar tidak gagalkan batch */});
     }
   }
+
+  // Catat heartbeat — bukti cron masih hidup (best-effort, tidak gagalkan response)
+  try {
+    await db.from("cron_heartbeat").upsert(
+      { job_name: "auto-cancel-expired-orders", last_run: new Date().toISOString() },
+      { onConflict: "job_name" },
+    );
+  } catch { /* abaikan agar tidak gagalkan cron */ }
 
   return Response.json({
     ok:             true,
