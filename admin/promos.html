@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Promo — SUKA Admin</title>
+<link rel="stylesheet" href="../assets/css/style.css?v=7" />
+<link rel="stylesheet" href="../assets/css/admin-desktop.css?v=7" />
+<link rel="manifest" href="/manifest.json" />
+<meta name="theme-color" content="#f29744" />
+</head>
+<body>
+<div class="phone">
+  <aside class="admin-sidebar" style="display:none">
+    <div class="admin-sidebar-logo">🌯 SUKA Admin</div>
+    <div class="admin-sidebar-user">
+      <div class="name" id="sidebarName">—</div>
+      <div class="role" id="sidebarRole">—</div>
+    </div>
+    <nav class="admin-sidebar-nav">
+      <a href="/admin/index.html"><span>🏠</span><span>Dashboard</span></a>
+      <a href="/admin/orders.html"><span>📋</span><span>Pesanan</span></a>
+      <a href="/admin/menu.html"><span>🌯</span><span>Menu</span></a>
+      <a href="/admin/reports.html"><span>📊</span><span>Laporan</span></a>
+      <a href="/admin/monitoring.html" class="admin-only"><span>🔍</span><span>Monitoring</span></a>
+      <a href="/admin/customers.html" class="admin-only"><span>🧑‍🤝‍🧑</span><span>Pelanggan</span></a>
+      <a href="/admin/vouchers.html" class="admin-only"><span>🎟️</span><span>Voucher</span></a>
+      <a href="/admin/promos.html" class="admin-only active"><span>🏷️</span><span>Promo</span></a>
+      <a href="/admin/outlets.html" class="admin-only"><span>📍</span><span>Outlet</span></a>
+      <a href="/admin/users.html" class="admin-only"><span>👥</span><span>Pengguna</span></a>
+      <a href="/admin/settings.html" class="admin-only"><span>⚙️</span><span>Pengaturan</span></a>
+    </nav>
+    <div class="admin-sidebar-footer">
+      <button onclick="adminSignOut()">🚪 Keluar</button>
+    </div>
+  </aside>
+
+  <div class="topbar">
+    <span class="topbar-title">🏷️ Promo</span>
+    <span id="adminName" style="font-size:12px;color:var(--muted)"></span>
+  </div>
+
+  <div class="admin-content">
+    <div style="padding:8px 12px">
+      <button class="btn btn-primary" style="width:100%" onclick="openPromoForm()">+ Tambah Promo</button>
+    </div>
+    <div id="summaryBar" style="padding:4px 12px 8px;font-size:12px;color:var(--muted)">—</div>
+    <div style="overflow-x:auto;padding-bottom:80px">
+      <table class="report-table" id="promoTable">
+        <thead>
+          <tr>
+            <th style="text-align:left">Promo</th>
+            <th style="text-align:left">Syarat</th>
+            <th style="text-align:center">Status</th>
+          </tr>
+        </thead>
+        <tbody id="promoBody">
+          <tr><td colspan="3" class="report-empty">Memuat…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <nav class="admin-nav">
+    <a href="/admin/index.html"><span>🏠</span><span>Dashboard</span></a>
+    <a href="/admin/orders.html"><span>📋</span><span>Pesanan</span></a>
+    <a href="/admin/menu.html"><span>🌯</span><span>Menu</span></a>
+    <a href="/admin/promos.html" class="admin-only"><span>🏷️</span><span>Promo</span></a>
+    <a href="/admin/settings.html" class="admin-only"><span>⚙️</span><span>Pengaturan</span></a>
+  </nav>
+</div>
+<div class="toast" id="toast"></div>
+<div id="adminModal" class="admin-modal-overlay" style="display:none"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="../config.js"></script>
+<script src="../assets/js/supabase.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/admin.js"></script>
+<script src="../assets/js/admin-promos.js"></script>
+</body>
+</html>
