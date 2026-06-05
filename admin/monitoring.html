@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Monitoring Sistem — SUKA Admin</title>
+<link rel="stylesheet" href="../assets/css/style.css?v=7" />
+<link rel="stylesheet" href="../assets/css/admin-desktop.css?v=7" />
+<link rel="manifest" href="/manifest.json" />
+<meta name="theme-color" content="#f29744" />
+</head>
+<body>
+<div class="phone">
+
+  <!-- Sidebar — hanya muncul di tablet/desktop via CSS -->
+  <aside class="admin-sidebar" style="display:none">
+    <div class="admin-sidebar-logo">🌯 SUKA Admin</div>
+    <div class="admin-sidebar-user">
+      <div class="name" id="sidebarName">—</div>
+      <div class="role" id="sidebarRole">—</div>
+    </div>
+    <nav class="admin-sidebar-nav">
+      <a href="/admin/index.html"><span>🏠</span><span>Dashboard</span></a>
+      <a href="/admin/orders.html"><span>📋</span><span>Pesanan</span></a>
+      <a href="/admin/menu.html"><span>🌯</span><span>Menu</span></a>
+      <a href="/admin/reports.html"><span>📊</span><span>Laporan</span></a>
+      <a href="/admin/monitoring.html" class="admin-only"><span>🔍</span><span>Monitoring</span></a>
+      <a href="/admin/customers.html" class="admin-only"><span>🧑‍🤝‍🧑</span><span>Pelanggan</span></a>
+      <a href="/admin/vouchers.html" class="admin-only"><span>🎟️</span><span>Voucher</span></a>
+      <a href="/admin/outlets.html" class="admin-only"><span>📍</span><span>Outlet</span></a>
+      <a href="/admin/users.html" class="admin-only"><span>👥</span><span>Pengguna</span></a>
+      <a href="/admin/settings.html" class="admin-only"><span>⚙️</span><span>Pengaturan</span></a>
+    </nav>
+    <div class="admin-sidebar-footer">
+      <button onclick="adminSignOut()">🚪 Keluar</button>
+    </div>
+  </aside>
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div>
+      <div class="topbar-logo">
+        <img src="../assets/img/logo.png" alt="SUKA Shawarma" style="height:28px;width:auto;vertical-align:middle;margin-right:6px" onerror="this.style.display='none'">
+        <span>SUKA Admin</span>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:1px">
+        <span id="adminRole" style="font-weight:600"></span>
+        <span id="adminName" style="margin-left:4px"></span>
+      </div>
+    </div>
+    <button onclick="adminSignOut()"
+            style="font-size:12px;color:var(--brand);background:var(--brand-bg);border:0;border-radius:999px;padding:6px 12px;font-weight:600">
+      Keluar
+    </button>
+  </div>
+
+  <div class="admin-content">
+
+  <!-- Konten utama -->
+  <div id="pageContent" style="padding:0 0 80px 0">
+    <!-- Skeleton awal -->
+    <div class="stat-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <div class="stat-card"><div class="skeleton skeleton-line" style="height:18px;margin-bottom:8px"></div><div class="skeleton skeleton-line short"></div></div>
+      <div class="stat-card"><div class="skeleton skeleton-line" style="height:18px;margin-bottom:8px"></div><div class="skeleton skeleton-line short"></div></div>
+    </div>
+
+    <div id="monContent" style="display:none">
+      <div id="statusBar" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px"></div>
+      <div id="metricCards" class="stat-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px"></div>
+      <div class="section-block"><div class="section-title">⚠️ Butuh Perhatian</div><div id="attentionPanel"></div></div>
+      <div class="section-block"><div class="section-title">📈 Volume Order per Jam</div><div id="volumeChart" style="display:flex;align-items:flex-end;gap:3px;height:70px;padding:4px 0"></div></div>
+      <div class="section-block"><div class="section-title">⏱️ Heartbeat Cron</div><div id="cronPanel"></div></div>
+      <div class="section-block admin-only"><div class="section-title">💾 Kapasitas</div><div id="capacityPanel"></div></div>
+      <div class="section-block"><div class="section-title">🔔 Log Alert</div><div id="alertLog"></div></div>
+    </div>
+  </div>
+
+  </div><!-- /admin-content -->
+
+  <!-- Bottom nav -->
+  <nav class="admin-nav">
+    <a href="/admin/index.html"><span>🏠</span><span>Dashboard</span></a>
+    <a href="/admin/orders.html"><span>📋</span><span>Pesanan</span></a>
+    <a href="/admin/menu.html"><span>🌯</span><span>Menu</span></a>
+    <a href="/admin/reports.html"><span>📊</span><span>Laporan</span></a>
+    <a href="/admin/monitoring.html" class="admin-only"><span>🔍</span><span>Monitor</span></a>
+    <a href="/admin/outlets.html" class="admin-only"><span>📍</span><span>Outlet</span></a>
+    <a href="/admin/settings.html" class="admin-only"><span>⚙️</span><span>Pengaturan</span></a>
+  </nav>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="../config.js"></script>
+<script src="../assets/js/supabase.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/admin.js"></script>
+<script src="../assets/js/monitoring.js"></script>
+<script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
+</body>
+</html>
