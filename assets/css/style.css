@@ -1105,3 +1105,33 @@ select.form-input { cursor: pointer; }
   .report-table { font-size: 11px; }
   .metric-card { box-shadow: none; border: 1px solid #ddd; }
 }
+
+/* ─── Monitoring dashboard — tighten spacing ─────────────────────────────────── */
+#monContent .section-block {
+  margin-bottom: 12px;
+}
+#monContent .section-title {
+  font-size: 13px;
+  font-weight: 700;
+  padding: 10px 14px 6px;
+  color: var(--ink);
+}
+
+/* Log Alert — rapi list items */
+#alertLog > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  background: var(--card);
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+#alertLog > p {
+  color: var(--muted);
+  font-size: 12px;
+  padding: 6px 0;
+  margin: 0;
+}

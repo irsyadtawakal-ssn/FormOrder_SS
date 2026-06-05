@@ -263,7 +263,9 @@ async function loadAlertLog() {
 
 async function loadCapacity(healthSnap) {
   if (!healthSnap || !healthSnap.capacity) {
-    document.getElementById('capacityPanel').innerHTML = '<p class="muted">Data tidak tersedia</p>';
+    // Sembunyikan section Kapasitas jika data tidak tersedia
+    const section = document.getElementById('capacityPanel')?.closest('.section-block');
+    if (section) section.style.display = 'none';
     return;
   }
 
