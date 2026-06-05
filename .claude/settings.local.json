@@ -65,7 +65,20 @@
       "WebFetch(domain:plugins.svn.wordpress.org)",
       "Bash(grep -v \"//\\\\|test\")",
       "Bash(grep -n \"^\\\\/\\\\* ─\" assets/css/style.css)",
-      "Bash(git -C \"D:\\\\MIT\\\\CLAUDE CODE PROJECT\\\\TiktokGo SS\" status --short)"
+      "Bash(git -C \"D:\\\\MIT\\\\CLAUDE CODE PROJECT\\\\TiktokGo SS\" status --short)",
+      "Bash(supabase link *)",
+      "WebFetch(domain:api.github.com)",
+      "Bash(curl -sf https://upload.wikimedia.org/wikipedia/commons/thumb/b/b3/Logo_Bank_BJB.png/120px-Logo_Bank_BJB.png -o 'D:/MIT/CLAUDE CODE PROJECT/TiktokGo SS/assets/img/payment/bjb.png')",
+      "Bash(curl -sf https://qris.id/homepage/images/qris_logo.png -o __TRACKED_VAR__/qris.png)",
+      "Bash(curl -sfL https://upload.wikimedia.org/wikipedia/id/5/5b/Logo_bank_BJB.png -o 'D:/MIT/CLAUDE CODE PROJECT/TiktokGo SS/assets/img/payment/bjb.png' -A Mozilla/5.0)",
+      "Bash(curl -sfL https://s3-ap-southeast-1.amazonaws.com/static.xendit.co/xendit-homepage/payment-channel-icons/QRIS.png -o __TRACKED_VAR__/qris.png -A Mozilla/5.0)",
+      "Bash(curl -sfL https://raw.githubusercontent.com/nicepay-dev/nicepay-php/master/assets/img/bank/bjb.png -o 'D:\\\\MIT\\\\CLAUDE CODE PROJECT\\\\TiktokGo SS\\\\assets\\\\img\\\\payment/bjb.png' -A Mozilla/5.0)",
+      "Bash(file __TRACKED_VAR__/qris.png)",
+      "Bash(python -c ' *)",
+      "Bash(git -C \"D:\\\\MIT\\\\CLAUDE CODE PROJECT\\\\TiktokGo SS\" branch --show-current)",
+      "Bash(git -C \"D:\\\\MIT\\\\CLAUDE CODE PROJECT\\\\TiktokGo SS\" diff .claude/settings.local.json)",
+      "Bash(git checkout *)",
+      "Bash(git merge *)"
     ]
   }
 }
