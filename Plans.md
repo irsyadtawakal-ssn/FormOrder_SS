@@ -192,6 +192,21 @@
 
 ---
 
+## Phase 11b — Meta Pixel & Tracking ✅
+**Scope:** Meta Pixel dinamis via pengaturan admin — tanpa hardcode, bisa ganti ID kapan saja
+**Output:** Admin isi Pixel ID di settings → tracking langsung aktif di semua halaman customer
+
+### Tasks
+- [x] 11b.1 `assets/js/pixel.js` — load meta_pixel_id & meta_pixel_enabled dari app_settings, inject fbq dinamis
+- [x] 11b.2 Admin Settings — card "Tracking & Pixel": toggle aktif + input Pixel ID, upsert ke app_settings
+- [x] 11b.3 Event PageView — otomatis di index.html, checkout.html, order.html
+- [x] 11b.4 Event ViewContent — saat menu outlet selesai dimuat (index.html)
+- [x] 11b.5 Event AddToCart — saat item ditambah ke cart (index.html)
+- [x] 11b.6 Event InitiateCheckout — saat halaman checkout dibuka (checkout.html)
+- [x] 11b.7 Event Purchase — saat order status jadi paid, fire sekali via sessionStorage flag (order.html)
+
+---
+
 ## Phase 12 — Dokumentasi & Training
 **Scope:** Flow diagram + docs untuk onboarding karyawan & referensi tim
 **Output:** Dokumen customer journey lengkap per role
@@ -241,3 +256,4 @@
 - ✅ 2026-05-23 — Seragamkan title tab semua halaman customer ke "Order Sukashawarma"
 - ✅ 2026-06-03 — Logo payment channel lengkap: QRIS, BCA, BNI, BRI, Mandiri, BJB (webp), BSI, CIMB di assets/img/payment/
 - ✅ 2026-06-04 — Customer journey flow diagram (Customer + Admin + Outlet Staff per-step + state machine, Xendit multi-channel)
+- ✅ 2026-06-05 — Meta Pixel dinamis: pixel.js + admin settings card + 5 standard events (PageView, ViewContent, AddToCart, InitiateCheckout, Purchase)
