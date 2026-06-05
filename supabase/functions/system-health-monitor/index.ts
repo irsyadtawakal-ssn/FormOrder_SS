@@ -20,8 +20,26 @@ Deno.serve(async (req: Request) => {
   const SRV = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const TG_TOKEN = Deno.env.get("TELEGRAM_BOT_TOKEN")!;
   const TG_CHAT = Deno.env.get("TELEGRAM_CHAT_ID")!;
-  const auth = (req.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "").trim();
-  if (auth !== SRV) return Response.json({ error: "Unauthorized" }, { status: 401, headers: CORS });
+
+  // ─── Verifikasi JWT + check role service_role ─────────────────────────────
+  const jwt = (req.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "").trim();
+  if (!jwt) return Response.json({ error: "Unauthorized" }, { status: 401, headers: CORS });
+
+  // Decode JWT payload (base64url decode, no signature verification needed for Supabase internal JWT)
+  const parts = jwt.split(".");
+  if (parts.length !== 3) return Response.json({ error: "Invalid JWT" }, { status: 401, headers: CORS });
+
+  let payload: Record<string, unknown>;
+  try {
+    const decoded = atob(parts[1].replace(/-/g, "+").replace(/_/g, "/"));
+    payload = JSON.parse(decoded);
+  } catch {
+    return Response.json({ error: "Invalid JWT" }, { status: 401, headers: CORS });
+  }
+
+  if (payload.role !== "service_role") {
+    return Response.json({ error: "Forbidden" }, { status: 403, headers: CORS });
+  }
 
   const db = createClient(URL, SRV, { auth: { persistSession: false } });
   const issues: { key: string; msg: string }[] = [];
