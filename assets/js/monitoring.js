@@ -228,30 +228,12 @@ async function loadVolume() {
   }).join('');
 }
 async function loadCron() {
-  const { data } = await window.db
-    .from('cron_heartbeat')
-    .select('*')
-    .order('job_name');
-
-  const el = document.getElementById('cronPanel');
-  if (!el) return;
-
-  if (!data || !data.length) {
-    el.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:8px 0">⏳ Belum ada heartbeat (deploy fungsi dulu)</p>';
-    return;
+  // Heartbeat belum ada data (cron existing tidak trigger EF)
+  // Hide panel untuk sekarang
+  const section = document.querySelector('[id="cronPanel"]')?.closest('.section-block');
+  if (section) {
+    section.style.display = 'none';
   }
-
-  el.innerHTML = data.map(c => {
-    const ageMin = (Date.now() - new Date(c.last_run).getTime()) / 60000;
-    const dead   = ageMin > 5;
-    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--card);border-radius:10px;margin-bottom:6px">
-      <div>
-        <span style="font-size:16px">${dead ? '🔴' : '🟢'}</span>
-        <span style="font-weight:600;font-size:13px;margin-left:8px">${escHtml(c.job_name)}</span>
-      </div>
-      <div style="font-size:11px;color:var(--muted)">${fmtTimeAgo(c.last_run)}</div>
-    </div>`;
-  }).join('');
 }
 async function loadAlertLog() {
   const { data } = await window.db

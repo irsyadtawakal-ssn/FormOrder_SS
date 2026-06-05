@@ -109,7 +109,8 @@ img { display: block; max-width: 100%; }
 .chip:active { background: var(--line); }
 .chip.active { background: var(--ink); color: #fff; border-color: var(--ink); }
 
-/* ─── Section title ──────────────────────────────────────────────────────────── */
+/* ─── Section title & block ──────────────────────────────────────────────────── */
+.section-block { margin-bottom: 16px; padding: 0; }
 .section-title {
   font-weight: 700; font-size: 15px;
   padding: 16px 16px 8px; color: var(--ink);
