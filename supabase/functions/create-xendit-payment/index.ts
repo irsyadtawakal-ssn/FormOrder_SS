@@ -362,8 +362,8 @@ serve(async (req: Request) => {
     .eq("is_active", true)
     .eq("applies_to", "all")
     .lte("min_purchase", subtotal)
-    .or(`start_at.is.null,start_at.lte.${nowIso}`)
-    .or(`end_at.is.null,end_at.gte.${nowIso}`)
+    .or(`start_at.is.null,start_at.lte."${nowIso}"`)
+    .or(`end_at.is.null,end_at.gte."${nowIso}"`)
     .order("priority", { ascending: false })
     .order("discount_value", { ascending: false })
     .limit(1);
