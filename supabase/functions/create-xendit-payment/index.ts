@@ -358,7 +358,7 @@ serve(async (req: Request) => {
   const nowIso = new Date().toISOString();
   const { data: promoRows } = await supabase
     .from("promos")
-    .select("id, name, discount_type, discount_value, max_discount, min_purchase")
+    .select("id, name, discount_type, discount_value, max_discount, min_purchase, usage_limit, usage_count")
     .eq("is_active", true)
     .eq("applies_to", "all")
     .lte("min_purchase", subtotal)
@@ -370,17 +370,25 @@ serve(async (req: Request) => {
 
   const promo = promoRows?.[0];
   if (promo) {
-    if (promo.discount_type === "percent") {
-      discount = Math.round(subtotal * Number(promo.discount_value) / 100);
-      if (promo.max_discount != null) {
-        discount = Math.min(discount, Number(promo.max_discount));
-      }
+    if (promo.usage_limit && promo.usage_count >= promo.usage_limit) {
+      // Usage limit reached, skip discount
+      discount = 0;
+      promoId = null;
+      promoName = null;
     } else {
-      discount = Math.min(Number(promo.discount_value), subtotal);
+      // Hitung diskon normal
+      if (promo.discount_type === "percent") {
+        discount = Math.round(subtotal * Number(promo.discount_value) / 100);
+        if (promo.max_discount != null) {
+          discount = Math.min(discount, Number(promo.max_discount));
+        }
+      } else {
+        discount = Math.min(Number(promo.discount_value), subtotal);
+      }
+      discount = Math.max(0, discount);
+      promoId = promo.id;
+      promoName = promo.name;
     }
-    discount = Math.max(0, discount);
-    promoId = promo.id;
-    promoName = promo.name;
   }
 
   const afterDiscount = subtotal - discount;

@@ -78,7 +78,8 @@
       "Bash(git -C \"D:\\\\MIT\\\\CLAUDE CODE PROJECT\\\\TiktokGo SS\" branch --show-current)",
       "Bash(git -C \"D:\\\\MIT\\\\CLAUDE CODE PROJECT\\\\TiktokGo SS\" diff .claude/settings.local.json)",
       "Bash(git checkout *)",
-      "Bash(git merge *)"
+      "Bash(git merge *)",
+      "Bash(cd \"/d/MIT/CLAUDE CODE PROJECT/TiktokGo SS\" && grep -r \"orders_promo_id_fkey\" supabase/migrations/)"
     ]
   }
 }

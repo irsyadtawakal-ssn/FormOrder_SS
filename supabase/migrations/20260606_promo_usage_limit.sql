@@ -1,12 +1,7 @@
--- supabase/migrations/20260606_promo_usage_limit.sql
 -- Finalisasi usage limit tracking untuk promos table + auto-disable cron job
+-- Kolom usage_limit dan usage_count sudah ditambahkan di migration 20260605
 
--- Add usage limit tracking columns (jika belum ada)
-ALTER TABLE public.promos
-  ADD COLUMN IF NOT EXISTS usage_limit integer,
-  ADD COLUMN IF NOT EXISTS usage_count integer NOT NULL DEFAULT 0;
-
--- Add comment for clarity
+-- Add comments for clarity
 COMMENT ON COLUMN public.promos.usage_limit IS 'Maximum number of buyers who can use this promo. NULL = unlimited.';
 COMMENT ON COLUMN public.promos.usage_count IS 'Current count of buyers who have used this promo (incremented on payment confirmation).';
 
@@ -20,8 +15,13 @@ ALTER TABLE public.orders
     REFERENCES public.promos(id)
     ON DELETE SET NULL;
 
+-- Create index on FK column for performance
+CREATE INDEX IF NOT EXISTS idx_orders_promo_id ON public.orders(promo_id);
+
 -- Schedule cron job for auto-disabling expired promos
 -- Run every hour at :00 minutes
+SELECT cron.unschedule('auto-disable-expired-promos');
+
 SELECT cron.schedule(
   'auto-disable-expired-promos',
   '0 * * * *',

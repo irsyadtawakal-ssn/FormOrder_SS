@@ -109,25 +109,25 @@ serve(async (req: Request) => {
   // 1. metadata.order_id → lookup by id (paling reliable)
   // 2. payment_request_id → lookup by tripay_reference (pr-xxx dari Xendit)
   // 3. reference_id → lookup by tripay_merchant_ref (SUKA-... format)
-  let order: { id: string; order_number: string; status: string; total: number; outlet_id: string; customer_name: string; customer_wa: string } | null = null;
+  let order: { id: string; order_number: string; status: string; total: number; outlet_id: string; customer_name: string; customer_wa: string; promo_id: string | null } | null = null;
 
   if (orderIdFromMeta) {
     const { data: o } = await supabase.from("orders")
-      .select("id, order_number, status, total, outlet_id, customer_name, customer_wa")
+      .select("id, order_number, status, total, outlet_id, customer_name, customer_wa, promo_id")
       .eq("id", orderIdFromMeta).maybeSingle();
     order = o;
   }
 
   if (!order && paymentRequestId) {
     const { data: o } = await supabase.from("orders")
-      .select("id, order_number, status, total, outlet_id, customer_name, customer_wa")
+      .select("id, order_number, status, total, outlet_id, customer_name, customer_wa, promo_id")
       .eq("tripay_reference", paymentRequestId).maybeSingle();
     order = o;
   }
 
   if (!order && referenceId) {
     const { data: o } = await supabase.from("orders")
-      .select("id, order_number, status, total, outlet_id, customer_name, customer_wa")
+      .select("id, order_number, status, total, outlet_id, customer_name, customer_wa, promo_id")
       .eq("tripay_merchant_ref", referenceId).maybeSingle();
     order = o;
   }
@@ -215,6 +215,43 @@ serve(async (req: Request) => {
   }
 
   console.info("Order berhasil diupdate ke paid:", order.order_number);
+
+  // ─── Increment promo usage count if promo was used ──────────────────────
+  if (order.promo_id) {
+    const { data: promo } = await supabase
+      .from("promos")
+      .select("usage_count, usage_limit")
+      .eq("id", order.promo_id)
+      .single();
+
+    if (promo) {
+      const newCount = (promo.usage_count ?? 0) + 1;
+      const { data: updatedPromo } = await supabase
+        .from("promos")
+        .update({ usage_count: newCount })
+        .eq("id", order.promo_id)
+        .select("usage_count, usage_limit")
+        .single();
+
+      // Auto-off promo if quota reached
+      if (
+        updatedPromo &&
+        updatedPromo.usage_limit &&
+        updatedPromo.usage_count >= updatedPromo.usage_limit
+      ) {
+        await supabase
+          .from("promos")
+          .update({ is_active: false })
+          .eq("id", order.promo_id);
+
+        console.info("Promo auto-disabled karena quota habis:", {
+          promo_id: order.promo_id,
+          usage_count: updatedPromo.usage_count,
+          usage_limit: updatedPromo.usage_limit,
+        });
+      }
+    }
+  }
 
   // ─── Trigger send-wa-notifications (async, fire-and-forget) ──────────────
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
