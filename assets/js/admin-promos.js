@@ -60,7 +60,7 @@ function discountSummary(p) {
   if (p.max_discount != null) parts.push(`maks ${rupiah(p.max_discount)}`);
   // Add usage display if limit is set
   if (p.usage_limit != null) {
-    parts.push(`${p.usage_count}/${p.usage_limit} pembeli`);
+    parts.push(`${p.usage_count ?? 0}/${p.usage_limit} pembeli`);
   }
   return parts.join(' • ');
 }
@@ -129,7 +129,7 @@ function openPromoForm(id) {
         <input id="pActive" type="checkbox" ${!p || p.is_active ? 'checked':''} /> Aktif
       </label>
 
-      ${p && p.usage_limit != null ? `
+      ${p && p.usage_limit != null && p.usage_limit > 0 ? `
       <div style="margin-top:16px;padding:12px;background:#f0fdf4;border-radius:8px;border:1px solid #dcfce7">
         <div style="font-weight:700;font-size:12px;margin-bottom:8px">📊 Status Penggunaan</div>
         <div style="margin-bottom:8px">

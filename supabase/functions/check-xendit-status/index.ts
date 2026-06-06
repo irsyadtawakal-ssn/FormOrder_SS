@@ -69,7 +69,7 @@ serve(async (req: Request) => {
   const { data: order, error: orderErr } = await supabase
     .from("orders")
     .select(
-      "id, order_number, status, total, tripay_reference, expires_at",
+      "id, order_number, status, total, tripay_reference, expires_at, promo_id",
     )
     .eq("order_number", orderNumber)
     .maybeSingle();
@@ -182,6 +182,26 @@ serve(async (req: Request) => {
       .eq("status", "pending_payment");
 
     if (!updateErr) {
+      // Increment promo usage count (atomik via RPC) — sama seperti xendit-webhook
+      if ((order as Record<string, unknown>).promo_id) {
+        const promoId = (order as Record<string, unknown>).promo_id as string;
+        const { data: promoRows, error: promoErr } = await supabase
+          .rpc("increment_promo_usage", { p_promo_id: promoId });
+
+        if (promoErr) {
+          console.error("Gagal increment usage promo (check-status):", promoErr);
+        } else if (promoRows?.[0]) {
+          const { usage_count, usage_limit } = promoRows[0];
+          if (usage_limit != null && usage_limit > 0 && usage_count >= usage_limit) {
+            await supabase
+              .from("promos")
+              .update({ is_active: false })
+              .eq("id", promoId);
+            console.info("Promo auto-disabled via check-status:", { promoId, usage_count, usage_limit });
+          }
+        }
+      }
+
       // Trigger WA notif (fire-and-forget) — mungkin belum dikirim oleh webhook
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
       const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;

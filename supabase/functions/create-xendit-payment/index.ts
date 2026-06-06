@@ -370,7 +370,7 @@ serve(async (req: Request) => {
 
   const promo = promoRows?.[0];
   if (promo) {
-    if (promo.usage_limit && promo.usage_count >= promo.usage_limit) {
+    if (promo.usage_limit != null && promo.usage_count >= promo.usage_limit) {
       // Usage limit reached, skip discount
       discount = 0;
       promoId = null;

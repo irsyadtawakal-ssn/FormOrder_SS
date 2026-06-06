@@ -20,7 +20,12 @@ CREATE INDEX IF NOT EXISTS idx_orders_promo_id ON public.orders(promo_id);
 
 -- Schedule cron job for auto-disabling expired promos
 -- Run every hour at :00 minutes
-SELECT cron.unschedule('auto-disable-expired-promos');
+DO $$
+BEGIN
+  PERFORM cron.unschedule('auto-disable-expired-promos');
+EXCEPTION WHEN OTHERS THEN
+  NULL; -- job belum ada di environment baru, lanjut ke schedule
+END $$;
 
 SELECT cron.schedule(
   'auto-disable-expired-promos',

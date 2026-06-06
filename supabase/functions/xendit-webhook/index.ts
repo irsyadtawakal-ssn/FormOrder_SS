@@ -197,7 +197,8 @@ serve(async (req: Request) => {
 
   // ─── UPDATE order status → paid ──────────────────────────────────────────
   // Guard .eq("status", "pending_payment") cegah race condition jika webhook duplikat
-  const { error: updateErr } = await supabase
+  // .select("id") dipakai untuk deteksi apakah UPDATE benar-benar mengenai baris
+  const { data: updatedOrder, error: updateErr } = await supabase
     .from("orders")
     .update({
       status: "paid",
@@ -206,7 +207,8 @@ serve(async (req: Request) => {
       tripay_reference: paymentId || (order as Record<string, unknown>).tripay_reference,
     })
     .eq("id", order.id)
-    .eq("status", "pending_payment");
+    .eq("status", "pending_payment")
+    .select("id");
 
   if (updateErr) {
     console.error("Gagal update order ke paid:", updateErr);
@@ -214,31 +216,27 @@ serve(async (req: Request) => {
     return new Response("Internal error", { status: 500 });
   }
 
+  // Jika 0 baris terupdate, berarti webhook lain sudah menang race ini
+  if (!updatedOrder || updatedOrder.length === 0) {
+    console.info("Order sudah diproses oleh webhook lain (idempoten):", order.order_number);
+    return jsonOk({ success: true, message: "Sudah diproses sebelumnya (idempoten)" });
+  }
+
   console.info("Order berhasil diupdate ke paid:", order.order_number);
 
-  // ─── Increment promo usage count if promo was used ──────────────────────
+  // ─── Increment promo usage count (atomik via RPC) ────────────────────────
+  // Menggunakan DB function untuk hindari race condition read-modify-write
   if (order.promo_id) {
-    const { data: promo } = await supabase
-      .from("promos")
-      .select("usage_count, usage_limit")
-      .eq("id", order.promo_id)
-      .single();
+    const { data: promoRows, error: promoErr } = await supabase
+      .rpc("increment_promo_usage", { p_promo_id: order.promo_id });
 
-    if (promo) {
-      const newCount = (promo.usage_count ?? 0) + 1;
-      const { data: updatedPromo } = await supabase
-        .from("promos")
-        .update({ usage_count: newCount })
-        .eq("id", order.promo_id)
-        .select("usage_count, usage_limit")
-        .single();
+    if (promoErr) {
+      console.error("Gagal increment usage promo:", promoErr);
+    } else if (promoRows?.[0]) {
+      const { usage_count, usage_limit } = promoRows[0];
 
-      // Auto-off promo if quota reached
-      if (
-        updatedPromo &&
-        updatedPromo.usage_limit &&
-        updatedPromo.usage_count >= updatedPromo.usage_limit
-      ) {
+      // Auto-off promo jika quota habis (cek != null dan > 0 untuk hindari falsy 0)
+      if (usage_limit != null && usage_limit > 0 && usage_count >= usage_limit) {
         await supabase
           .from("promos")
           .update({ is_active: false })
@@ -246,8 +244,8 @@ serve(async (req: Request) => {
 
         console.info("Promo auto-disabled karena quota habis:", {
           promo_id: order.promo_id,
-          usage_count: updatedPromo.usage_count,
-          usage_limit: updatedPromo.usage_limit,
+          usage_count,
+          usage_limit,
         });
       }
     }
