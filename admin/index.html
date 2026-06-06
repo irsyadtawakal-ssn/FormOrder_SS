@@ -27,6 +27,7 @@
       <a href="/admin/customers.html" class="admin-only"><span>🧑‍🤝‍🧑</span><span>Pelanggan</span></a>
       <a href="/admin/vouchers.html" class="admin-only"><span>🎟️</span><span>Voucher</span></a>
       <a href="/admin/promos.html" class="admin-only"><span>🏷️</span><span>Promo</span></a>
+      <a href="/admin/monitoring.html" class="admin-only"><span>🔍</span><span>Monitoring</span></a>
       <a href="/admin/outlets.html" class="admin-only"><span>📍</span><span>Outlet</span></a>
       <a href="/admin/users.html" class="admin-only"><span>👥</span><span>Pengguna</span></a>
       <a href="/admin/settings.html" class="admin-only"><span>⚙️</span><span>Pengaturan</span></a>
@@ -75,6 +76,7 @@
     <a href="/admin/orders.html"><span>📋</span><span>Pesanan</span></a>
     <a href="/admin/menu.html"><span>🌯</span><span>Menu</span></a>
     <a href="/admin/reports.html"><span>📊</span><span>Laporan</span></a>
+    <a href="/admin/monitoring.html" class="admin-only"><span>🔍</span><span>Monitor</span></a>
     <a href="/admin/outlets.html" class="admin-only"><span>📍</span><span>Outlet</span></a>
     <a href="/admin/settings.html" class="admin-only"><span>⚙️</span><span>Pengaturan</span></a>
   </nav>
@@ -125,6 +127,11 @@ async function loadDashboard(u) {
 
   const pc = document.getElementById('pageContent');
   pc.innerHTML = `
+    <div style="text-align:center;background:var(--brand);border-radius:var(--radius);padding:14px 16px;margin-bottom:14px;box-shadow:var(--shadow-lg)">
+      <div id="clockDate" style="font-size:12px;color:rgba(255,255,255,.8);font-weight:600;letter-spacing:.3px"></div>
+      <div id="clockTime" style="font-size:36px;font-weight:800;color:#ffffff;letter-spacing:-1px;line-height:1.1;margin-top:2px"></div>
+    </div>
+
     <div class="stat-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
       ${statCard('🛍️', orders.length, 'Order Hari Ini')}
       ${statCard('💰', formatRupiah(revenue), 'Pendapatan')}
@@ -153,6 +160,24 @@ async function loadDashboard(u) {
     <div style="height:80px"></div>
   `;
 }
+
+function tickClock() {
+  const now = new Date();
+  const tgl = now.toLocaleDateString('id-ID', {
+    timeZone: 'Asia/Jakarta',
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+  });
+  const jam = now.toLocaleTimeString('id-ID', {
+    timeZone: 'Asia/Jakarta',
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+  });
+  const d = document.getElementById('clockDate');
+  const t = document.getElementById('clockTime');
+  if (d) d.textContent = tgl;
+  if (t) t.textContent = jam;
+}
+tickClock();
+setInterval(tickClock, 1000);
 
 function statCard(icon, val, label) {
   return `<div class="stat-card">
