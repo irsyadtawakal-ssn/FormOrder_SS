@@ -43,7 +43,7 @@
 ### Tasks
 - [x] 3.1 Edge Function: `send-wa-notifications` — Fonnte API, notif admin + outlet + customer
 - [x] 3.2 Edge Function: `auto-cancel-expired-orders` — pg_cron tiap 1 menit, scan & cancel expired
-- [ ] 3.3 Seed notification_templates — 5 templates default
+- [x] 3.3 Seed notification_templates — 5 templates default
 - [x] 3.4 Integrasi notif ke order flow — events: new_order, ready, cancelled, transfer_submitted, transfer_verified
 
 ---
@@ -98,9 +98,9 @@
 - [x] 7.2 Konfigurasi subdomain `order.sukashawarma.com` — DNS propagasi selesai ✅
 - [x] 7.3 SSL/HTTPS untuk subdomain order
 - [x] 7.4 Auto-deploy via GitHub webhook + deploy.php di cPanel
-- [ ] 7.5 End-to-end test semua flow (order → transfer → upload → admin verifikasi)
+- [x] 7.5 End-to-end test semua flow (order → transfer → upload → admin verifikasi) — digantikan Phase 10 Xendit
 - [x] 7.6 Upload foto menu asli semua item
-- [ ] 7.7 Training karyawan per outlet
+- [x] 7.7 Training karyawan per outlet
 
 ---
 
@@ -126,9 +126,13 @@
 
 ---
 
-## Phase 9 — Loyalty Program ✅
+## Phase 9 — Loyalty Program ⏸ DIBEKUKAN
 **Scope:** Customers + Vouchers + Milestones + WA notif toggle
 **Output:** Admin bisa manage pelanggan loyal + voucher diskon
+
+> ⚠️ **Status:** Fitur ini dibekukan sementara — akan dikerjakan ulang di fase berikutnya.
+> Kode & migrasi tetap ada di repo, JANGAN dihapus.
+> Link sidebar admin (`customers.html`, `vouchers.html`) disembunyikan sampai fitur ini diaktifkan kembali.
 
 ### Tasks
 - [x] 9.1 Migration SQL `20260522_loyalty.sql` — tabel customers, vouchers, customer_vouchers, milestones
@@ -137,6 +141,11 @@
 - [x] 9.4 Admin Vouchers page (`admin/vouchers.html`) — CRUD voucher, assign manual
 - [x] 9.5 `assets/js/loyalty.js` — loyalty utilities (poin, voucher apply, milestone check)
 - [x] 9.6 Toggle notif WA per customer di admin settings
+- [x] 9.7 Sembunyikan link Voucher dari sidebar semua halaman admin (re-aktifkan saat Phase 9 dilanjutkan)
+- [x] 9.8 Refactor customers.html — pure database pelanggan (Menu Favorit + Outlet Favorit + Terakhir Beli), hapus UI loyalty
+- [x] 9.9 Refactor on-order-done — trigger saat paid (bukan done), tambah favorite_menu & favorite_outlet_id, komentari logic loyalty
+- [x] 9.10 Migration 20260606c_customers_favorite.sql — kolom favorite_menu & favorite_outlet_id di tabel customers
+- [x] 9.11 xendit-webhook — tambah trigger on-order-done saat order paid
 
 ---
 
@@ -153,7 +162,7 @@
 - [x] 10.6 Checkout page — ganti manual transfer ke Xendit QRIS (simpan qris_string di sessionStorage)
 - [x] 10.7 Order page — pending_payment tampil QR code + countdown, auto-update via Supabase realtime
 - [x] 10.8 Admin orders — hapus flow verifikasi manual, chip Verifikasi, tombol Approve/Tolak
-- [ ] 10.9 E2E test: QRIS scan → payment.capture webhook → order auto-confirmed
+- [x] 10.9 E2E test: QRIS scan → payment.capture webhook → order auto-confirmed
 
 ---
 
@@ -187,7 +196,7 @@
 - [x] 11.4 Checkout page — payment method picker (QRIS/VA/E-Wallet) dengan selectChannel()
 - [x] 11.5 Order page — pending_payment adaptif: QRIS=QR, VA=nomor+instruksi, E-Wallet=deeplink
 - [x] 11.6 Deploy create-xendit-payment + xendit-webhook, push frontend
-- [ ] 11.7 E2E test tiap channel
+- [x] 11.7 E2E test tiap channel
 - [x] 11.8 Tambah logo tiap channel pembayaran (QRIS/BCA/BNI/BRI/Mandiri/BJB/BSI/CIMB) di payment picker checkout
 
 ---
@@ -213,8 +222,8 @@
 
 ### Tasks
 - [x] 12.1 Customer journey flow — Customer, Admin, Outlet Staff per-step (`docs/superpowers/specs/2026-06-04-customer-journey-flow.md`)
-- [ ] 12.2 Training guide outlet staff — panduan singkat operasional harian
-- [ ] 12.3 Training guide admin — panduan verifikasi + manajemen
+- [x] 12.2 Training guide outlet staff — panduan singkat operasional harian
+- [x] 12.3 Training guide admin — panduan verifikasi + manajemen
 
 ---
 

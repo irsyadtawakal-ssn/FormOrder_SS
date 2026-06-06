@@ -25,7 +25,7 @@
       <a href="/admin/menu.html"><span>🌯</span><span>Menu</span></a>
       <a href="/admin/reports.html"><span>📊</span><span>Laporan</span></a>
       <a href="/admin/customers.html" class="admin-only"><span>🧑‍🤝‍🧑</span><span>Pelanggan</span></a>
-      <a href="/admin/vouchers.html" class="admin-only"><span>🎟️</span><span>Voucher</span></a>
+      <!-- LOYALTY FROZEN: <a href="/admin/vouchers.html" class="admin-only"><span>🎟️</span><span>Voucher</span></a> -->
       <a href="/admin/promos.html" class="admin-only"><span>🏷️</span><span>Promo</span></a>
       <a href="/admin/outlets.html" class="admin-only"><span>📍</span><span>Outlet</span></a>
       <a href="/admin/users.html" class="admin-only"><span>👥</span><span>Pengguna</span></a>
@@ -234,14 +234,7 @@ async function doUpdateStatus(orderId, newStatus) {
         body: JSON.stringify({ order_id: orderId, event }),
       }).catch(() => {});
     }
-    // Trigger loyalty check saat order selesai (fire and forget)
-    if (newStatus === 'done') {
-      fetch(`${window.SUKA_CONFIG.supabaseUrl}/functions/v1/on-order-done`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${window.SUKA_CONFIG.supabaseAnonKey}`, 'apikey': window.SUKA_CONFIG.supabaseAnonKey, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ order_id: orderId }),
-      }).catch(() => {});
-    }
+    // on-order-done sekarang dipanggil dari xendit-webhook saat status paid
   } catch (e) {
     if (btn) { btn.disabled = false; btn.textContent = STATUS_NEXT_ACTION[allOrders.find(o=>o.id===orderId)?.status]?.label || '?'; }
     adminToast('❌ Gagal: ' + e.message);

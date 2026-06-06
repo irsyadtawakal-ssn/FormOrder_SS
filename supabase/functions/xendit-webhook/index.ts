@@ -264,5 +264,15 @@ serve(async (req: Request) => {
     body: JSON.stringify({ order_id: order.id, event: "paid" }),
   }).catch((err) => console.error("Gagal trigger send-wa-notifications:", err));
 
+  // ─── Trigger on-order-done: update data customer (fire-and-forget) ────────
+  fetch(`${supabaseUrl}/functions/v1/on-order-done`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${serviceKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ order_id: order.id }),
+  }).catch((err) => console.error("Gagal trigger on-order-done:", err));
+
   return jsonOk({ success: true, message: "Order diupdate ke paid" });
 });

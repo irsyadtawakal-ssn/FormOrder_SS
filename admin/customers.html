@@ -25,7 +25,7 @@
       <a href="/admin/menu.html"><span>🌯</span><span>Menu</span></a>
       <a href="/admin/reports.html"><span>📊</span><span>Laporan</span></a>
       <a href="/admin/customers.html" class="admin-only"><span>🧑‍🤝‍🧑</span><span>Pelanggan</span></a>
-      <a href="/admin/vouchers.html" class="admin-only"><span>🎟️</span><span>Voucher</span></a>
+      <!-- LOYALTY FROZEN: <a href="/admin/vouchers.html" class="admin-only"><span>🎟️</span><span>Voucher</span></a> -->
       <a href="/admin/promos.html" class="admin-only"><span>🏷️</span><span>Promo</span></a>
       <a href="/admin/outlets.html" class="admin-only"><span>📍</span><span>Outlet</span></a>
       <a href="/admin/users.html" class="admin-only"><span>👥</span><span>Pengguna</span></a>
@@ -88,11 +88,13 @@
             <th style="text-align:left">Pelanggan</th>
             <th style="text-align:right">Order</th>
             <th style="text-align:right">Total Belanja</th>
+            <th style="text-align:left">Menu Favorit</th>
+            <th style="text-align:left">Outlet Favorit</th>
             <th style="text-align:right">Terakhir Order</th>
           </tr>
         </thead>
         <tbody id="custBody">
-          <tr><td colspan="4" class="report-empty">Memuat…</td></tr>
+          <tr><td colspan="6" class="report-empty">Memuat…</td></tr>
         </tbody>
       </table>
     </div>
@@ -316,6 +318,9 @@ function renderTable() {
     const lastOrder = c.last_order_at
       ? new Date(c.last_order_at).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' })
       : '—';
+    const outletName = c.favorite_outlet_id
+      ? (allOutlets.find(o => o.id === c.favorite_outlet_id)?.name || '—')
+      : '—';
     return `
       <tr style="cursor:pointer" onclick="showCustomerDetail('${c.wa_number}')">
         <td>
@@ -324,6 +329,8 @@ function renderTable() {
         </td>
         <td style="text-align:right;font-weight:600">${c.total_orders || 0}×</td>
         <td style="text-align:right">${formatRupiah(c.total_spent || 0)}</td>
+        <td style="font-size:12px">${escHtml(c.favorite_menu || '—')}</td>
+        <td style="font-size:12px">${escHtml(outletName)}</td>
         <td style="text-align:right;font-size:12px;color:var(--muted)">${lastOrder}</td>
       </tr>`;
   }).join('');
@@ -335,37 +342,19 @@ function escHtml(s) {
 }
 
 // ─── Detail modal ─────────────────────────────────────────────────────────────
-async function showCustomerDetail(waNumber) {
+function showCustomerDetail(waNumber) {
   const c = allCustomers.find(x => x.wa_number === waNumber);
   if (!c) return;
 
-  // Ambil voucher milik customer ini
-  const { data: vouchers } = await window.db
-    .from('vouchers')
-    .select('*')
-    .eq('customer_wa', waNumber)
-    .order('created_at', { ascending: false });
-
-  const vList = (vouchers || []);
   const firstOrder = c.first_order_at
     ? new Date(c.first_order_at).toLocaleDateString('id-ID', { day:'2-digit', month:'long', year:'numeric' })
     : '—';
   const lastOrder = c.last_order_at
     ? new Date(c.last_order_at).toLocaleDateString('id-ID', { day:'2-digit', month:'long', year:'numeric' })
     : '—';
-
-  const voucherHtml = vList.length
-    ? vList.map(v => `
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
-          <div>
-            <div style="font-weight:700;font-family:monospace;letter-spacing:1px">${v.code}</div>
-            <div style="font-size:11px;color:var(--muted)">${escHtml(v.reward_desc)} · Milestone ${v.milestone}×</div>
-          </div>
-          <span style="font-size:11px;padding:2px 8px;border-radius:20px;${v.is_used
-            ? 'background:#f3f4f6;color:var(--muted)'
-            : 'background:#dcfce7;color:#16a34a'}">${v.is_used ? 'Dipakai' : 'Aktif'}</span>
-        </div>`).join('')
-    : '<div style="color:var(--muted);font-size:13px;padding:8px 0">Belum ada voucher.</div>';
+  const outletName = c.favorite_outlet_id
+    ? (allOutlets.find(o => o.id === c.favorite_outlet_id)?.name || '—')
+    : '—';
 
   openAdminModal(`
     <div class="modal-header">
@@ -391,6 +380,14 @@ async function showCustomerDetail(waNumber) {
           <span class="val" style="font-weight:700">${formatRupiah(c.total_spent || 0)}</span>
         </div>
         <div class="info-row">
+          <span class="label">Menu Favorit</span>
+          <span class="val">${escHtml(c.favorite_menu || '—')}</span>
+        </div>
+        <div class="info-row">
+          <span class="label">Outlet Favorit</span>
+          <span class="val">${escHtml(outletName)}</span>
+        </div>
+        <div class="info-row">
           <span class="label">Order Pertama</span>
           <span class="val">${firstOrder}</span>
         </div>
@@ -399,10 +396,7 @@ async function showCustomerDetail(waNumber) {
           <span class="val">${lastOrder}</span>
         </div>
       </div>
-      <div style="margin-top:16px">
-        <div style="font-weight:600;margin-bottom:4px">🎟️ Voucher (${vList.length})</div>
-        ${voucherHtml}
-      </div>
+      <!-- LOYALTY FROZEN: voucher section akan ditampilkan kembali saat Phase 9 dilanjutkan -->
     </div>
   `);
 }
