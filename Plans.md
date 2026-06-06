@@ -278,6 +278,15 @@
 
 ---
 
+## Tech Debt — Perlu Dikerjakan
+
+- [ ] **PRIORITAS** Rename kolom DB: `tripay_reference` → `xendit_payment_id`, `tripay_merchant_ref` → `xendit_reference_id` — nama lama Tripay tapi isi Xendit, membingungkan saat debug. Perlu update: 3 Edge Functions (create-xendit-payment, xendit-webhook, check-xendit-status) + order.html + admin/orders.html
+- [ ] Hapus dead columns dari era transfer manual: `proof_url`, `proof_submitted_at`, `ai_verification_result` di tabel orders
+- [ ] Rename response key `qris_string` → `qris_url` di return value Edge Function create-xendit-payment agar konsisten dengan nama kolom DB
+- [ ] Hapus DB function `generate_order_number()` di 001_schema.sql — dead code, tidak pernah dipanggil karena Edge Function generate order number sendiri
+
+---
+
 ## Pending Owner Input
 - [x] Foto menu items — semua sudah diupload ✅
 - [x] Nomor WA tiap outlet — SQL migration `20260521_outlet_phones.sql` siap, **jalankan di Supabase SQL Editor**
