@@ -31,11 +31,26 @@ function rupiah(n) { return 'Rp ' + Number(n || 0).toLocaleString('id-ID'); }
 
 function promoStatus(p) {
   const now = Date.now();
+
+  // Check is_active first
   if (!p.is_active) return { label: 'Nonaktif', bg: '#f3f4f6', fg: 'var(--muted)' };
-  if (p.start_at && new Date(p.start_at).getTime() > now)
+
+  // Check if expired (time-based)
+  if (p.end_at && new Date(p.end_at).getTime() < now) {
+    return { label: 'Kedaluwarsa', bg: '#f3f4f6', fg: 'var(--muted)' };
+  }
+
+  // Check if quota reached (usage-based)
+  if (p.usage_limit != null && p.usage_count >= p.usage_limit) {
+    return { label: 'Habis', bg: '#fecaca', fg: '#991b1b' };
+  }
+
+  // Check if scheduled (not started yet)
+  if (p.start_at && new Date(p.start_at).getTime() > now) {
     return { label: 'Terjadwal', bg: '#fef3c7', fg: '#b45309' };
-  if (p.end_at && new Date(p.end_at).getTime() < now)
-    return { label: 'Berakhir', bg: '#f3f4f6', fg: 'var(--muted)' };
+  }
+
+  // Active and valid
   return { label: 'Aktif', bg: '#dcfce7', fg: '#16a34a' };
 }
 
@@ -43,6 +58,10 @@ function discountSummary(p) {
   const val = p.discount_type === 'percent' ? `${p.discount_value}%` : rupiah(p.discount_value);
   const parts = [val, `min ${rupiah(p.min_purchase)}`];
   if (p.max_discount != null) parts.push(`maks ${rupiah(p.max_discount)}`);
+  // Add usage display if limit is set
+  if (p.usage_limit != null) {
+    parts.push(`${p.usage_count}/${p.usage_limit} pembeli`);
+  }
   return parts.join(' • ');
 }
 
@@ -103,9 +122,32 @@ function openPromoForm(id) {
       <label class="form-label">Prioritas</label>
       <input id="pPriority" type="number" class="form-input" value="${p ? p.priority : 1}" />
 
+      <label class="form-label">Batas pembeli (opsional)</label>
+      <input id="pLimit" type="number" class="form-input" value="${p && p.usage_limit != null ? p.usage_limit : ''}" placeholder="kosong = unlimited" />
+
       <label style="display:flex;align-items:center;gap:8px;margin-top:12px">
         <input id="pActive" type="checkbox" ${!p || p.is_active ? 'checked':''} /> Aktif
       </label>
+
+      ${p && p.usage_limit != null ? `
+      <div style="margin-top:16px;padding:12px;background:#f0fdf4;border-radius:8px;border:1px solid #dcfce7">
+        <div style="font-weight:700;font-size:12px;margin-bottom:8px">📊 Status Penggunaan</div>
+        <div style="margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+            <span>${p.usage_count} dari ${p.usage_limit} pembeli</span>
+            <span style="color:var(--muted)">${Math.round((p.usage_count / p.usage_limit) * 100)}%</span>
+          </div>
+          <div style="width:100%;height:6px;background:#e5e7eb;border-radius:3px;overflow:hidden">
+            <div style="height:100%;width:${Math.min((p.usage_count / p.usage_limit) * 100, 100)}%;background:#16a34a;transition:width 0.3s"></div>
+          </div>
+        </div>
+        ${p.usage_count >= p.usage_limit ? `
+          <div style="font-size:12px;color:#991b1b">Promo ini sudah mencapai batas pembeli. Tidak ada pembeli baru yang bisa dapat diskon.</div>
+        ` : `
+          <div style="font-size:12px;color:#166534">Promo ini masih berlaku untuk ${p.usage_limit - p.usage_count} pembeli berikutnya.</div>
+        `}
+      </div>
+      ` : ''}
 
       <button class="btn btn-primary" style="width:100%;margin-top:16px" onclick="savePromo('${p ? p.id : ''}')">💾 Simpan</button>
       ${p ? `<button class="btn" style="width:100%;margin-top:8px;color:#dc2626" onclick="deletePromo('${p.id}')">🗑️ Hapus</button>` : ''}
@@ -121,6 +163,8 @@ async function savePromo(id) {
   const startRaw = document.getElementById('pStart').value;
   const endRaw = document.getElementById('pEnd').value;
   const priority = Number(document.getElementById('pPriority').value || 1);
+  const limitRaw = document.getElementById('pLimit').value;
+  const usageLimit = limitRaw === '' ? null : Number(limitRaw);
   const isActive = document.getElementById('pActive').checked;
 
   if (!name) { showToast('Nama promo wajib diisi'); return; }
@@ -135,7 +179,9 @@ async function savePromo(id) {
     max_discount: maxRaw === '' ? null : Number(maxRaw),
     start_at: startRaw ? new Date(startRaw).toISOString() : null,
     end_at: endRaw ? new Date(endRaw).toISOString() : null,
-    priority, is_active: isActive, updated_at: new Date().toISOString(),
+    priority, is_active: isActive,
+    usage_limit: usageLimit,
+    updated_at: new Date().toISOString(),
   };
 
   const q = id
