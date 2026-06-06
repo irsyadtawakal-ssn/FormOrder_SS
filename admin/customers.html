@@ -46,21 +46,21 @@
   <div class="admin-content">
 
     <!-- Tabs -->
-    <div class="chips" style="padding:8px 12px 4px;border-bottom:1px solid var(--border)">
+    <div class="chips" style="border-bottom:1px solid var(--line)">
       <button class="chip active" data-tab="all" onclick="switchTab('all')">Semua Pelanggan</button>
       <button class="chip" data-tab="today" onclick="switchTab('today')">Hari Ini</button>
     </div>
 
     <!-- TAB: All Customers -->
     <div id="tabAll" style="display:block">
-      <!-- Search + stats row -->
-      <div style="padding:8px 12px 4px;display:flex;gap:8px;align-items:center">
+      <!-- Search -->
+      <div style="padding:12px 16px 0">
         <input type="search" id="searchInput" class="form-input" placeholder="Cari nama / WA…"
-               style="flex:1;font-size:13px" oninput="renderTable()" />
+               style="width:100%;font-size:13px" oninput="renderTable()" />
       </div>
 
       <!-- Sort chips -->
-      <div class="chips" style="padding-bottom:4px">
+      <div class="chips">
         <button class="chip active" data-sort="last_order_at" onclick="setSort('last_order_at')">Terbaru</button>
         <button class="chip" data-sort="total_orders" onclick="setSort('total_orders')">Order Terbanyak</button>
         <button class="chip" data-sort="total_spent" onclick="setSort('total_spent')">Pengeluaran</button>
@@ -68,17 +68,17 @@
     </div>
 
     <!-- TAB: Today Orders -->
-    <div id="tabToday" style="display:none;padding:8px 12px 4px">
-      <div style="display:flex;gap:8px;align-items:center">
-        <select id="outletFilterToday" class="form-input" style="flex:0;font-size:13px" onchange="loadTodayOrders()">
+    <div id="tabToday" style="display:none">
+      <div style="padding:12px 16px 0">
+        <select id="outletFilterToday" class="form-input" style="width:100%;font-size:13px" onchange="loadTodayOrders()">
           <option value="">Semua Outlet</option>
         </select>
       </div>
-      <div id="todaySummaryBar" style="padding:4px 0 8px;font-size:12px;color:var(--muted)">—</div>
+      <div id="todaySummaryBar" style="padding:8px 16px;font-size:12px;color:var(--muted)">—</div>
     </div>
 
     <!-- Summary bar (All Customers) -->
-    <div id="summaryBar" style="padding:4px 12px 8px;font-size:12px;color:var(--muted)">—</div>
+    <div id="summaryBar" style="padding:8px 16px;font-size:12px;color:var(--muted)">—</div>
 
     <!-- Table (All Customers) -->
     <div id="allCustomersTable" style="overflow-x:auto;padding-bottom:80px">
