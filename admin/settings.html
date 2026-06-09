@@ -155,7 +155,7 @@ function renderPage() {
         </label>
       </div>
 
-      <div class="form-group" style="margin-bottom:0">
+      <div class="form-group">
         <label class="form-label">Meta Pixel ID</label>
         <input id="pixelId" class="form-input" type="text" inputmode="numeric"
                value="${val('meta_pixel_id', '')}"
@@ -165,9 +165,28 @@ function renderPage() {
         </div>
       </div>
 
-      <button class="btn-add-big" style="width:100%;margin-top:14px" onclick="savePixelId()">
-        Simpan Pixel ID
-      </button>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Meta Access Token</label>
+        <div style="display:flex;gap:8px;align-items:flex-start">
+          <input id="pixelToken" class="form-input" type="password"
+                 placeholder="Tempel token dari Meta Apps"
+                 style="flex:1" />
+          <button class="action-btn action-secondary" style="margin-top:0;white-space:nowrap"
+                  onclick="clearPixelToken()">Hapus</button>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">
+          Token disimpan terenkripsi. <b>Jangan share</b> dengan orang lain.
+        </div>
+        ${val('meta_pixel_token_exists','false') === 'true'
+          ? `<div style="font-size:11px;color:var(--success);margin-top:4px">✅ Token sudah tersimpan (${val('meta_pixel_token_masked','')})</div>`
+          : ''}
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button class="btn-add-big" style="flex:1" onclick="savePixelSettings()">
+          Simpan Pengaturan Pixel
+        </button>
+      </div>
     </div>
 
     <!-- ── Bulk Import ──────────────────────────────────────────── -->
@@ -300,17 +319,68 @@ async function savePixelEnabled(enabled) {
   adminToast('✅ Tersimpan');
 }
 
-async function savePixelId() {
+async function savePixelSettings() {
   const pixelId = document.getElementById('pixelId').value.trim();
+  const pixelToken = document.getElementById('pixelToken').value.trim();
+
+  // Validasi Pixel ID
   if (pixelId && !/^\d{10,20}$/.test(pixelId)) {
     adminToast('❌ Pixel ID tidak valid (10–20 digit angka)'); return;
   }
+
+  // Validasi token (jika ada, harus format Meta token)
+  if (pixelToken && pixelToken.length < 100) {
+    adminToast('❌ Token tidak valid (terlalu pendek)'); return;
+  }
+
+  const upserts = [
+    { key: 'meta_pixel_id', value: pixelId, updated_at: new Date().toISOString() },
+  ];
+
+  // Jika ada token baru, simpan
+  if (pixelToken) {
+    const lastChars = pixelToken.slice(-8);
+    upserts.push({ key: 'meta_pixel_token', value: pixelToken, updated_at: new Date().toISOString() });
+    upserts.push({ key: 'meta_pixel_token_exists', value: 'true', updated_at: new Date().toISOString() });
+    upserts.push({ key: 'meta_pixel_token_masked', value: `...${lastChars}`, updated_at: new Date().toISOString() });
+  }
+
   const { error } = await window.db
     .from('app_settings')
-    .upsert({ key: 'meta_pixel_id', value: pixelId, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+    .upsert(upserts, { onConflict: 'key' });
+
   if (error) { adminToast('❌ ' + error.message); return; }
+
+  // Update state lokal
   settings['meta_pixel_id'] = { key: 'meta_pixel_id', value: pixelId };
-  adminToast(pixelId ? '✅ Pixel ID disimpan' : '✅ Pixel ID dihapus');
+  if (pixelToken) {
+    const lastChars = pixelToken.slice(-8);
+    settings['meta_pixel_token_exists'] = { key: 'meta_pixel_token_exists', value: 'true' };
+    settings['meta_pixel_token_masked'] = { key: 'meta_pixel_token_masked', value: `...${lastChars}` };
+  }
+
+  // Clear input field setelah simpan
+  document.getElementById('pixelToken').value = '';
+  adminToast('✅ Pengaturan Pixel disimpan');
+}
+
+async function clearPixelToken() {
+  if (!confirm('Hapus token Meta? Ini tidak bisa dibatalkan.')) return;
+
+  const { error } = await window.db
+    .from('app_settings')
+    .delete()
+    .in('key', ['meta_pixel_token', 'meta_pixel_token_exists', 'meta_pixel_token_masked']);
+
+  if (error) { adminToast('❌ ' + error.message); return; }
+
+  delete settings['meta_pixel_token'];
+  delete settings['meta_pixel_token_exists'];
+  delete settings['meta_pixel_token_masked'];
+
+  document.getElementById('pixelToken').value = '';
+  renderPage();
+  adminToast('✅ Token dihapus');
 }
 
 // ─── Simpan app_settings ──────────────────────────────────────────────────────
