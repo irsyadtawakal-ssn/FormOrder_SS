@@ -13,19 +13,32 @@ window.sukaPixelTrack = function(event, params) {
 };
 
 (async function initPixel() {
-  if (!window.db) return;
+  if (!window.db) {
+    console.warn('[SUKA Pixel] window.db belum siap — pixel tidak diinisialisasi.');
+    return;
+  }
 
-  const { data } = await window.db
+  const { data, error } = await window.db
     .from('app_settings')
     .select('key, value')
     .in('key', ['meta_pixel_id', 'meta_pixel_enabled']);
 
-  if (!data) return;
+  if (error) {
+    console.warn('[SUKA Pixel] Gagal baca app_settings (cek RLS app_settings_public_select):', error.message);
+    return;
+  }
+  if (!data || data.length === 0) {
+    console.warn('[SUKA Pixel] Setting pixel tidak terbaca. Pastikan meta_pixel_id & meta_pixel_enabled diizinkan di RLS public_select.');
+    return;
+  }
 
   var map = {};
   data.forEach(function(r) { map[r.key] = r.value; });
 
-  if (map.meta_pixel_enabled !== 'true' || !map.meta_pixel_id) return;
+  if (map.meta_pixel_enabled !== 'true' || !map.meta_pixel_id) {
+    console.info('[SUKA Pixel] Pixel nonaktif atau ID kosong (enabled=' + map.meta_pixel_enabled + ').');
+    return;
+  }
 
   var pixelId = map.meta_pixel_id.trim();
   if (!pixelId) return;
