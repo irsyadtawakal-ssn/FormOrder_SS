@@ -58,7 +58,7 @@ serve(async (req) => {
         phone_wa: outlet.phone || '-',
         is_active: outlet.is_active,
         type: outlet.type || 'owned',
-        open_hour: outlet.open_hour ? outlet.open_hour.substring(0, 5) + ':00' : '09:00:00',
+        open_hour: outlet.open_hour ? outlet.open_hour.substring(0, 5) + ':00' : '13:00:00',
         close_hour: outlet.close_hour ? outlet.close_hour.substring(0, 5) + ':00' : '22:00:00',
         pos_outlet_id: outlet.id
       }
