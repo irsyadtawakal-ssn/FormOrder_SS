@@ -6,7 +6,58 @@
 <title>Order Sukashawarma</title>
 <link rel="stylesheet" href="assets/css/style.css?v=7" />
 <link rel="manifest" href="/manifest.json" />
-<meta name="theme-color" content="#f29744" />
+<link rel="theme-color" content="#f29744" />
+<style>
+  /* Animasi Sukses & Redesign UI */
+  @keyframes popIn {
+    0% { transform: scale(0.5); opacity: 0; }
+    70% { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes pulseGlow {
+    0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+    70% { box-shadow: 0 0 0 15px rgba(34, 197, 94, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+  }
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  .lucide-spin { animation: spin 2s linear infinite; }
+  .status-hero.animated {
+    animation: fadeSlideUp 0.6s ease-out forwards;
+  }
+  .status-icon.success-animated {
+    animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, pulseGlow 2s infinite 1s;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: white;
+    border-radius: 50%;
+    width: 64px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    box-shadow: 0 4px 14px rgba(34, 197, 94, 0.3);
+  }
+  .status-icon.animated {
+    animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  }
+  .info-card {
+    animation: fadeSlideUp 0.5s ease-out 0.2s forwards;
+    opacity: 0;
+    animation-fill-mode: forwards;
+  }
+  details {
+    animation: fadeSlideUp 0.5s ease-out 0.3s forwards;
+    opacity: 0;
+    animation-fill-mode: forwards;
+  }
+</style>
 </head>
 <body>
 <div class="phone">
@@ -38,6 +89,10 @@
 
 <!-- QR library (untuk render order number QR di state ready) -->
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
+<!-- Lucide Icons -->
+<script src="https://unpkg.com/lucide@latest"></script>
+<!-- Lucide Icons -->
+<script src="https://unpkg.com/lucide@latest"></script>
 <!-- Supabase SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -59,7 +114,7 @@ const TERMINAL_STATUSES = ['paid', 'done', 'cancelled', 'expired'];
 // Channel groupings — satu sumber kebenaran, dipakai di renderStatus & post-render
 const VA_CHANNELS      = ['BCA', 'BNI', 'BRI', 'MANDIRI'];
 const EWALLET_CHANNELS = ['GOPAY', 'OVO', 'DANA'];
-const EWALLET_ICONS    = { GOPAY: '💚', OVO: '💜', DANA: '💙' };
+const EWALLET_ICONS    = { GOPAY: '<i data-lucide="wallet" color="#00a550"></i>', OVO: '<i data-lucide="wallet" color="#4c3494"></i>', DANA: '<i data-lucide="wallet" color="#118ee9"></i>' };
 
 // Helper — derivasi channel dari order object (field DB atau cache)
 function getChannel(o) { return o._payment_channel || o.payment_channel || 'QRIS'; }
@@ -212,7 +267,7 @@ function renderStatus(o) {
       const _rawLink   = o._ewallet_deeplink || '';
       const ewalletLink= /^(https?:\/\/|gojek:\/\/|ovo:\/\/|dana:\/\/)/.test(_rawLink) ? _rawLink : '';
 
-      const heroIcon  = isQris ? '📱' : isVA ? '🏦' : '💳';
+      const heroIcon  = isQris ? '<i data-lucide="qr-code"></i>' : isVA ? '<i data-lucide="building-2"></i>' : '<i data-lucide="credit-card"></i>';
       const heroTitle = isQris ? 'Scan QRIS untuk Bayar'
                       : isVA   ? `Transfer ke Virtual Account ${vaBank}`
                       :          `Bayar via ${channel}`;
@@ -221,8 +276,8 @@ function renderStatus(o) {
                       :          `Tap tombol di bawah untuk buka aplikasi ${channel}`;
 
       heroHtml = `
-        <div class="status-hero">
-          <div class="status-icon">${heroIcon}</div>
+        <div class="status-hero animated">
+          <div class="status-icon animated" style="color:var(--brand)">${heroIcon}</div>
           <div class="status-title">${heroTitle}</div>
           <div class="status-sub">${heroSub}</div>
           <span class="status-chip status-pending">BELUM BAYAR</span>
@@ -247,7 +302,7 @@ function renderStatus(o) {
             </button>
           </div>
           <div style="margin:0 12px 10px;padding:10px 14px;background:#fef9c3;border-radius:10px;font-size:12px;line-height:1.8;color:#854d0e">
-            📱 <b>Cara bayar:</b> Buka m-banking / GoPay / OVO / DANA → Scan QR → Konfirmasi <b>${formatRupiah(o.total)}</b>
+            <div style="display:flex;gap:8px;align-items:flex-start"><i data-lucide="smartphone" style="width:16px;height:16px;flex-shrink:0;margin-top:2px"></i> <span><b>Cara bayar:</b> Buka m-banking / GoPay / OVO / DANA → Scan QR → Konfirmasi <b>${formatRupiah(o.total)}</b>
           </div>`;
       }
 
@@ -260,7 +315,7 @@ function renderStatus(o) {
         };
         paymentContent = `
           <div class="info-card">
-            <div style="font-weight:700;font-size:14px;margin-bottom:10px">🏦 Virtual Account ${vaBank}</div>
+            <div style="font-weight:700;font-size:14px;margin-bottom:10px"><i data-lucide="building-2" style="width:16px;height:16px;vertical-align:text-bottom;display:inline-block"></i> Virtual Account ${vaBank}</div>
             <div class="info-row">
               <span class="label">Bank</span>
               <span class="val" style="font-weight:700">${vaBank}</span>
@@ -279,12 +334,12 @@ function renderStatus(o) {
               <span class="val" style="font-size:18px;font-weight:800;color:var(--brand)">${formatRupiah(o.total)}</span>
             </div>
             <div style="margin-top:12px;font-size:12px;color:var(--muted);line-height:1.6;background:var(--bg);padding:10px;border-radius:8px">
-              📋 <b>Cara bayar:</b> ${bankInstructions[vaBank] || `m-Banking ${vaBank} → Virtual Account`}
-            </div>
+              <div style="display:flex;gap:8px;align-items:flex-start"><i data-lucide="clipboard-type" style="width:16px;height:16px;flex-shrink:0;margin-top:2px"></i> <span><b>Cara bayar:</b> ${bankInstructions[vaBank] || `m-Banking ${vaBank} → Virtual Account`}
+            </span></div>
           </div>
           <div style="margin:0 12px 10px;padding:10px 14px;background:var(--brand-bg);border-radius:10px;font-size:12px;line-height:1.6;color:var(--ink2)">
-            ⚠️ Transfer <b>tepat ${formatRupiah(o.total)}</b> — nominal harus sama persis
-          </div>
+            <div style="display:flex;gap:8px;align-items:flex-start"><i data-lucide="alert-triangle" style="width:16px;height:16px;flex-shrink:0;margin-top:2px"></i> <span>Transfer <b>tepat ${formatRupiah(o.total)}</b> — nominal harus sama persis
+          </span></div>
           <div style="margin:0 12px 10px">
             <div style="font-size:12px;color:var(--muted);margin-bottom:6px" id="countdown">Menghitung waktu…</div>
             <button id="btnCekStatus" class="btn-add-big" onclick="doCekStatus()"
@@ -297,7 +352,7 @@ function renderStatus(o) {
       if (isEwallet) {
         paymentContent = `
           <div class="info-card" style="text-align:center">
-            <div style="font-size:48px;margin-bottom:8px">${EWALLET_ICONS[channel] ?? '💳'}</div>
+            <div style="font-size:48px;margin-bottom:8px">${EWALLET_ICONS[channel] ?? '<i data-lucide="credit-card" style="width:16px;height:16px;vertical-align:text-bottom;display:inline-block"></i>'}</div>
             <div style="font-size:22px;font-weight:800;color:var(--brand);margin-bottom:4px">${formatRupiah(o.total)}</div>
             <div style="font-size:12px;color:var(--muted);margin-bottom:16px" id="countdown">Menghitung waktu…</div>
             ${ewalletLink
@@ -315,7 +370,7 @@ function renderStatus(o) {
 
       extraHtml = paymentContent + `
         <div style="margin:0 12px 12px;padding:10px 14px;background:#e0f2fe;border-radius:10px;font-size:12px;line-height:1.5;color:#075985">
-          🔒 <b>Jangan tutup tab ini</b> sampai status berubah jadi "Pembayaran Dikonfirmasi"
+          <div style="display:flex;gap:8px;align-items:flex-start"><i data-lucide="lock" style="width:16px;height:16px;flex-shrink:0;margin-top:2px"></i> <span><b>Jangan tutup tab ini</b> sampai status berubah jadi "Pembayaran Dikonfirmasi"
         </div>`;
       break;
     }
@@ -328,8 +383,8 @@ function renderStatus(o) {
         sukaPixelTrack('Purchase', { value: o.total, currency: 'IDR', order_id: o.order_number });
       }
       heroHtml = `
-        <div class="status-hero">
-          <div class="status-icon">✅</div>
+        <div class="status-hero animated">
+          <div class="status-icon success-animated"><i data-lucide="check" style="width:40px;height:40px"></i></div>
           <div class="status-title">Pembayaran Dikonfirmasi!</div>
           <div class="status-sub">Pembayaran ${payLabel} berhasil — outlet sedang menyiapkan pesananmu</div>
           <span class="status-chip status-paid">DIKONFIRMASI</span>
@@ -339,8 +394,8 @@ function renderStatus(o) {
 
     case 'preparing':
       heroHtml = `
-        <div class="status-hero">
-          <div class="status-icon">👨‍🍳</div>
+        <div class="status-hero animated">
+          <div class="status-icon animated" style="color:#ea580c"><i data-lucide="chef-hat" style="width:40px;height:40px"></i></div>
           <div class="status-title">Sedang Disiapkan</div>
           <div class="status-sub">Outlet sedang memproses pesananmu</div>
           <span class="status-chip status-preparing">DIPROSES</span>
@@ -349,8 +404,8 @@ function renderStatus(o) {
 
     case 'ready':
       heroHtml = `
-        <div class="status-hero">
-          <div class="status-icon">🎉</div>
+        <div class="status-hero animated">
+          <div class="status-icon animated" style="color:#0284c7"><i data-lucide="party-popper" style="width:40px;height:40px"></i></div>
           <div class="status-title">Pesanan Siap Diambil!</div>
           <div class="status-sub">Tunjukkan kode ini ke kasir</div>
           <span class="status-chip status-ready">SIAP DIAMBIL</span>
@@ -367,8 +422,8 @@ function renderStatus(o) {
 
     case 'done':
       heroHtml = `
-        <div class="status-hero">
-          <div class="status-icon">🌯</div>
+        <div class="status-hero animated">
+          <div class="status-icon animated" style="color:#16a34a"><i data-lucide="shopping-bag" style="width:40px;height:40px"></i></div>
           <div class="status-title">Selesai!</div>
           <div class="status-sub">Terima kasih sudah pesan di SUKA Shawarma</div>
           <span class="status-chip status-done">SELESAI</span>
@@ -384,8 +439,8 @@ function renderStatus(o) {
 
     case 'cancelled':
       heroHtml = `
-        <div class="status-hero">
-          <div class="status-icon">❌</div>
+        <div class="status-hero animated">
+          <div class="status-icon animated" style="color:#dc2626"><i data-lucide="x-circle" style="width:40px;height:40px"></i></div>
           <div class="status-title">Pesanan Dibatalkan</div>
           <div class="status-sub">${escHtml(o.cancel_reason) || 'Pesanan dibatalkan oleh outlet'}</div>
           <span class="status-chip status-cancelled">DIBATALKAN</span>
@@ -404,8 +459,8 @@ function renderStatus(o) {
 
     case 'expired':
       heroHtml = `
-        <div class="status-hero">
-          <div class="status-icon">⌛</div>
+        <div class="status-hero animated">
+          <div class="status-icon animated" style="color:#d97706"><i data-lucide="hourglass" style="width:40px;height:40px"></i></div>
           <div class="status-title">Pesanan Kedaluwarsa</div>
           <div class="status-sub">Waktu pembayaran habis. Silakan pesan ulang.</div>
           <span class="status-chip status-expired">KEDALUWARSA</span>
@@ -422,8 +477,8 @@ function renderStatus(o) {
 
     default:
       heroHtml = `
-        <div class="status-hero">
-          <div class="status-icon">🔄</div>
+        <div class="status-hero animated">
+          <div class="status-icon animated" style="color:var(--muted)"><i data-lucide="loader-2" class="lucide-spin" style="width:40px;height:40px"></i></div>
           <div class="status-title">Memproses…</div>
           <div class="status-sub">Mohon tunggu sebentar</div>
         </div>`;
@@ -445,7 +500,7 @@ function renderStatus(o) {
         <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:5px 0;font-size:13px">
           <div style="flex:1;min-width:0">
             <span style="font-weight:600">${it.quantity}× ${escHtml(it.item_name)}</span>
-            ${it.note ? `<div style="font-size:11px;color:var(--muted);margin-top:1px">📝 ${escHtml(it.note)}</div>` : ''}
+            ${it.note ? `<div style="font-size:11px;color:var(--muted);margin-top:1px"><i data-lucide="pencil" style="width:12px;height:12px;vertical-align:text-bottom"></i> ${escHtml(it.note)}</div>` : ''}
           </div>
           <span style="font-weight:700;white-space:nowrap;margin-left:10px">${formatRupiah(it.unit_price * it.quantity)}</span>
         </div>`).join('')}
@@ -454,7 +509,7 @@ function renderStatus(o) {
   const infoHtml = `
     <details style="margin:0 12px 12px;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden">
       <summary style="padding:12px 14px;font-weight:700;font-size:13px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;list-style:none;-webkit-appearance:none">
-        <span>📋 Detail Pesanan</span>
+        <span style="display:flex;align-items:center;gap:6px"><i data-lucide="clipboard-list" style="width:16px;height:16px"></i> Detail Pesanan</span>
         <span style="font-size:11px;color:var(--muted);font-weight:500">Lihat ▾</span>
       </summary>
       <div style="padding:0 14px 12px;border-top:1px solid var(--line)">
@@ -489,6 +544,7 @@ function renderStatus(o) {
     <div style="height:32px"></div>`;
 
   document.getElementById('pageContent').innerHTML = heroHtml + extraHtml + infoHtml;
+  if (window.lucide) { lucide.createIcons(); }
 
   // Post-render hooks per status
   if (o.status === 'ready') {
@@ -527,7 +583,7 @@ function copyVA(vaNumber) {
   navigator.clipboard.writeText(vaNumber).then(() => {
     const btn = document.getElementById('btnCopyVA');
     if (!btn) return;
-    btn.textContent = '✅ Disalin!';
+    btn.textContent = '<i data-lucide="check-circle-2" style="width:14px;height:14px;color:var(--green);vertical-align:text-bottom;display:inline-block"></i> Disalin!';
     btn.style.background = '#f0fdf4';
     btn.style.color = '#16a34a';
     setTimeout(() => {
@@ -603,7 +659,7 @@ async function doCekStatus() {
     } else {
       showToast(result.status === 'pending_payment'
         ? '⏳ Pembayaran belum terdeteksi. Tunggu sebentar.'
-        : '✅ Status diperbarui');
+        : '<i data-lucide="check-circle-2" style="width:14px;height:14px;color:var(--green);vertical-align:text-bottom;display:inline-block"></i> Status diperbarui');
     }
   } catch (err) {
     showToast('Gagal cek status. Coba lagi.');

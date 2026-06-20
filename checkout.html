@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="assets/css/style.css?v=7" />
 <link rel="manifest" href="/manifest.json" />
 <meta name="theme-color" content="#f29744" />
+<script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
 <div class="phone">
@@ -59,6 +60,7 @@
 <div class="toast" id="toast"></div>
 
 <!-- Scripts -->
+<script src="https://unpkg.com/lucide@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script src="assets/js/supabase.js"></script>
@@ -71,15 +73,15 @@ let selectedChannel = 'QRIS'; // default
 
 const PAYMENT_CHANNELS = [
   { group: 'QRIS',            channels: [
-    { id: 'QRIS',    label: 'QRIS',    icon: '📱', desc: 'Scan QR — semua bank & e-wallet • Biaya admin 0.63%' },
+    { id: 'QRIS',    label: 'QRIS',    icon: '<i data-lucide="qr-code"></i>', desc: 'Scan QR — semua bank & e-wallet • Biaya admin 0.63%' },
   ]},
   { group: 'Virtual Account', channels: [
-    { id: 'BNI',     label: 'BNI',     icon: '🏦', desc: 'Virtual Account BNI • Biaya admin Rp 4.000' },
-    { id: 'BRI',     label: 'BRI',     icon: '🏦', desc: 'Virtual Account BRI • Biaya admin Rp 4.000' },
-    { id: 'MANDIRI', label: 'Mandiri', icon: '🏦', desc: 'Virtual Account Mandiri • Biaya admin Rp 4.000' },
-    { id: 'BJB',     label: 'BJB',     icon: '🏦', desc: 'Virtual Account BJB • Biaya admin Rp 4.000' },
-    { id: 'BSI',     label: 'BSI',     icon: '🏦', desc: 'Virtual Account BSI • Biaya admin Rp 4.000' },
-    { id: 'CIMB',    label: 'CIMB',    icon: '🏦', desc: 'Virtual Account CIMB • Biaya admin Rp 4.000' },
+    { id: 'BNI',     label: 'BNI',     icon: '<i data-lucide="building-2"></i>', desc: 'Virtual Account BNI • Biaya admin Rp 4.000' },
+    { id: 'BRI',     label: 'BRI',     icon: '<i data-lucide="building-2"></i>', desc: 'Virtual Account BRI • Biaya admin Rp 4.000' },
+    { id: 'MANDIRI', label: 'Mandiri', icon: '<i data-lucide="building-2"></i>', desc: 'Virtual Account Mandiri • Biaya admin Rp 4.000' },
+    { id: 'BJB',     label: 'BJB',     icon: '<i data-lucide="building-2"></i>', desc: 'Virtual Account BJB • Biaya admin Rp 4.000' },
+    { id: 'BSI',     label: 'BSI',     icon: '<i data-lucide="building-2"></i>', desc: 'Virtual Account BSI • Biaya admin Rp 4.000' },
+    { id: 'CIMB',    label: 'CIMB',    icon: '<i data-lucide="building-2"></i>', desc: 'Virtual Account CIMB • Biaya admin Rp 4.000' },
   ]},
 ];
 
@@ -129,7 +131,7 @@ function renderPage() {
       <span class="n">
         <b>${item.qty}× ${item.name}</b>
         ${sel ? `<br/><span style="color:var(--muted);font-size:12px">${sel}</span>` : ''}
-        ${item.note ? `<br/><span style="color:var(--muted);font-size:12px">📝 ${escHtml(item.note)}</span>` : ''}
+        ${item.note ? `<br/><span style="color:var(--muted);font-size:12px"><i data-lucide="pencil" style="width:12px;height:12px;vertical-align:text-bottom"></i> ${escHtml(item.note)}</span>` : ''}
       </span>
       <span style="text-align:right;white-space:nowrap">${formatRupiah(item.unitPrice * item.qty)}</span>
     </div>`;
@@ -139,7 +141,7 @@ function renderPage() {
 
     <!-- Outlet -->
     <div class="info-card" style="margin-top:12px">
-      <div style="font-weight:700;font-size:14px;margin-bottom:8px">📍 Outlet Pickup</div>
+      <div style="font-weight:700;font-size:14px;margin-bottom:8px"><i data-lucide="store" style="width:16px;height:16px;vertical-align:text-bottom"></i> Outlet Pickup</div>
       <div class="info-row">
         <span class="label">Outlet</span>
         <span class="val">${outletName}</span>
@@ -152,7 +154,7 @@ function renderPage() {
 
     <!-- Data pemesan -->
     <div class="info-card">
-      <div style="font-weight:700;font-size:14px;margin-bottom:8px">👤 Data Pemesan</div>
+      <div style="font-weight:700;font-size:14px;margin-bottom:8px"><i data-lucide="user" style="width:16px;height:16px;vertical-align:text-bottom"></i> Data Pemesan</div>
       <div class="info-row">
         <span class="label">Nama</span>
         <span class="val">${customerName}</span>
@@ -173,7 +175,7 @@ function renderPage() {
 
     <!-- Ringkasan pesanan -->
     <div class="info-card">
-      <div style="font-weight:700;font-size:14px;margin-bottom:10px">🍽 Pesanan</div>
+      <div style="font-weight:700;font-size:14px;margin-bottom:10px"><i data-lucide="utensils" style="width:16px;height:16px;vertical-align:text-bottom"></i> Pesanan</div>
       <div class="summary-box" style="margin-bottom:0">
         ${itemsHtml}
         <div class="summary-row total">
@@ -184,14 +186,14 @@ function renderPage() {
 
     <!-- Rincian harga -->
     <div class="info-card">
-      <div style="font-weight:700;font-size:14px;margin-bottom:8px">💰 Total Pembayaran</div>
+      <div style="font-weight:700;font-size:14px;margin-bottom:8px"><i data-lucide="receipt" style="width:16px;height:16px;vertical-align:text-bottom"></i> Total Pembayaran</div>
       ${previewDiscount > 0 ? `
       <div class="info-row">
         <span class="label">Subtotal</span>
         <span class="val">${formatRupiah(subtotal)}</span>
       </div>
       <div class="info-row" style="color:#16a34a">
-        <span class="label">🏷️ Diskon${previewPromoName ? ' — ' + escHtml(previewPromoName) : ''}</span>
+        <span class="label"><i data-lucide="tag" style="width:14px;height:14px;vertical-align:text-bottom"></i> Diskon${previewPromoName ? ' — ' + escHtml(previewPromoName) : ''}</span>
         <span class="val" style="color:#16a34a">−${formatRupiah(previewDiscount)}</span>
       </div>` : ''}
       <div class="info-row" style="padding-top:4px">
@@ -202,7 +204,7 @@ function renderPage() {
 
     <!-- Pilih metode bayar -->
     <div class="info-card">
-      <div style="font-weight:700;font-size:14px;margin-bottom:12px">💳 Metode Pembayaran</div>
+      <div style="font-weight:700;font-size:14px;margin-bottom:12px"><i data-lucide="credit-card" style="width:16px;height:16px;vertical-align:text-bottom"></i> Metode Pembayaran</div>
       ${PAYMENT_CHANNELS.map(group => `
         <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:10px 0 6px">${group.group}</div>
         <div style="display:flex;flex-direction:column;gap:6px">
@@ -224,15 +226,15 @@ function renderPage() {
     <!-- Cek ulang sebelum konfirmasi -->
     <div style="margin:0 12px 12px;border-radius:12px;overflow:hidden;border:2px solid var(--brand)">
       <div style="background:var(--brand);padding:10px 14px;display:flex;align-items:center;gap:8px">
-        <span style="font-size:18px">⚠️</span>
+        <span style="font-size:18px"><i data-lucide="alert-triangle" style="width:20px;height:20px"></i></span>
         <span style="font-weight:800;font-size:13px;color:#fff;letter-spacing:.3px">PASTIKAN SEMUA SUDAH BENAR</span>
       </div>
       <div style="background:var(--brand-bg);padding:12px 14px">
         <div style="font-size:12px;color:var(--ink2);line-height:1.8;display:flex;flex-direction:column;gap:4px">
-          <div>✅ <b>Nama</b> dan <b>nomor WhatsApp</b> sudah benar</div>
-          <div>✅ <b>Outlet</b> yang dipilih sudah sesuai</div>
-          <div>✅ <b>Waktu ambil</b> sudah tepat</div>
-          <div>✅ <b>Menu & jumlah</b> pesanan sudah sesuai</div>
+          <div><i data-lucide="check-circle-2" style="width:14px;height:14px;color:var(--green);vertical-align:text-bottom"></i> <b>Nama</b> dan <b>nomor WhatsApp</b> sudah benar</div>
+          <div><i data-lucide="check-circle-2" style="width:14px;height:14px;color:var(--green);vertical-align:text-bottom"></i> <b>Outlet</b> yang dipilih sudah sesuai</div>
+          <div><i data-lucide="check-circle-2" style="width:14px;height:14px;color:var(--green);vertical-align:text-bottom"></i> <b>Waktu ambil</b> sudah tepat</div>
+          <div><i data-lucide="check-circle-2" style="width:14px;height:14px;color:var(--green);vertical-align:text-bottom"></i> <b>Menu & jumlah</b> pesanan sudah sesuai</div>
         </div>
         <div style="margin-top:10px;font-size:11px;color:var(--muted);line-height:1.5">
           Instruksi pembayaran akan muncul setelah konfirmasi sesuai metode yang dipilih.
@@ -244,6 +246,7 @@ function renderPage() {
 
     <div style="height:140px"></div>
   `;
+  if (window.lucide) { lucide.createIcons(); }
 
   // Terapkan state awal melalui selectChannel — konsisten dengan interaksi berikutnya
   selectChannel(selectedChannel);
@@ -307,7 +310,7 @@ async function doCheckout() {
     document.getElementById('loadingOverlay').style.display = 'none';
     btnBayar.disabled = false;
     isSubmitting = false;
-    showToast('❌ ' + (err.message || 'Gagal memproses pesanan. Coba lagi.'), 4000);
+    showToast('<i data-lucide="x-circle" style="width:14px;height:14px;vertical-align:text-bottom"></i> ' + (err.message || 'Gagal memproses pesanan. Coba lagi.'), 4000);
   }
 }
 
@@ -354,6 +357,7 @@ if (!checkoutData || !checkoutData.cart || !checkoutData.cart.length) {
       <p>Data pesanan tidak ditemukan.<br/>Silakan kembali dan coba lagi.</p>
       <button class="btn-retry" onclick="window.location.href='index.html'">Ke Halaman Utama</button>
     </div>`;
+  if (window.lucide) { lucide.createIcons(); }
 } else {
   const subtotal = getCartTotal(checkoutData.cart);
   fetchPromoPreview(subtotal).then(() => {
@@ -363,5 +367,6 @@ if (!checkoutData || !checkoutData.cart || !checkoutData.cart.length) {
 }
 </script>
 <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
+<script>if(window.lucide) { lucide.createIcons(); }</script>
 </body>
 </html>

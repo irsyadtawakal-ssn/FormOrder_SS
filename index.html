@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="assets/css/style.css?v=7" />
 <link rel="manifest" href="/manifest.json" />
 <meta name="theme-color" content="#f29744" />
+<script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
 <div class="phone">
@@ -27,7 +28,7 @@
     </div>
     <button class="how-to-btn" style="position:relative"
             onclick="document.getElementById('howToModal').style.display='flex'">
-      ℹ️ Cara Pesan
+      <i data-lucide="info" style="width:16px;height:16px;display:inline-block;vertical-align:text-bottom;margin-right:4px"></i> Cara Pesan
     </button>
   </div>
 
@@ -35,7 +36,7 @@
   <div class="modal-overlay" id="howToModal" style="display:none" onclick="if(event.target===this)this.style.display='none'">
     <div class="modal-box how-to-box">
       <button class="modal-close" style="position:absolute;top:10px;right:12px"
-              onclick="document.getElementById('howToModal').style.display='none'">✕</button>
+              onclick="document.getElementById('howToModal').style.display='none'"><i data-lucide="x" style="width:16px;height:16px"></i></button>
       <div class="how-to-steps" style="padding-top:20px">
         <div class="how-to-step">
           <div class="how-to-num">1</div>
@@ -69,7 +70,7 @@
           <div class="how-to-num">5</div>
           <div>
             <div class="how-to-title">Ambil Pesanan</div>
-            <div class="how-to-desc">Setelah pembayaran dikonfirmasi, datang ke outlet sesuai waktu pickup yang dipilih. 🎉</div>
+            <div class="how-to-desc">Setelah pembayaran dikonfirmasi, datang ke outlet sesuai waktu pickup yang dipilih. <i data-lucide="party-popper" style="width:16px;height:16px;vertical-align:text-bottom;display:inline-block"></i></div>
           </div>
         </div>
       </div>
@@ -80,7 +81,7 @@
   <div class="outlet-sel-wrap">
     <div class="outlet-sel" id="outletSel" onclick="toggleOutletDropdown()">
       <div class="outlet-sel-left">
-        <span class="outlet-sel-icon">📍</span>
+        <span class="outlet-sel-icon"><i data-lucide="map-pin" style="width:20px;height:20px"></i></span>
         <div>
           <div class="outlet-sel-label">Pickup di</div>
           <div class="outlet-sel-name" id="outletSelName">Memuat…</div>
@@ -108,7 +109,7 @@
 
   <!-- Banner pemulihan pesanan pending -->
   <div id="pendingOrderBanner" style="display:none;padding:10px 14px;background:#fef9c3;border-bottom:1px solid #f0e68c;font-size:13px;color:#854d0e;display:none;align-items:center;gap:10px">
-    <span style="flex:1;line-height:1.4">⚠️ <b>Pesanan belum selesai</b> — belum upload bukti transfer?</span>
+    <span style="flex:1;line-height:1.4"><i data-lucide="alert-triangle" style="width:16px;height:16px;vertical-align:middle;margin-right:4px"></i> <b>Pesanan belum selesai</b> — belum upload bukti transfer?</span>
     <a id="pendingOrderLink" href="#" style="flex-shrink:0;padding:6px 12px;background:#854d0e;color:#fff;border-radius:8px;font-weight:700;font-size:12px;text-decoration:none;white-space:nowrap">
       Upload →
     </a>
@@ -219,6 +220,7 @@
 <div class="toast" id="toast"></div>
 
 <!-- Scripts -->
+<script src="https://unpkg.com/lucide@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script src="assets/js/supabase.js"></script>
@@ -341,9 +343,9 @@ function renderOutletDropdownItems(outlets) {
         </div>
         ${o.address ? `
         <div class="outlet-drop-addr">
-          📍 ${escHtml(o.address)}
+          <i data-lucide="map-pin" style="width:12px;height:12px;vertical-align:text-bottom"></i> ${escHtml(o.address)}
           <a class="outlet-drop-maps" href="${mapsUrl}" target="_blank"
-             onclick="event.stopPropagation()">🗺 Maps</a>
+             onclick="event.stopPropagation()"><i data-lucide="map" style="width:12px;height:12px;vertical-align:text-bottom"></i> Maps</a>
         </div>` : ''}
       </div>`;
   }).join('');
@@ -390,6 +392,7 @@ async function selectOutlet(slug) {
   // Reset menu state
   activeCategory = 'Semua';
   document.getElementById('menuContent').innerHTML = '';
+  if (window.lucide) { lucide.createIcons(); }
   document.getElementById('tabs').style.display = 'none';
   document.getElementById('searchWrap').style.display = 'none';
 
@@ -409,6 +412,7 @@ async function loadMenu() {
 
   if (outletErr || !outletData) {
     document.getElementById('menuContent').innerHTML = `<div class="error-box"><p>Outlet tidak ditemukan.</p></div>`;
+  if (window.lucide) { lucide.createIcons(); }
     return;
   }
 
@@ -431,6 +435,7 @@ async function loadMenu() {
 
   if (catRes.error || itemRes.error) {
     document.getElementById('menuContent').innerHTML = `<div class="error-box"><p>Gagal memuat menu. Coba lagi.</p></div>`;
+  if (window.lucide) { lucide.createIcons(); }
     return;
   }
 
@@ -496,7 +501,7 @@ function showMenuSkeleton() {
 
 // ─── Render tabs ──────────────────────────────────────────────────────────────
 function renderTabs() {
-  const allCats = ['Semua', '⭐ Best Seller', ...menuData.map(c => c.name)];
+  const allCats = ['Semua', '<i data-lucide="star" style="width:14px;height:14px;vertical-align:text-bottom;fill:currentColor"></i> Best Seller', ...menuData.map(c => c.name)];
   document.getElementById('tabs').innerHTML = allCats.map(c =>
     `<div class="tab ${c === activeCategory ? 'active' : ''}" onclick="setCategory('${c.replace(/'/g, "\\'")}')">${c}</div>`
   ).join('');
@@ -519,8 +524,8 @@ function renderMenu() {
   let sections = menuData.map(cat => ({
     ...cat,
     items: cat.items.filter(item => {
-      if (activeCategory === '⭐ Best Seller' && !item.is_best_seller) return false;
-      if (activeCategory !== 'Semua' && activeCategory !== '⭐ Best Seller' && cat.name !== activeCategory) return false;
+      if (activeCategory === '<i data-lucide="star" style="width:14px;height:14px;vertical-align:text-bottom;fill:currentColor"></i> Best Seller' && !item.is_best_seller) return false;
+      if (activeCategory !== 'Semua' && activeCategory !== '<i data-lucide="star" style="width:14px;height:14px;vertical-align:text-bottom;fill:currentColor"></i> Best Seller' && cat.name !== activeCategory) return false;
       if (q && !item.name.toLowerCase().includes(q) && !(item.description || '').toLowerCase().includes(q)) return false;
       return true;
     })
@@ -529,7 +534,7 @@ function renderMenu() {
   if (!sections.length) {
     document.getElementById('menuContent').innerHTML = `
       <div class="empty">
-        <div class="empty-icon">🍽️</div>
+        <div class="empty-icon"><i data-lucide="utensils" style="width:40px;height:40px;margin:0 auto"></i></div>
         <div class="empty-title">Menu tidak ditemukan</div>
         <div class="empty-desc">Coba kata kunci lain.</div>
       </div>`;
@@ -549,7 +554,7 @@ function renderMenu() {
         <div class="deal-card ${!item.isAvailable ? 'unavailable' : ''}" onclick="${clickFn}">
           <div class="deal-img-wrap">
             <div class="deal-img">
-              ${item.photo_url ? `<img src="${item.photo_url}" alt="${escHtml(item.name)}" loading="lazy" />` : '🌯'}
+              ${item.photo_url ? `<img src="${item.photo_url}" alt="${escHtml(item.name)}" loading="lazy" />` : '<i data-lucide="sandwich" style="width:40px;height:40px;color:var(--faint)"></i>'}
             </div>
             ${item.is_best_seller ? `<span class="deal-img-badge">BEST SELLER</span>` : ''}
             ${!item.isAvailable ? `<span class="deal-img-badge sold-out">HABIS</span>` : ''}
@@ -605,7 +610,7 @@ function openItemSheet(itemId) {
 function renderItemSheet() {
   let html = `
     <div class="item-hero">
-      ${currentItem.photo_url ? `<img src="${currentItem.photo_url}" alt="${currentItem.name}" />` : '🌯'}
+      ${currentItem.photo_url ? `<img src="${currentItem.photo_url}" alt="${currentItem.name}" />` : '<i data-lucide="sandwich" style="width:40px;height:40px;color:var(--faint)"></i>'}
     </div>
     ${currentItem.description ? `<p style="color:var(--muted);font-size:14px;margin:0 0 18px">${escHtml(currentItem.description)}</p>` : ''}`;
 
@@ -644,6 +649,7 @@ function renderItemSheet() {
     </div>`;
 
   document.getElementById('sheetItemBody').innerHTML = html;
+  if (window.lucide) { lucide.createIcons(); }
   updateSheetPrice();
 }
 
@@ -717,7 +723,7 @@ function addToCart() {
   setCart(outletSlug, cart);
   updateCartBar();
   closeAllSheets();
-  showToast('✓ ' + currentItem.name + ' ditambahkan');
+  showToast('<i data-lucide="check" style="width:14px;height:14px;vertical-align:text-bottom;display:inline-block"></i> ' + currentItem.name + ' ditambahkan');
   sukaPixelTrack('AddToCart', { content_name: currentItem.name, value: unitPrice * currentQty, currency: 'IDR' });
 }
 
@@ -750,7 +756,7 @@ function renderCartSheet() {
       <span class="n">
         <b>${item.qty}× ${item.name}</b>
         ${sel ? `<br/><span style="color:var(--muted);font-size:12px">${sel}</span>` : ''}
-        ${item.note ? `<br/><span style="color:var(--muted);font-size:12px">📝 ${item.note}</span>` : ''}
+        ${item.note ? `<br/><span style="color:var(--muted);font-size:12px"><i data-lucide="pencil" style="width:12px;height:12px;vertical-align:text-bottom"></i> ${item.note}</span>` : ''}
       </span>
       <span style="text-align:right;white-space:nowrap">
         ${formatRupiah(item.unitPrice * item.qty)}
@@ -762,6 +768,7 @@ function renderCartSheet() {
   html += '</div>';
 
   document.getElementById('cartItems').innerHTML = html;
+  if (window.lucide) { lucide.createIcons(); }
   document.getElementById('checkoutTotal').textContent = formatRupiah(subtotal);
 }
 
@@ -836,5 +843,6 @@ function closeAllSheets() {
 }
 </script>
 <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
+<script>if(window.lucide) { lucide.createIcons(); }</script>
 </body>
 </html>
