@@ -12,6 +12,12 @@
       "runtimeExecutable": "python",
       "runtimeArgs": ["-m", "http.server", "7789"],
       "port": 7789
+    },
+    {
+      "name": "node-static-preview",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-l", "7790"],
+      "port": 7790
     }
   ]
 }

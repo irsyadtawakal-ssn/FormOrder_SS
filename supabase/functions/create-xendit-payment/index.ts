@@ -396,8 +396,12 @@ serve(async (req: Request) => {
   const total = afterDiscount + serviceFee;
 
   // ─── Xendit credentials ───────────────────────────────────────────────────
+  // Mode simulasi: dipakai di staging saat XENDIT_SECRET_KEY belum di-set.
+  // JANGAN aktifkan SIMULATE_PAYMENTS di production.
   const xenditSecretKey = Deno.env.get("XENDIT_SECRET_KEY");
-  if (!xenditSecretKey) {
+  const simulateMode = !xenditSecretKey && Deno.env.get("SIMULATE_PAYMENTS") === "true";
+
+  if (!xenditSecretKey && !simulateMode) {
     console.error("XENDIT_SECRET_KEY belum dikonfigurasi");
     return json({ error: "Layanan pembayaran belum tersedia. Hubungi admin." }, 503);
   }
@@ -483,66 +487,90 @@ serve(async (req: Request) => {
     return json({ error: "Gagal menyimpan detail order. Silakan coba lagi." }, 500);
   }
 
-  // ─── Call Xendit Payment Request API ─────────────────────────────────────
-  const xenditAuth = "Basic " + btoa(xenditSecretKey + ":");
-  const xenditPaymentMethod = buildXenditPaymentMethod(
-    channel, customer_name.trim(), expiredAt, frontendUrl, orderNum,
-  );
+  // ─── Call Xendit Payment Request API (atau simulasi di staging) ──────────
+  let paymentRequestId: string | null;
+  let qrisString: string | null;
+  let vaNumber: string | null;
+  let vaBank: string | null;
+  let ewalletDeeplink: string | null;
 
-  let xenditResponse: Record<string, unknown> | null = null;
+  if (simulateMode) {
+    // Mode simulasi — tidak ada panggilan ke Xendit, generate data dummy
+    console.warn("SIMULATE_PAYMENTS aktif — order dibuat tanpa Xendit:", orderNum);
+    paymentRequestId = `sim-${referenceId}`;
+    qrisString = CHANNEL_CONFIG[channel].type === "QR_CODE"
+      ? `SIMULATED-QRIS-${referenceId}`
+      : null;
+    vaNumber = CHANNEL_CONFIG[channel].type === "VIRTUAL_ACCOUNT"
+      ? "8808" + String(Date.now()).slice(-10)
+      : null;
+    vaBank = CHANNEL_CONFIG[channel].type === "VIRTUAL_ACCOUNT" ? channel : null;
+    ewalletDeeplink = null;
+  } else {
+    const xenditAuth = "Basic " + btoa(xenditSecretKey + ":");
+    const xenditPaymentMethod = buildXenditPaymentMethod(
+      channel, customer_name.trim(), expiredAt, frontendUrl, orderNum,
+    );
 
-  try {
-    const res = await fetch("https://api.xendit.co/payment_requests", {
-      method: "POST",
-      headers: {
-        Authorization: xenditAuth,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        reference_id: referenceId,
-        currency: "IDR",
-        amount: total,
-        country: "ID",
-        payment_method: xenditPaymentMethod,
-        description: `Order ${orderNum} - SUKA Shawarma ${outlet.name}`,
-        metadata: {
-          order_id: order.id,
-          order_number: orderNum,
-          outlet_slug,
-          payment_channel: channel,
+    let xenditResponse: Record<string, unknown> | null = null;
+
+    try {
+      const res = await fetch("https://api.xendit.co/payment_requests", {
+        method: "POST",
+        headers: {
+          Authorization: xenditAuth,
+          "Content-Type": "application/json",
         },
-      }),
-    });
+        body: JSON.stringify({
+          reference_id: referenceId,
+          currency: "IDR",
+          amount: total,
+          country: "ID",
+          payment_method: xenditPaymentMethod,
+          description: `Order ${orderNum} - SUKA Shawarma ${outlet.name}`,
+          metadata: {
+            order_id: order.id,
+            order_number: orderNum,
+            outlet_slug,
+            payment_channel: channel,
+          },
+        }),
+      });
 
-    xenditResponse = await res.json() as Record<string, unknown>;
+      xenditResponse = await res.json() as Record<string, unknown>;
 
-    if (!res.ok) {
-      throw new Error(
-        (xenditResponse.message as string) ??
-        (xenditResponse.error_code as string) ??
-        `Xendit HTTP ${res.status}`,
-      );
+      if (!res.ok) {
+        throw new Error(
+          (xenditResponse.message as string) ??
+          (xenditResponse.error_code as string) ??
+          `Xendit HTTP ${res.status}`,
+        );
+      }
+
+      console.info("Xendit response:", JSON.stringify({
+        id: xenditResponse.id,
+        status: xenditResponse.status,
+        channel,
+        actions: xenditResponse.actions,
+      }));
+    } catch (err) {
+      await supabase.from("orders").update({
+        status: "cancelled",
+        cancel_reason: `Xendit error: ${(err as Error).message}`,
+        cancelled_at: new Date().toISOString(),
+      }).eq("id", order.id);
+      console.error("Xendit API error:", err);
+      return json({ error: "Gagal menghubungi layanan pembayaran. Silakan coba lagi." }, 502);
     }
 
-    console.info("Xendit response:", JSON.stringify({
-      id: xenditResponse.id,
-      status: xenditResponse.status,
-      channel,
-      actions: xenditResponse.actions,
-    }));
-  } catch (err) {
-    await supabase.from("orders").update({
-      status: "cancelled",
-      cancel_reason: `Xendit error: ${(err as Error).message}`,
-      cancelled_at: new Date().toISOString(),
-    }).eq("id", order.id);
-    console.error("Xendit API error:", err);
-    return json({ error: "Gagal menghubungi layanan pembayaran. Silakan coba lagi." }, 502);
+    // ─── Ekstrak data dari response Xendit ─────────────────────────────────
+    const extracted = extractPaymentData(xenditResponse, channel);
+    paymentRequestId = extracted.paymentRequestId;
+    qrisString = extracted.qrisString;
+    vaNumber = extracted.vaNumber;
+    vaBank = extracted.vaBank;
+    ewalletDeeplink = extracted.ewalletDeeplink;
   }
-
-  // ─── Ekstrak data dari response Xendit ───────────────────────────────────
-  const { paymentRequestId, qrisString, vaNumber, vaBank, ewalletDeeplink } =
-    extractPaymentData(xenditResponse, channel);
 
   // ─── UPDATE order dengan data payment ────────────────────────────────────
   await supabase.from("orders").update({

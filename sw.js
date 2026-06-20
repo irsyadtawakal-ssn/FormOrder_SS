@@ -1,5 +1,5 @@
 // Service Worker — SUKA Shawarma
-const CACHE = 'suka-v9'; // Naikkan versi setiap kali ada perubahan shell
+const CACHE = 'suka-v10'; // Naikkan versi setiap kali ada perubahan shell
 
 // File shell yang di-cache (cache-first)
 const SHELL = [
@@ -67,7 +67,12 @@ self.addEventListener('fetch', e => {
   // Cache-first untuk shell
   e.respondWith(
     caches.match(e.request).then(cached => {
-      if (cached) return cached;
+      if (cached) {
+        // Cached response yang berasal dari redirect (mis. /checkout.html → /checkout
+        // saat dev server clean-URL) membuat browser melempar net::ERR_FAILED kalau
+        // dipakai langsung untuk navigasi. Bungkus ulang jadi Response baru (redirected: false).
+        return cached.redirected ? new Response(cached.body, cached) : cached;
+      }
       return fetch(e.request).catch(() => offlineFallback(e.request));
     })
   );

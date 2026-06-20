@@ -292,6 +292,13 @@
 - [x] Nomor WA tiap outlet — SQL migration `20260521_outlet_phones.sql` siap, **jalankan di Supabase SQL Editor**
 - [x] OPENROUTER_API_KEY — sudah diset di Supabase Secrets
 - [x] Logo SUKA Shawarma — `assets/img/logo.png` sudah ada, tampil di topbar semua halaman
+- [ ] **Integrasi POS Kasir** — setup sebelum order online bisa masuk ke kasir:
+  - [ ] Jalankan migration `20260619_pos_kasir_outlet_mapping.sql` (order-system) lalu isi `outlets.pos_outlet_id` untuk tiap outlet (UUID outlet di project Supabase pos-kasir `khpkoreaaucvyqfhynfq`)
+  - [ ] Jalankan `migration-online-order-integration.sql` di project Supabase pos-kasir
+  - [ ] Set Supabase Secrets order-system (project `ipwkiizicobqdpfcmgvc`): `POS_KASIR_API_URL` (mis. `https://pos-kasir.vercel.app/api/orders/incoming`), `ORDER_TO_KASIR_SECRET`, `KASIR_TO_ORDER_SECRET`
+  - [ ] Set env vars pos-kasir (Vercel): `ORDER_TO_KASIR_SECRET` (sama dgn di atas), `KASIR_TO_ORDER_SECRET` (sama dgn di atas), `ORDER_SYSTEM_NOTIFY_URL` (`https://<ref-staging>.supabase.co/functions/v1/kasir-order-done`)
+  - [ ] Deploy Edge Functions baru: `push-order-to-kasir`, `kasir-order-done`
+  - [ ] Test end-to-end di staging dulu (order-system staging + pos-kasir dev) sebelum production
 
 ---
 

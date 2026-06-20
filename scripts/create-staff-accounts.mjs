@@ -3,7 +3,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL     = 'https://qntuhtkujpwudcpudwbj.supabase.co';
+const SUPABASE_URL     = 'https://ipwkiizicobqdpfcmgvc.supabase.co';
 const SERVICE_ROLE_KEY = process.argv[2];
 
 if (!SERVICE_ROLE_KEY) {

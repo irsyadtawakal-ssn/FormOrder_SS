@@ -110,47 +110,58 @@ serve(async (req: Request) => {
     });
   }
 
-  // ─── Xendit credentials ───────────────────────────────────────────────────
+  // ─── Xendit credentials (atau simulasi di staging) ───────────────────────
+  // Mode simulasi: dipakai di staging saat XENDIT_SECRET_KEY belum di-set.
+  // JANGAN aktifkan SIMULATE_PAYMENTS di production.
   const xenditSecretKey = Deno.env.get("XENDIT_SECRET_KEY");
-  if (!xenditSecretKey) {
+  const simulateMode = !xenditSecretKey && Deno.env.get("SIMULATE_PAYMENTS") === "true";
+
+  if (!xenditSecretKey && !simulateMode) {
     console.error("XENDIT_SECRET_KEY belum dikonfigurasi");
     return json({ error: "Layanan pembayaran tidak tersedia" }, 503);
   }
 
-  const xenditAuth = "Basic " + btoa(xenditSecretKey + ":");
-
-  // ─── GET /payment_requests/{id} dari Xendit ───────────────────────────────
   let xenditStatus: string | null = null;
   let xenditAmount: number | null = null;
 
-  try {
-    const res = await fetch(
-      `https://api.xendit.co/payment_requests/${order.tripay_reference}`,
-      {
-        method: "GET",
-        headers: { Authorization: xenditAuth },
-      },
-    );
+  if (simulateMode) {
+    // Tap "Sudah Bayar? Cek Status" langsung dianggap sukses — tidak ada Xendit nyata
+    console.warn("SIMULATE_PAYMENTS aktif — order disimulasikan paid:", orderNumber);
+    xenditStatus = "SUCCEEDED";
+    xenditAmount = Number(order.total);
+  } else {
+    const xenditAuth = "Basic " + btoa(xenditSecretKey + ":");
 
-    const payload = await res.json();
+    // ─── GET /payment_requests/{id} dari Xendit ─────────────────────────────
+    try {
+      const res = await fetch(
+        `https://api.xendit.co/payment_requests/${order.tripay_reference}`,
+        {
+          method: "GET",
+          headers: { Authorization: xenditAuth },
+        },
+      );
 
-    if (!res.ok) {
-      console.error("Xendit check-status error:", payload.message ?? payload.error_code);
-      // Kembalikan status DB — jangan error ke customer
+      const payload = await res.json();
+
+      if (!res.ok) {
+        console.error("Xendit check-status error:", payload.message ?? payload.error_code);
+        // Kembalikan status DB — jangan error ke customer
+        return json({ success: true, status: order.status, synced: false });
+      }
+
+      xenditStatus = String(payload.status ?? "").toUpperCase();
+      xenditAmount = Number(payload.amount ?? 0);
+
+      console.info("Xendit status check:", {
+        order_number: orderNumber,
+        xendit_status: xenditStatus,
+        xendit_amount: xenditAmount,
+      });
+    } catch (err) {
+      console.error("Xendit API tidak terjangkau:", err);
       return json({ success: true, status: order.status, synced: false });
     }
-
-    xenditStatus = String(payload.status ?? "").toUpperCase();
-    xenditAmount = Number(payload.amount ?? 0);
-
-    console.info("Xendit status check:", {
-      order_number: orderNumber,
-      xendit_status: xenditStatus,
-      xendit_amount: xenditAmount,
-    });
-  } catch (err) {
-    console.error("Xendit API tidak terjangkau:", err);
-    return json({ success: true, status: order.status, synced: false });
   }
 
   // ─── Sync status dari Xendit ke DB ───────────────────────────────────────

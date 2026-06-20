@@ -38,7 +38,7 @@ Deno.serve(async (req: Request) => {
   const { data: order, error: orderErr } = await db
     .from("orders")
     .select(`
-      id, customer_name, customer_wa, total, notes, outlet_id,
+      id, customer_name, customer_wa, total, notes, outlet_id, pickup_time, payment_method,
       outlets(pos_outlet_id),
       order_items(item_name, quantity, unit_price)
     `)
@@ -60,13 +60,30 @@ Deno.serve(async (req: Request) => {
 
   const items = (order.order_items as { item_name: string; quantity: number; unit_price: number }[]) || [];
 
+  // Format catatan gabungan agar info pelanggan dan pembayaran masuk ke kasir
+  // tanpa perlu ada kolom tambahan di database POS Kasir.
+  const paymentLabel = order.payment_method === "tripay_qris" ? "QRIS" : (order.payment_method || "Online");
+  const pickupLabel = order.pickup_time || "-";
+  
+  const infoHeader = [
+    `-- INFO PEMESAN ONLINE --`,
+    `Nama: ${order.customer_name}`,
+    `Telp: ${order.customer_wa}`,
+    `Pembayaran: ${paymentLabel}`,
+    `Ambil: ${pickupLabel}`
+  ].join("\n");
+
+  const combinedNotes = order.notes
+    ? `${infoHeader}\n\n-- CATATAN PELANGGAN --\n${order.notes}`
+    : infoHeader;
+
   const payload = {
     external_order_id: order.id,
     pos_outlet_id:      posOutletId,
     customer_name:      order.customer_name,
     customer_phone:     order.customer_wa,
     total_amount:       order.total,
-    notes:              order.notes,
+    notes:              combinedNotes,
     items: items.map((i) => ({
       menu_item_name: i.item_name,
       quantity:       i.quantity,
