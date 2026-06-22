@@ -475,7 +475,6 @@ async function loadMenu() {
 
   document.getElementById('searchWrap').style.display = 'block';
   document.getElementById('tabs').style.display = 'flex';
-  // btnCart dihapus bersama topbar — opsional
   const btnCart = document.getElementById('btnCart');
   if (btnCart) btnCart.style.display = '';
 
@@ -501,10 +500,15 @@ function showMenuSkeleton() {
 
 // ─── Render tabs ──────────────────────────────────────────────────────────────
 function renderTabs() {
-  const allCats = ['Semua', '<i data-lucide="star" style="width:14px;height:14px;vertical-align:text-bottom;fill:currentColor"></i> Best Seller', ...menuData.map(c => c.name)];
+  const allCats = [
+    { id: 'Semua', label: 'Semua' },
+    { id: 'Best Seller', label: '<i data-lucide="star" style="width:14px;height:14px;vertical-align:text-bottom;fill:currentColor;margin-right:4px;"></i>Best Seller' },
+    ...menuData.map(c => ({ id: c.name, label: c.name }))
+  ];
   document.getElementById('tabs').innerHTML = allCats.map(c =>
-    `<div class="tab ${c === activeCategory ? 'active' : ''}" onclick="setCategory('${c.replace(/'/g, "\\'")}')">${c}</div>`
+    `<div class="tab ${c.id === activeCategory ? 'active' : ''}" onclick="setCategory('${c.id.replace(/'/g, "\\'")}')">${c.label}</div>`
   ).join('');
+  if (window.lucide) { lucide.createIcons(); }
 }
 
 function setCategory(c) {
@@ -524,8 +528,8 @@ function renderMenu() {
   let sections = menuData.map(cat => ({
     ...cat,
     items: cat.items.filter(item => {
-      if (activeCategory === '<i data-lucide="star" style="width:14px;height:14px;vertical-align:text-bottom;fill:currentColor"></i> Best Seller' && !item.is_best_seller) return false;
-      if (activeCategory !== 'Semua' && activeCategory !== '<i data-lucide="star" style="width:14px;height:14px;vertical-align:text-bottom;fill:currentColor"></i> Best Seller' && cat.name !== activeCategory) return false;
+      if (activeCategory === 'Best Seller' && !item.is_best_seller) return false;
+      if (activeCategory !== 'Semua' && activeCategory !== 'Best Seller' && cat.name !== activeCategory) return false;
       if (q && !item.name.toLowerCase().includes(q) && !(item.description || '').toLowerCase().includes(q)) return false;
       return true;
     })
