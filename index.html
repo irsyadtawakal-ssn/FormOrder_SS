@@ -727,7 +727,7 @@ function addToCart() {
   setCart(outletSlug, cart);
   updateCartBar();
   closeAllSheets();
-  showToast('<i data-lucide="check" style="width:14px;height:14px;vertical-align:text-bottom;display:inline-block"></i> ' + currentItem.name + ' ditambahkan');
+  showToast('✓ ' + currentItem.name + ' ditambahkan');
   sukaPixelTrack('AddToCart', { content_name: currentItem.name, value: unitPrice * currentQty, currency: 'IDR' });
 }
 
