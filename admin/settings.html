@@ -125,6 +125,24 @@ function renderPage() {
       </div>
     </div>
 
+    <!-- ── Logo ──────────────────────────────────────── -->
+    <div class="info-card" style="margin-bottom:12px">
+      <div style="font-weight:700;font-size:14px;margin-bottom:12px">✨ Logo Banner</div>
+
+      <div class="form-group">
+        <label class="form-label">Ubah Logo</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="file" id="logoInput" accept="image/jpeg, image/png, image/webp"
+                 class="form-input" style="flex:1;padding:6px"
+                 onchange="uploadLogoPhoto(this)" />
+        </div>
+        <div id="logoStatus" style="font-size:11px;color:var(--muted);margin-top:4px">Disarankan PNG transparan, rasio kotak atau memanjang.</div>
+      </div>
+      <div style="margin-top:10px;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:#f0f0f0;position:relative;height:80px;display:flex;align-items:center;justify-content:center;padding:10px">
+        <img id="logoPreview" src="${val('hero_logo_url', '../assets/img/logo.png')}" style="max-width:100%;max-height:100%;object-fit:contain" onerror="this.style.display='none'" />
+      </div>
+    </div>
+
     <!-- ── Biaya Layanan ──────────────────────────────────────── -->
     <div class="info-card" style="margin-bottom:12px">
       <div style="font-weight:700;font-size:14px;margin-bottom:12px">💰 Biaya Layanan</div>
@@ -437,6 +455,44 @@ async function uploadBannerPhoto(input) {
   document.getElementById('bannerPreview').style.display = 'block';
   settings['hero_banner_url'] = { key: 'hero_banner_url', value: url };
   adminToast('✅ Banner diperbarui');
+}
+
+// ─── Upload Logo ───────────────────────────────────────────────────────────────
+async function uploadLogoPhoto(input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  if (file.size > 2 * 1024 * 1024) { adminToast('❌ Ukuran maksimal 2MB'); return; }
+
+  const statusEl = document.getElementById('logoStatus');
+  statusEl.textContent = 'Mengupload…';
+
+  const ext = file.name.split('.').pop();
+  const path = `assets/logo-${Date.now()}.${ext}`;
+
+  const { error: uploadErr } = await window.db.storage.from('menu_assets')
+    .upload(path, file, { upsert: false, contentType: file.type });
+
+  if (uploadErr) {
+    statusEl.textContent = '❌ Gagal upload: ' + uploadErr.message;
+    return;
+  }
+
+  const { data: publicUrlData } = window.db.storage.from('menu_assets').getPublicUrl(path);
+  const url = publicUrlData.publicUrl;
+
+  const { error: saveErr } = await window.db.from('app_settings')
+    .upsert({ key: 'hero_logo_url', value: url, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+
+  if (saveErr) {
+    statusEl.textContent = '❌ Gagal menyimpan URL: ' + saveErr.message;
+    return;
+  }
+
+  statusEl.textContent = '✅ Logo berhasil diperbarui';
+  document.getElementById('logoPreview').src = url;
+  document.getElementById('logoPreview').style.display = 'block';
+  settings['hero_logo_url'] = { key: 'hero_logo_url', value: url };
+  adminToast('✅ Logo diperbarui');
 }
 
 // ─── Simpan app_settings ──────────────────────────────────────────────────────

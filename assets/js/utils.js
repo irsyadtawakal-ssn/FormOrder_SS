@@ -137,7 +137,10 @@ function showToast(msg, duration = 2000) {
     el.className = 'toast';
     document.body.appendChild(el);
   }
-  el.textContent = msg;
+  el.innerHTML = msg;
+  if (window.lucide) {
+    window.lucide.createIcons({ root: el });
+  }
   el.classList.add('show');
   clearTimeout(_toastTimer);
   _toastTimer = setTimeout(() => el.classList.remove('show'), duration);

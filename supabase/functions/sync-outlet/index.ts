@@ -64,9 +64,12 @@ serve(async (req) => {
       }
 
       if (existing) {
+        const updatePayload = { ...payload }
+        delete updatePayload.name // Do not overwrite existing mixed-case name
+
         const { error } = await supabase
           .from('outlets')
-          .update(payload)
+          .update(updatePayload)
           .eq('id', existing.id)
         if (error) throw error
       } else {

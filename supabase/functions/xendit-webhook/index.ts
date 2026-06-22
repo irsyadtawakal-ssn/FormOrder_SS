@@ -274,5 +274,17 @@ serve(async (req: Request) => {
     body: JSON.stringify({ order_id: order.id }),
   }).catch((err) => console.error("Gagal trigger on-order-done:", err));
 
+  // ─── Trigger push-order-to-kasir: dorong order ke POS Kasir (fire-and-forget) ──
+  // Jalur server-to-server, tidak bergantung pada tab /kasir terbuka/reload
+  // (berbeda dari OnlineOrderSync yang berjalan di browser POS Kasir).
+  fetch(`${supabaseUrl}/functions/v1/push-order-to-kasir`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${serviceKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ order_id: order.id }),
+  }).catch((err) => console.error("Gagal trigger push-order-to-kasir:", err));
+
   return jsonOk({ success: true, message: "Order diupdate ke paid" });
 });

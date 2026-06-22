@@ -224,6 +224,29 @@ serve(async (req: Request) => {
         },
         body: JSON.stringify({ order_id: order.id, event: "paid" }),
       }).catch((err) => console.error("Gagal trigger WA notif:", err));
+
+      // Trigger on-order-done: update data customer (fire-and-forget)
+      fetch(`${supabaseUrl}/functions/v1/on-order-done`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${serviceKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ order_id: order.id }),
+      }).catch((err) => console.error("Gagal trigger on-order-done:", err));
+
+      // Trigger push-order-to-kasir: dorong order ke POS Kasir (fire-and-forget)
+      // Jalur ini wajib ada di sini juga karena check-xendit-status adalah
+      // entry point KEDUA yang bisa menandai order 'paid' (selain xendit-webhook),
+      // jadi tidak bisa mengandalkan trigger yang hanya dipasang di xendit-webhook.
+      fetch(`${supabaseUrl}/functions/v1/push-order-to-kasir`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${serviceKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ order_id: order.id }),
+      }).catch((err) => console.error("Gagal trigger push-order-to-kasir:", err));
     }
 
     return json({ success: true, status: "paid", synced: true });

@@ -40,7 +40,7 @@ Deno.serve(async (req: Request) => {
     .select(`
       id, customer_name, customer_wa, total, notes, outlet_id, pickup_time, payment_method,
       outlets(pos_outlet_id),
-      order_items(item_name, quantity, unit_price)
+      order_items(item_name, quantity, unit_price, note)
     `)
     .eq("id", order_id)
     .single();
@@ -58,7 +58,7 @@ Deno.serve(async (req: Request) => {
     return Response.json({ error: "Outlet belum dipetakan ke POS Kasir" }, { status: 400, headers: CORS });
   }
 
-  const items = (order.order_items as { item_name: string; quantity: number; unit_price: number }[]) || [];
+  const items = (order.order_items as { item_name: string; quantity: number; unit_price: number; note: string | null }[]) || [];
 
   // Format catatan gabungan agar info pelanggan dan pembayaran masuk ke kasir
   // tanpa perlu ada kolom tambahan di database POS Kasir.
@@ -85,7 +85,9 @@ Deno.serve(async (req: Request) => {
     total_amount:       order.total,
     notes:              combinedNotes,
     items: items.map((i) => ({
-      menu_item_name: i.item_name,
+      // Konvensi |NOTE| sama dengan pull-online, supaya catatan per-menu
+      // ikut diparsing & ditampilkan terpisah oleh UI kasir (lib/order-item-name.ts).
+      menu_item_name: i.note ? `${i.item_name}|NOTE|${i.note}` : i.item_name,
       quantity:       i.quantity,
       unit_price:     i.unit_price,
       subtotal:       i.unit_price * i.quantity,
