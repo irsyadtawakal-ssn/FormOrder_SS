@@ -1,5 +1,5 @@
 // Service Worker — SUKA Shawarma
-const CACHE = 'suka-v10'; // Naikkan versi setiap kali ada perubahan shell
+const CACHE = 'suka-v11'; // Naikkan versi setiap kali ada perubahan shell
 
 // File shell yang di-cache (cache-first)
 const SHELL = [
@@ -64,7 +64,34 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // Cache-first untuk shell
+  // Network-first untuk HTML/navigasi — supaya update kode (index.html, admin, dll)
+  // selalu sampai ke semua device, tidak terjebak versi lama di cache.
+  // Fallback ke cache hanya kalau benar-benar offline.
+  const isHtml = e.request.mode === 'navigate' ||
+    e.request.destination === 'document' ||
+    (e.request.headers.get('accept') || '').includes('text/html');
+  if (isHtml) {
+    e.respondWith(
+      fetch(e.request)
+        .then(resp => {
+          // Simpan salinan terbaru untuk fallback offline
+          const copy = resp.clone();
+          caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {});
+          return resp;
+        })
+        .catch(() =>
+          caches.match(e.request).then(cached => {
+            if (cached) {
+              return cached.redirected ? new Response(cached.body, cached) : cached;
+            }
+            return offlineFallback(e.request);
+          })
+        )
+    );
+    return;
+  }
+
+  // Cache-first untuk aset shell (css/js/img — sudah pakai ?v= untuk busting)
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) {

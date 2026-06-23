@@ -437,9 +437,17 @@ function resizeImageFile(file, maxW, maxH, quality) {
       canvas.width = width;
       canvas.height = height;
       canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      // Selalu ekspor ke WebP — ukuran kecil & dijamin bisa dirender di HP,
+      // apapun format aslinya (jpg/png/dll). Fallback ke JPEG kalau browser
+      // admin tak mendukung WebP.
+      const done = (blob, type) =>
+        blob ? resolve({ blob, type }) : reject(new Error('Gagal memproses gambar'));
       canvas.toBlob(
-        (blob) => (blob ? resolve(blob) : reject(new Error('Gagal memproses gambar'))),
-        'image/jpeg',
+        (blob) => {
+          if (blob) return done(blob, 'image/webp');
+          canvas.toBlob((jpg) => done(jpg, 'image/jpeg'), 'image/jpeg', quality);
+        },
+        'image/webp',
         quality
       );
     };
@@ -459,18 +467,21 @@ async function uploadBannerPhoto(input) {
   const statusEl = document.getElementById('bannerStatus');
   statusEl.textContent = 'Memproses gambar…';
 
-  // Kecilkan ke max 1280px lebar (≈0.8MP) supaya aman dirender di HP
+  // Kecilkan ke max 1280px lebar (≈0.8MP) + konversi ke WebP supaya aman
+  // dirender di HP, apapun format aslinya (jpg/png/dll).
   let uploadBlob, contentType;
   try {
-    uploadBlob = await resizeImageFile(file, 1280, 1280, 0.85);
-    contentType = 'image/jpeg';
+    const out = await resizeImageFile(file, 1280, 1280, 0.85);
+    uploadBlob = out.blob;
+    contentType = out.type;
   } catch (e) {
     statusEl.textContent = '❌ ' + e.message;
     return;
   }
 
   statusEl.textContent = 'Mengupload…';
-  const path = `assets/banner-${Date.now()}.jpg`;
+  const ext = contentType === 'image/webp' ? 'webp' : 'jpg';
+  const path = `assets/banner-${Date.now()}.${ext}`;
 
   const { error: uploadErr } = await window.db.storage.from('menu_assets')
     .upload(path, uploadBlob, { upsert: false, contentType });
