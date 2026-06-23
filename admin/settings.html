@@ -118,7 +118,7 @@ function renderPage() {
                  class="form-input" style="flex:1;padding:6px"
                  onchange="uploadBannerPhoto(this)" />
         </div>
-        <div id="bannerStatus" style="font-size:11px;color:var(--muted);margin-top:4px">Ukuran ideal: 800x400px (JPG/PNG).</div>
+        <div id="bannerStatus" style="font-size:11px;color:var(--muted);margin-top:4px">Ukuran ideal: 800x400px. Gambar otomatis dikecilkan supaya muncul di HP.</div>
       </div>
       <div style="margin-top:10px;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:#f0f0f0;position:relative;height:120px">
         <img id="bannerPreview" src="${val('hero_banner_url', '../assets/img/hero-bg.jpg')}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'" />
@@ -420,19 +420,60 @@ async function clearPixelToken() {
 }
 
 // ─── Upload Banner ─────────────────────────────────────────────────────────────
+// Resize gambar di browser sebelum upload — cegah gambar megapixel tinggi
+// yang gagal dirender di HP (browser mobile punya batas decode megapixel).
+function resizeImageFile(file, maxW, maxH, quality) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const objUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(objUrl);
+      let { width, height } = img;
+      // Hanya kecilkan kalau melebihi batas (jangan memperbesar)
+      const scale = Math.min(1, maxW / width, maxH / height);
+      width = Math.round(width * scale);
+      height = Math.round(height * scale);
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      canvas.toBlob(
+        (blob) => (blob ? resolve(blob) : reject(new Error('Gagal memproses gambar'))),
+        'image/jpeg',
+        quality
+      );
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(objUrl);
+      reject(new Error('File gambar tidak valid'));
+    };
+    img.src = objUrl;
+  });
+}
+
 async function uploadBannerPhoto(input) {
   if (!input.files || !input.files[0]) return;
   const file = input.files[0];
   if (file.size > 2 * 1024 * 1024) { adminToast('❌ Ukuran maksimal 2MB'); return; }
 
   const statusEl = document.getElementById('bannerStatus');
-  statusEl.textContent = 'Mengupload…';
+  statusEl.textContent = 'Memproses gambar…';
 
-  const ext = file.name.split('.').pop();
-  const path = `assets/banner-${Date.now()}.${ext}`;
+  // Kecilkan ke max 1280px lebar (≈0.8MP) supaya aman dirender di HP
+  let uploadBlob, contentType;
+  try {
+    uploadBlob = await resizeImageFile(file, 1280, 1280, 0.85);
+    contentType = 'image/jpeg';
+  } catch (e) {
+    statusEl.textContent = '❌ ' + e.message;
+    return;
+  }
+
+  statusEl.textContent = 'Mengupload…';
+  const path = `assets/banner-${Date.now()}.jpg`;
 
   const { error: uploadErr } = await window.db.storage.from('menu_assets')
-    .upload(path, file, { upsert: false, contentType: file.type });
+    .upload(path, uploadBlob, { upsert: false, contentType });
 
   if (uploadErr) {
     statusEl.textContent = '❌ Gagal upload: ' + uploadErr.message;
