@@ -82,6 +82,9 @@ let templates  = []; // notification_templates rows
   if (!u) return;
   await Promise.all([loadSettings(), loadTemplates()]);
   renderPage();
+  // Perbaiki otomatis banner/logo lama yang resolusinya kebesaran (gagal muncul
+  // di HP). Jalan di latar belakang — tidak memblok render halaman.
+  autoHealHeroImages();
 })();
 
 async function loadSettings() {
@@ -457,6 +460,77 @@ function resizeImageFile(file, maxW, maxH, quality) {
     };
     img.src = objUrl;
   });
+}
+
+// ─── Auto-heal gambar lama yang kebesaran ───────────────────────────────────
+// Banner/logo yang diupload SEBELUM ada resize otomatis bisa beresolusi sangat
+// besar (megapixel tinggi) sehingga gagal dirender di HP. Saat super admin buka
+// halaman ini, kita deteksi & kecilkan otomatis lalu simpan ulang — tanpa perlu
+// admin upload manual. Hanya jalan sekali per gambar (setelah dikecilkan, lebar
+// sudah ≤ batas jadi dilewati).
+function loadImageCORS(url) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous'; // wajib supaya canvas tak ter-taint & bisa diekspor
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('gagal load'));
+    img.src = url;
+  });
+}
+
+async function healOneImage(settingKey, maxDim, prefix) {
+  const url = val(settingKey);
+  // Hanya proses file milik kita di Supabase Storage publik
+  if (!url || !url.includes('/storage/v1/object/public/')) return;
+
+  let img;
+  try { img = await loadImageCORS(url); } catch { return; } // tak terakses → lewati
+  // Sudah aman untuk HP → tidak perlu apa-apa
+  if (img.naturalWidth <= maxDim && img.naturalHeight <= maxDim) return;
+
+  const scale = Math.min(1, maxDim / img.naturalWidth, maxDim / img.naturalHeight);
+  const w = Math.round(img.naturalWidth * scale);
+  const h = Math.round(img.naturalHeight * scale);
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+
+  let blob, type;
+  try {
+    blob = await new Promise((res) => canvas.toBlob(res, 'image/webp', 0.85));
+    type = 'image/webp';
+    if (!blob) {
+      blob = await new Promise((res) => canvas.toBlob(res, 'image/jpeg', 0.85));
+      type = 'image/jpeg';
+    }
+  } catch { return; } // SecurityError (taint) → lewati diam-diam
+  if (!blob) return;
+
+  const ext = type === 'image/webp' ? 'webp' : 'jpg';
+  const path = `assets/${prefix}-${Date.now()}.${ext}`;
+  const { error: upErr } = await window.db.storage.from('menu_assets')
+    .upload(path, blob, { upsert: false, contentType: type });
+  if (upErr) return;
+
+  const { data: pub } = window.db.storage.from('menu_assets').getPublicUrl(path);
+  const newUrl = pub.publicUrl;
+  const { error: saveErr } = await window.db.from('app_settings')
+    .upsert({ key: settingKey, value: newUrl, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+  if (saveErr) return;
+
+  settings[settingKey] = { key: settingKey, value: newUrl };
+  const previewId = settingKey === 'hero_banner_url' ? 'bannerPreview' : 'logoPreview';
+  const el = document.getElementById(previewId);
+  if (el) { el.src = newUrl; el.style.display = 'block'; }
+  adminToast('✅ Gambar dioptimalkan otomatis agar muncul di HP');
+}
+
+async function autoHealHeroImages() {
+  try {
+    await healOneImage('hero_banner_url', 1280, 'banner');
+    await healOneImage('hero_logo_url', 480, 'logo');
+  } catch { /* jangan sampai mengganggu halaman */ }
 }
 
 async function uploadBannerPhoto(input) {

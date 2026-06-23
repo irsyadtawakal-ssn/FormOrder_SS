@@ -1,0 +1,10 @@
+# Konfigurasi Supabase CLI
+# PENTING: project_id ini HARUS project produksi yang dipakai situs (lihat config.js).
+# Jangan deploy fungsi saat CLI ter-link ke project lain — produksi tidak akan ter-update.
+project_id = "qntuhtkujpwudcpudwbj"
+
+# create-admin-user memverifikasi super_admin sendiri di dalam kode (cek Bearer token
+# + role). Verify JWT platform HARUS dimatikan, jika tidak request preflight OPTIONS
+# (yang tak membawa Authorization) ditolak gateway dengan 401 → CORS gagal di browser.
+[functions.create-admin-user]
+verify_jwt = false
