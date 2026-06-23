@@ -385,6 +385,38 @@
           updateCartBar();
         }
 
+        // Ubah URL gambar Supabase Storage jadi versi yang dikecilkan di server
+        // (endpoint render/image). Ini membuat banner LAMA yang resolusinya besar
+        // tetap muncul di HP tanpa perlu re-upload — karena server mengirim versi
+        // kecil yang pasti bisa di-decode browser mobile.
+        function supabaseResizedUrl(url, width) {
+          if (!url || typeof url !== "string") return url;
+          if (!url.includes("/storage/v1/object/public/")) return url; // bukan URL storage publik
+          const transformed = url.replace(
+            "/storage/v1/object/public/",
+            "/storage/v1/render/image/public/",
+          );
+          const sep = transformed.includes("?") ? "&" : "?";
+          return `${transformed}${sep}width=${width}&quality=80&resize=contain`;
+        }
+
+        // Pasang src versi kecil; kalau gagal (mis. transform tak aktif di plan),
+        // jatuh balik ke URL asli sekali, lalu biarkan onerror bawaan menyembunyikan.
+        function setImageWithFallback(img, originalUrl, width) {
+          if (!img || !originalUrl) return;
+          const small = supabaseResizedUrl(originalUrl, width);
+          if (small !== originalUrl) {
+            img.onerror = function () {
+              img.onerror = function () {
+                this.style.display = "none";
+              };
+              img.src = originalUrl; // fallback ke gambar asli
+            };
+          }
+          img.src = small;
+          img.style.display = "block";
+        }
+
         // Load hero banner and logo early
         window.db
           .from("app_settings")
@@ -394,19 +426,19 @@
             if (data && data.length > 0) {
               const bannerData = data.find((d) => d.key === "hero_banner_url");
               if (bannerData?.value) {
-                const img = document.getElementById("heroBgImg");
-                if (img) {
-                  img.src = bannerData.value;
-                  img.style.display = "block";
-                }
+                setImageWithFallback(
+                  document.getElementById("heroBgImg"),
+                  bannerData.value,
+                  1280,
+                );
               }
               const logoData = data.find((d) => d.key === "hero_logo_url");
               if (logoData?.value) {
-                const img = document.getElementById("heroLogoImg");
-                if (img) {
-                  img.src = logoData.value;
-                  img.style.display = "block";
-                }
+                setImageWithFallback(
+                  document.getElementById("heroLogoImg"),
+                  logoData.value,
+                  240,
+                );
               }
             }
           });
