@@ -67,7 +67,7 @@
 
   <!-- Topbar -->
   <div class="topbar">
-    <button class="topbar-ic" onclick="sessionStorage.setItem('back_from_order','1');window.location.href='index.html'">‹</button>
+    <button class="topbar-ic" onclick="window.location.href='index.html'">‹</button>
     <div class="topbar-logo">
       <img src="assets/img/logo.png" alt="SUKA Shawarma" style="height:32px;width:auto;vertical-align:middle;margin-right:6px" onerror="this.style.display='none'">
       <span>SUKA Shawarma</span>
@@ -178,16 +178,7 @@ async function loadOrder(cached) {
     order.order_items = cached.order_items;
   }
 
-  // Simpan order aktif ke localStorage supaya bisa dipulihkan kalau tab hilang
-  if (['pending_payment'].includes(order.status)) {
-    localStorage.setItem('suka_last_order', JSON.stringify({
-      order_number: order.order_number,
-      url: window.location.href,
-      saved_at: Date.now(),
-    }));
-  } else {
-    localStorage.removeItem('suka_last_order');
-  }
+
 
   renderStatus(order);
   subscribeRealtime(order.id);
