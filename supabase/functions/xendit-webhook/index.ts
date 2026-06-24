@@ -23,6 +23,93 @@ function jsonOk(data: unknown) {
   });
 }
 
+// ─── Meta Conversions API (server-side Purchase) ────────────────────────────────
+// SHA-256 hex — Meta wajib hashing untuk semua data PII (telepon, nama)
+async function sha256Hex(input: string): Promise<string> {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input));
+  return Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+// Normalisasi WA ke format 628xxx (tanpa +) — selaras dengan normalizeWA() di utils.js
+function normalizeWA(s: string): string {
+  s = (s ?? "").replace(/[\s\-().]/g, "");
+  if (s.startsWith("+62")) return "62" + s.slice(3);
+  if (s.startsWith("62")) return s;
+  if (s.startsWith("0")) return "62" + s.slice(1);
+  return s;
+}
+
+// Kirim event Purchase ke Meta via Conversions API.
+// event_id = order_number → Meta deduplikasi dengan pixel client (order.html).
+// Idempotensi sudah dijamin di webhook (order hanya bisa transisi ke 'paid' sekali),
+// jadi fungsi ini hanya terpanggil satu kali per order.
+// deno-lint-ignore no-explicit-any
+async function sendMetaPurchase(
+  supabase: any,
+  order: { order_number: string; total: number; customer_name: string; customer_wa: string },
+): Promise<void> {
+  const { data: rows } = await supabase
+    .from("app_settings")
+    .select("key, value")
+    .in("key", ["meta_pixel_id", "meta_pixel_enabled", "meta_pixel_token"]);
+
+  const map: Record<string, string> = {};
+  (rows ?? []).forEach((r: { key: string; value: string }) => { map[r.key] = r.value; });
+
+  if (map.meta_pixel_enabled !== "true" || !map.meta_pixel_id || !map.meta_pixel_token) {
+    console.info("[Meta CAPI] Pixel nonaktif / kredensial belum lengkap — Purchase server-side dilewati");
+    return;
+  }
+
+  // Lewati order tes — order asli selalu jauh di atas ambang ini (item termurah puluhan ribu),
+  // sedangkan order tes biasanya bernilai Rp1. Cegah polusi data Purchase di Meta.
+  const MIN_PURCHASE_VALUE = 1000;
+  if (Number(order.total) < MIN_PURCHASE_VALUE) {
+    console.info("[Meta CAPI] Order tes (di bawah ambang) — Purchase dilewati:", order.order_number, order.total);
+    return;
+  }
+
+  const pixelId = map.meta_pixel_id.trim();
+  const token = map.meta_pixel_token.trim();
+
+  // Bangun user_data ter-hash (minimal satu identifier wajib ada)
+  const userData: Record<string, string[]> = {};
+  const phone = normalizeWA(order.customer_wa);
+  if (phone) userData.ph = [await sha256Hex(phone)];
+  if (order.customer_name) userData.fn = [await sha256Hex(order.customer_name.trim().toLowerCase())];
+
+  const body = {
+    data: [{
+      event_name: "Purchase",
+      event_time: Math.floor(Date.now() / 1000),
+      event_id: order.order_number, // kunci deduplikasi dgn pixel client
+      action_source: "website",
+      event_source_url: "https://order.sukashawarma.com/order.html",
+      user_data: userData,
+      custom_data: {
+        currency: "IDR",
+        value: Number(order.total),
+        order_id: order.order_number,
+      },
+    }],
+  };
+
+  const url = `https://graph.facebook.com/v21.0/${pixelId}/events?access_token=${encodeURIComponent(token)}`;
+  const resp = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const txt = await resp.text();
+  if (!resp.ok) {
+    console.error("[Meta CAPI] Purchase gagal:", resp.status, txt);
+  } else {
+    console.info("[Meta CAPI] Purchase terkirim:", order.order_number, txt);
+  }
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 serve(async (req: Request) => {
   // Xendit hanya kirim POST
@@ -250,6 +337,16 @@ serve(async (req: Request) => {
       }
     }
   }
+
+  // ─── Kirim Purchase ke Meta Conversions API (server-side, fire-and-forget) ─
+  // Sumber kebenaran tunggal: 1 order = tepat 1 Purchase. event_id = order_number
+  // sehingga Meta deduplikasi dengan pixel client di order.html.
+  sendMetaPurchase(supabase, {
+    order_number: order.order_number,
+    total: order.total,
+    customer_name: order.customer_name,
+    customer_wa: order.customer_wa,
+  }).catch((err) => console.error("[Meta CAPI] Error tak terduga:", err));
 
   // ─── Trigger send-wa-notifications (async, fire-and-forget) ──────────────
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;

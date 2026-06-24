@@ -372,9 +372,11 @@ function renderStatus(o) {
     case 'paid': {
       const channel  = getChannel(o);
       const payLabel = channel === 'QRIS' ? 'QRIS' : VA_CHANNELS.includes(channel) ? `VA ${channel}` : channel || 'digital';
-      if (!sessionStorage.getItem('pixel_purchase_' + o.order_number)) {
+      // Lewati order tes (di bawah Rp1.000) agar tidak mengotori data Purchase — selaras dgn xendit-webhook
+      if (Number(o.total) >= 1000 && !sessionStorage.getItem('pixel_purchase_' + o.order_number)) {
         sessionStorage.setItem('pixel_purchase_' + o.order_number, '1');
-        sukaPixelTrack('Purchase', { value: o.total, currency: 'IDR', order_id: o.order_number });
+        // eventID = order_number → Meta deduplikasi dgn Conversions API (xendit-webhook)
+        sukaPixelTrack('Purchase', { value: o.total, currency: 'IDR', order_id: o.order_number }, { eventID: o.order_number });
       }
       heroHtml = `
         <div class="status-hero animated">
