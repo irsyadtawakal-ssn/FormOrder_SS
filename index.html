@@ -779,28 +779,61 @@
           .value.toLowerCase()
           .trim();
 
-        let sections = menuData
-          .map((cat) => ({
-            ...cat,
-            items: cat.items.filter((item) => {
-              if (activeCategory === "Best Seller" && !item.is_best_seller)
-                return false;
+        let sections = [];
+
+        // Kumpulkan item Best Seller dari semua kategori
+        let bestSellerItems = [];
+        menuData.forEach((cat) => {
+          cat.items.forEach((item) => {
+            if (item.is_best_seller) {
               if (
-                activeCategory !== "Semua" &&
-                activeCategory !== "Best Seller" &&
-                cat.name !== activeCategory
+                q &&
+                !item.name.toLowerCase().includes(q) &&
+                !(item.description || "").toLowerCase().includes(q)
               )
-                return false;
+                return;
+              bestSellerItems.push(item);
+            }
+          });
+        });
+
+        // Masukkan section Best Seller jika sedang di tab Semua atau tab Best Seller
+        if (activeCategory === "Semua" || activeCategory === "Best Seller") {
+          if (bestSellerItems.length > 0) {
+            sections.push({
+              name: "Best Seller",
+              items: bestSellerItems,
+            });
+          }
+        }
+
+        // Masukkan kategori reguler jika bukan sedang di tab Best Seller
+        if (activeCategory !== "Best Seller") {
+          menuData.forEach((cat) => {
+            if (activeCategory !== "Semua" && cat.name !== activeCategory) return;
+
+            let items = cat.items.filter((item) => {
+              // Jika di tab Semua, jangan tampilkan item Best Seller lagi di kategori bawahnya (agar tidak ganda)
+              if (activeCategory === "Semua" && item.is_best_seller) return false;
+
               if (
                 q &&
                 !item.name.toLowerCase().includes(q) &&
                 !(item.description || "").toLowerCase().includes(q)
               )
                 return false;
+              
               return true;
-            }),
-          }))
-          .filter((cat) => cat.items.length > 0);
+            });
+
+            if (items.length > 0) {
+              sections.push({
+                name: cat.name,
+                items: items,
+              });
+            }
+          });
+        }
 
         if (!sections.length) {
           document.getElementById("menuContent").innerHTML = `
