@@ -4,20 +4,41 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Login Admin — SUKA Shawarma</title>
-<link rel="stylesheet" href="../assets/css/style.css?v=7" />
 <link rel="manifest" href="/manifest.json" />
 <meta name="theme-color" content="#f29744" />
+<script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="../assets/css/admin-ui.css?v=2" />
+<style type="text/tailwindcss">
+  @theme {
+    --color-brand: #f29744;
+    --color-brand-bg: #fff8f1;
+    --color-brand-dark: #d87c2b;
+  }
+  @utility form-group {
+    @apply flex flex-col gap-1.5 mb-4;
+  }
+  @utility form-label {
+    @apply text-xs font-bold text-gray-600 uppercase tracking-wide;
+  }
+  @utility form-input {
+    @apply w-full bg-white border border-gray-200 text-gray-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all placeholder:text-gray-300;
+  }
+  @utility btn-add-big {
+    @apply w-full bg-brand hover:bg-brand-dark text-white font-bold py-3 rounded-xl transition-all shadow-md shadow-brand/10 text-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+</style>
 </head>
-<body>
-<div class="phone" style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding-bottom:0">
-  <div style="width:100%;padding:32px 20px">
+<body class="bg-gray-50 text-gray-900 font-sans antialiased">
+<div class="flex min-h-screen flex-col items-center justify-center p-4">
+  <div class="w-full max-w-md bg-white p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
 
-    <div style="text-align:center;margin-bottom:36px">
-      <div style="margin-bottom:12px">
-        <img src="../assets/img/logo.png" alt="SUKA Shawarma" style="height:80px;width:auto" onerror="this.outerHTML='<span style=font-size:52px>🌯</span>'">
+    <div class="text-center mb-8">
+      <div class="mb-4">
+        <img src="../assets/img/logo.png" alt="SUKA Shawarma" class="h-20 w-auto mx-auto" onerror="this.outerHTML='<i data-lucide=\'utensils\' class=\'w-16 h-16 text-brand mx-auto\'></i>'; if(window.lucide) window.lucide.createIcons();">
       </div>
-      <div style="font-size:22px;font-weight:800;color:var(--brand)">SUKA Shawarma</div>
-      <div style="font-size:13px;color:var(--muted);margin-top:4px">Panel Admin</div>
+      <div class="text-2xl font-black text-brand tracking-tight">SUKA Shawarma</div>
+      <div class="text-sm font-semibold text-gray-400 mt-1">Panel Admin</div>
     </div>
 
     <div class="form-group">
@@ -25,15 +46,15 @@
       <input type="email" id="email" class="form-input" placeholder="admin@sukshawarma.com"
              autocomplete="email" />
     </div>
-    <div class="form-group" style="margin-top:14px">
+    <div class="form-group mt-2">
       <label class="form-label">Password</label>
       <input type="password" id="password" class="form-input" placeholder="••••••••"
              autocomplete="current-password" />
     </div>
 
-    <div id="loginError" style="color:var(--brand);font-size:13px;margin-top:8px;display:none"></div>
+    <div id="loginError" style="color:var(--brand);font-size:13px;margin-top:8px;display:none" class="text-sm text-red-600 bg-red-50 border border-red-100 px-4 py-3 rounded-xl"></div>
 
-    <button id="btnLogin" class="btn-add-big" style="width:100%;margin-top:20px" onclick="doLogin()">
+    <button id="btnLogin" class="btn-add-big mt-4" onclick="doLogin()">
       Masuk
     </button>
 
@@ -46,6 +67,7 @@
 <script>
 // Redirect kalau sudah login
 (async function () {
+  if (window.lucide) window.lucide.createIcons();
   const { data: { user } } = await window.db.auth.getUser();
   if (user) {
     const { data: p } = await window.db.from('admin_users').select('id').eq('id', user.id).single();

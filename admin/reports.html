@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="id">
 <head>
 <meta charset="utf-8" />
@@ -6,118 +6,184 @@
 <title>Laporan — SUKA Admin</title>
 <link rel="manifest" href="/manifest.json" />
 <meta name="theme-color" content="#f29744" />
-<link rel="stylesheet" href="../assets/css/style.css?v=7" />
-<link rel="stylesheet" href="../assets/css/admin-desktop.css?v=7" />
+<script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="../assets/css/admin-ui.css?v=2" />
+<style type="text/tailwindcss">
+  @theme {
+    --color-brand: #f29744;
+    --color-brand-bg: #fff8f1;
+    --color-brand-dark: #d87c2b;
+  }
+  .ts-control { border-radius: 0.75rem !important; border-color: #f3f4f6 !important; background-color: #f9fafb !important; padding: 0.5rem 0.75rem !important; font-size: 0.875rem !important; font-weight: 600 !important; color: #374151 !important; box-shadow: none !important; }
+  .ts-wrapper { min-width: 240px; }
+  .ts-control.focus { border-color: #f29744 !important; box-shadow: 0 0 0 1px #f29744 !important; }
+  .ts-dropdown { border-radius: 0.75rem !important; border-color: #e5e7eb !important; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06) !important; margin-top: 0.25rem !important; font-size: 0.875rem !important; }
+  .ts-dropdown .option { padding: 0.5rem 0.75rem !important; color: #4b5563 !important; cursor: pointer; }
+  .ts-dropdown .option.active { background-color: #fff8f1 !important; color: #f29744 !important; font-weight: 600; }
+</style>
 </head>
-<body>
-<div class="phone">
+<body class="bg-gray-50 text-gray-900 font-sans antialiased">
+<div class="flex h-screen overflow-hidden">
 
-  <!-- Sidebar — hanya muncul di tablet/desktop via CSS -->
-  <aside class="admin-sidebar" style="display:none">
-    <div class="admin-sidebar-logo">🌯 SUKA Admin</div>
-    <div class="admin-sidebar-user">
-      <div class="name" id="sidebarName">—</div>
-      <div class="role" id="sidebarRole">—</div>
+  <!-- Sidebar -->
+  <aside class="hidden md:flex flex-col w-64 bg-white border-r border-gray-200 h-full">
+    <div class="p-6 border-b border-gray-200 flex items-center gap-3">
+      <i data-lucide="utensils" class="text-brand w-6 h-6"></i>
+      <span class="font-extrabold text-xl text-brand">SUKA Admin</span>
     </div>
-        <nav class="admin-sidebar-nav">
-      <a href="/admin/index.html"><span>🏠</span><span>Dashboard</span></a>
-      <a href="/admin/orders.html"><span>📋</span><span>Pesanan</span></a>
-      <a href="/admin/menu.html"><span>🌯</span><span>Menu</span></a>
-      <a href="/admin/reports.html"><span>📊</span><span>Laporan</span></a>
-      <a href="/admin/customers.html" class="admin-only"><span>🧑‍🤝‍🧑</span><span>Pelanggan</span></a>
-      <!-- LOYALTY FROZEN: <a href="/admin/vouchers.html" class="admin-only"><span>🎟️</span><span>Voucher</span></a> -->
-      <a href="/admin/promos.html" class="admin-only"><span>🏷️</span><span>Promo</span></a>
-      <a href="/admin/outlets.html" class="admin-only"><span>📍</span><span>Outlet</span></a>
-      <a href="/admin/users.html" class="admin-only"><span>👥</span><span>Pengguna</span></a>
-      <a href="/admin/monitoring.html" class="admin-only"><span>🔍</span><span>Monitoring</span></a>
-      <a href="/admin/settings.html" class="admin-only"><span>⚙️</span><span>Pengaturan</span></a>
+    <div class="px-6 py-4 flex flex-col gap-1 border-b border-gray-200 bg-gray-50">
+      <span class="text-sm font-bold text-gray-800" id="sidebarName">—</span>
+      <span class="text-xs font-medium text-gray-500" id="sidebarRole">—</span>
+    </div>
+    <nav class="flex-1 overflow-y-auto py-4 flex flex-col gap-2 px-3">
+      <a href="/admin/index.html" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-brand font-medium transition-colors"><i data-lucide="layout-dashboard" class="w-5 h-5"></i><span>Dashboard</span></a>
+      <a href="/admin/orders.html" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-brand font-medium transition-colors"><i data-lucide="clipboard-list" class="w-5 h-5"></i><span>Pesanan</span></a>
+      <a href="/admin/menu.html" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-brand font-medium transition-colors"><i data-lucide="utensils" class="w-5 h-5"></i><span>Menu</span></a>
+      <a href="/admin/reports.html" class="flex items-center gap-3 px-3 py-2 rounded-lg text-brand bg-brand-bg font-medium transition-colors"><i data-lucide="bar-chart-2" class="w-5 h-5"></i><span>Laporan</span></a>
+      <a href="/admin/customers.html" class="admin-only flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-brand font-medium transition-colors"><i data-lucide="users" class="w-5 h-5"></i><span>Pelanggan</span></a>
+      <a href="/admin/promos.html" class="admin-only flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-brand font-medium transition-colors"><i data-lucide="tag" class="w-5 h-5"></i><span>Promo</span></a>
+      <a href="/admin/outlets.html" class="admin-only flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-brand font-medium transition-colors"><i data-lucide="map-pin" class="w-5 h-5"></i><span>Outlet</span></a>
+      <a href="/admin/users.html" class="admin-only flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-brand font-medium transition-colors"><i data-lucide="user-cog" class="w-5 h-5"></i><span>Pengguna</span></a>
+      <a href="/admin/monitoring.html" class="admin-only flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-brand font-medium transition-colors"><i data-lucide="activity" class="w-5 h-5"></i><span>Monitoring</span></a>
+      <a href="/admin/settings.html" class="admin-only flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-brand font-medium transition-colors"><i data-lucide="settings" class="w-5 h-5"></i><span>Pengaturan</span></a>
     </nav>
-    <div class="admin-sidebar-footer">
-      <button onclick="adminSignOut()">🚪 Keluar</button>
+    <div class="p-4 border-t border-gray-200">
+      <button onclick="adminSignOut()" class="flex items-center justify-center gap-2 text-red-600 bg-red-50 hover:bg-red-100 py-2.5 px-4 rounded-xl w-full transition-colors font-bold shadow-sm">
+        <i data-lucide="log-out" class="w-5 h-5"></i> Keluar
+      </button>
     </div>
   </aside>
 
-  <!-- Topbar -->
-  <div class="topbar">
-    <span class="topbar-title">📊 Laporan</span>
-    <div style="display:flex;align-items:center;gap:8px">
-      <span id="adminName" style="font-size:12px;color:var(--muted)"></span>
-    </div>
+  <!-- Main Content -->
+  <div class="flex-1 flex flex-col h-full overflow-hidden relative">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm z-10">
+      <div class="flex items-center gap-3">
+        <img src="../assets/img/logo.png" alt="SUKA" class="h-8 w-auto md:hidden" onerror="this.style.display='none'">
+        <div class="hidden md:flex items-center gap-2 font-bold text-gray-800 text-lg">
+          <i data-lucide="bar-chart-2" class="w-5 h-5 text-brand"></i> Laporan
+        </div>
+        <span class="md:hidden font-bold text-gray-800 flex items-center gap-2"><i data-lucide="bar-chart-2" class="w-5 h-5 text-brand"></i> Laporan</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span id="adminName" class="hidden md:block text-xs text-gray-500"></span>
+        <button onclick="adminSignOut()" class="md:hidden flex items-center gap-1 text-xs font-bold text-red-600 bg-red-50 px-3 py-1.5 rounded-full">
+          <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Scrollable Content Area -->
+    <main class="flex-1 overflow-y-auto p-4 md:p-8 pb-24 md:pb-8 bg-gray-50">
+      <div class="max-w-6xl mx-auto">
+
+        <!-- Header Laporan dengan Filter -->
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
+          <div>
+            <h1 class="text-2xl font-bold text-gray-800 mb-1">Ringkasan Laporan</h1>
+            <p class="text-sm text-gray-500">Pantau performa penjualan dan menu terlaris.</p>
+          </div>
+          <div class="flex gap-2 flex-wrap items-center bg-white p-2 rounded-2xl shadow-sm border border-gray-100" id="filterBar">
+            <select id="outletFilter" class="admin-only bg-gray-50 border border-transparent hover:border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold text-gray-700 outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all cursor-pointer" style="display:none">
+              <option value="">Semua Outlet</option>
+            </select>
+            <div class="h-8 w-px bg-gray-200 hidden md:block mx-1"></div>
+            <select id="rangePreset" onchange="onPresetChange()" class="bg-gray-50 border border-transparent hover:border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold text-gray-700 outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all cursor-pointer">
+              <option value="today">Hari Ini</option>
+              <option value="7d" selected>7 Hari Terakhir</option>
+              <option value="30d">30 Hari Terakhir</option>
+              <option value="custom">Kustom</option>
+            </select>
+            <div id="customRange" style="display:none; gap:8px;" class="items-center ml-2">
+              <input type="date" id="dateFrom" class="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-medium text-gray-700 outline-none focus:border-brand" />
+              <span class="text-gray-400 font-medium">-</span>
+              <input type="date" id="dateTo" class="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-medium text-gray-700 outline-none focus:border-brand" />
+            </div>
+            <button onclick="loadReport()" class="bg-brand hover:bg-brand-dark text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm transition-colors cursor-pointer flex items-center gap-2 ml-1">
+              <i data-lucide="filter" class="w-4 h-4"></i> Terapkan
+            </button>
+            <div class="h-8 w-px bg-gray-200 hidden md:block mx-1"></div>
+            <label class="flex items-center gap-2 text-sm font-semibold text-gray-600 cursor-pointer hover:text-gray-800 transition-colors">
+              <input type="checkbox" id="hideTestOrders" checked onchange="loadReport()" class="w-4 h-4 rounded border-gray-300 text-brand focus:ring-brand cursor-pointer">
+              Sembunyikan Tes
+            </label>
+          </div>
+        </div>
+
+        <!-- Metrics -->
+        <div class="bg-white border border-gray-100 rounded-2xl shadow-sm mb-6 flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-gray-100" id="metricsGrid">
+          <div class="p-5"><div class="text-xs text-gray-500 font-bold mb-2">Total Revenue</div><div class="skeleton-line" style="height:28px;width:80px"></div></div>
+          <div class="p-5"><div class="text-xs text-gray-500 font-bold mb-2">Jumlah Order</div><div class="skeleton-line" style="height:28px;width:40px"></div></div>
+          <div class="p-5"><div class="text-xs text-gray-500 font-bold mb-2">Rata-rata Order</div><div class="skeleton-line" style="height:28px;width:60px"></div></div>
+          <div class="p-5"><div class="text-xs text-gray-500 font-bold mb-2">vs Periode Lalu</div><div class="skeleton-line" style="height:28px;width:50px"></div></div>
+        </div>
+
+        <!-- 2 Column Layout for Desktop -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          <!-- Chart (Takes 2 columns) -->
+          <div class="lg:col-span-2 bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex flex-col min-h-0">
+            <h3 class="font-bold text-gray-800 mb-6 flex items-center gap-2"><div class="p-1.5 bg-orange-50 rounded-lg text-brand"><i data-lucide="trending-up" class="w-4 h-4"></i></div> Revenue Harian</h3>
+            <div class="relative w-full flex-1 min-h-[300px]">
+              <canvas id="revenueChart" class="absolute inset-0"></canvas>
+            </div>
+          </div>
+
+          <!-- Podium (Takes 1 column) -->
+          <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex flex-col">
+            <h3 class="font-bold text-gray-800 mb-6 flex items-center gap-2"><div class="p-1.5 bg-orange-50 rounded-lg text-brand"><i data-lucide="award" class="w-4 h-4"></i></div> Menu Terlaris</h3>
+            <div class="flex-1 flex flex-col gap-3" id="podiumWrap">
+              <div class="text-center text-gray-400 py-10 text-sm font-medium">Memuat data...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabel detail -->
+        <div class="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden mb-6">
+          <div class="px-6 py-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white">
+             <h3 class="font-bold text-gray-800 flex items-center gap-2"><div class="p-1.5 bg-gray-50 rounded-lg text-gray-400"><i data-lucide="list" class="w-4 h-4"></i></div> Detail Per Item</h3>
+             <div class="flex gap-2">
+               <button onclick="exportCSV()" class="text-sm font-bold text-brand bg-white border border-orange-200 px-4 py-2 rounded-xl hover:bg-orange-50 transition-colors flex items-center gap-2 w-fit cursor-pointer shadow-sm"><i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Export CSV</button>
+               <button onclick="exportPDF()" class="text-sm font-bold text-red-600 bg-white border border-red-200 px-4 py-2 rounded-xl hover:bg-red-50 transition-colors flex items-center gap-2 w-fit cursor-pointer shadow-sm"><i data-lucide="file-text" class="w-4 h-4"></i> Export PDF</button>
+             </div>
+          </div>
+          <div id="tableWrap" class="overflow-x-auto">
+             <div class="text-center text-gray-400 py-10 text-sm font-medium">Memuat data...</div>
+          </div>
+        </div>
+
+      </div>
+    </main>
   </div>
 
-  <div class="admin-content">
-
-  <!-- Filter -->
-  <div class="report-filters" id="filterBar">
-    <select id="outletFilter" class="admin-only" style="display:none">
-      <option value="">Semua Outlet</option>
-    </select>
-    <select id="rangePreset" onchange="onPresetChange()">
-      <option value="today">Hari Ini</option>
-      <option value="7d" selected>7 Hari</option>
-      <option value="30d">30 Hari</option>
-      <option value="custom">Custom</option>
-    </select>
-    <div id="customRange" style="display:none;flex:100%;gap:8px;flex-wrap:wrap">
-      <input type="date" id="dateFrom" />
-      <input type="date" id="dateTo" />
-    </div>
-    <button onclick="loadReport()">Terapkan</button>
-  </div>
-
-  <!-- Metrics -->
-  <div class="metrics-grid" id="metricsGrid">
-    <div class="metric-card"><div class="metric-label">Total Revenue</div><div class="metric-value skeleton-line" style="height:24px;width:80px"></div></div>
-    <div class="metric-card"><div class="metric-label">Jumlah Order</div><div class="metric-value skeleton-line" style="height:24px;width:40px"></div></div>
-    <div class="metric-card"><div class="metric-label">Rata-rata Order</div><div class="metric-value skeleton-line" style="height:24px;width:60px"></div></div>
-    <div class="metric-card"><div class="metric-label">vs Periode Lalu</div><div class="metric-value skeleton-line" style="height:24px;width:50px"></div></div>
-  </div>
-
-  <!-- Chart -->
-  <div class="chart-wrap">
-    <h3>Revenue Harian</h3>
-    <canvas id="revenueChart" height="160"></canvas>
-  </div>
-
-  <!-- Podium top-3 -->
-  <div style="padding:0 0 8px">
-    <div style="font-size:13px;font-weight:700;color:var(--ink2);margin-bottom:8px">🏆 Menu Terlaris</div>
-  </div>
-  <div class="podium" id="podiumWrap">
-    <div class="report-empty" style="flex:1">Memuat data...</div>
-  </div>
-
-  <!-- Tabel detail -->
-  <div class="report-table-wrap">
-    <h3>
-      Detail Per Item
-      <button onclick="exportCSV()">⬇ Export CSV</button>
-    </h3>
-    <div id="tableWrap"><div class="report-empty">Memuat data...</div></div>
-  </div>
-
-  </div><!-- /admin-content -->
-
-  <!-- Bottom nav -->
-    <nav class="admin-nav">
-    <a href="/admin/index.html"><span>🏠</span><span>Dashboard</span></a>
-    <a href="/admin/orders.html"><span>📋</span><span>Pesanan</span></a>
-    <a href="/admin/menu.html"><span>🌯</span><span>Menu</span></a>
-    <a href="/admin/reports.html"><span>📊</span><span>Laporan</span></a>
-    <a href="/admin/monitoring.html" class="admin-only"><span>🔍</span><span>Monitor</span></a>
-    <a href="/admin/settings.html" class="admin-only"><span>⚙️</span><span>Pengaturan</span></a>
+  <!-- Mobile Bottom Nav -->
+  <nav class="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 flex items-center justify-around pb-safe pt-1 z-20 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+    <a href="/admin/index.html" class="flex flex-col items-center gap-1 py-2 px-2 text-gray-500 hover:text-brand"><i data-lucide="layout-dashboard" class="w-5 h-5"></i><span class="text-[10px] font-medium">Dashboard</span></a>
+    <a href="/admin/orders.html" class="flex flex-col items-center gap-1 py-2 px-2 text-gray-500 hover:text-brand"><i data-lucide="clipboard-list" class="w-5 h-5"></i><span class="text-[10px] font-medium">Pesanan</span></a>
+    <a href="/admin/menu.html" class="flex flex-col items-center gap-1 py-2 px-2 text-gray-500 hover:text-brand"><i data-lucide="utensils" class="w-5 h-5"></i><span class="text-[10px] font-medium">Menu</span></a>
+    <a href="/admin/reports.html" class="flex flex-col items-center gap-1 py-2 px-2 text-brand"><i data-lucide="bar-chart-2" class="w-5 h-5"></i><span class="text-[10px] font-bold">Laporan</span></a>
+    <a href="/admin/settings.html" class="admin-only flex flex-col items-center gap-1 py-2 px-2 text-gray-500 hover:text-brand"><i data-lucide="settings" class="w-5 h-5"></i><span class="text-[10px] font-medium">Settings</span></a>
   </nav>
-
 </div>
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 <script src="../config.js"></script>
 <script src="../assets/js/supabase.js"></script>
 <script src="../assets/js/utils.js"></script>
-<script src="../assets/js/admin.js"></script>
+<script src="../assets/js/admin.js?v=2"></script>
 <script src="../assets/js/reports.js"></script>
+<script>
+  // Render icon shell statis (Lucide tidak auto-run di UMD)
+  (function(){ var f=function(){ if(window.lucide) window.lucide.createIcons(); };
+    document.addEventListener('DOMContentLoaded', f); window.addEventListener('load', f); })();
+</script>
 <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
 </body>
 </html>

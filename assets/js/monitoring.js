@@ -63,7 +63,8 @@ async function loadAttention() {
   if (!el) return rows;
 
   if (!rows.length) {
-    el.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:8px 0">✅ Tidak ada order nyangkut</p>';
+    el.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:8px 0;display:flex;align-items:center;gap:6px"><i data-lucide="check-circle" class="w-4 h-4 text-emerald-500"></i> Tidak ada order nyangkut</p>';
+    if (window.lucide) window.lucide.createIcons();
     return rows;
   }
 
@@ -82,6 +83,7 @@ async function loadAttention() {
     </a>`;
   }).join('');
 
+  if (window.lucide) window.lucide.createIcons();
   return rows;
 }
 async function loadNotifFailCount() {
@@ -109,20 +111,21 @@ async function loadMetrics() {
     ]);
 
     const cards = [
-      { icon: '✅', value: paid24.count ?? 0,   label: 'Order Bayar (24j)' },
-      { icon: '❌', value: expired24.count ?? 0, label: 'Expired/Batal (24j)' },
-      { icon: '📵', value: fail1.count ?? 0,     label: 'Notif Gagal (60m)' },
+      { icon: '<i data-lucide="check-circle-2" class="w-6 h-6 text-emerald-500 mx-auto"></i>', value: paid24.count ?? 0,   label: 'Order Bayar (24j)' },
+      { icon: '<i data-lucide="x-circle" class="w-6 h-6 text-red-500 mx-auto"></i>', value: expired24.count ?? 0, label: 'Expired/Batal (24j)' },
+      { icon: '<i data-lucide="bell-off" class="w-6 h-6 text-gray-400 mx-auto"></i>', value: fail1.count ?? 0,     label: 'Notif Gagal (60m)' },
     ];
 
     const el = document.getElementById('metricCards');
     if (!el) return;
     el.innerHTML = cards.map(c =>
       `<div class="stat-card" style="text-align:center">
-        <div style="font-size:20px;margin-bottom:2px">${c.icon}</div>
+        <div style="margin-bottom:6px">${c.icon}</div>
         <div style="font-weight:800;font-size:22px;color:var(--ink)">${c.value}</div>
         <div style="font-size:11px;color:var(--muted);margin-top:2px">${c.label}</div>
       </div>`
     ).join('');
+    if (window.lucide) window.lucide.createIcons();
   } catch (e) {
     console.error('loadMetrics error:', e);
     const el = document.getElementById('metricCards');
@@ -131,7 +134,12 @@ async function loadMetrics() {
 }
 
 function lamp(state) {
-  return { green: '🟢', yellow: '🟡', red: '🔴', gray: '⚠️' }[state] || '⚠️';
+  return { 
+    green: '<i data-lucide="check-circle-2" class="w-7 h-7 text-emerald-500"></i>', 
+    yellow: '<i data-lucide="alert-triangle" class="w-7 h-7 text-amber-500"></i>', 
+    red: '<i data-lucide="x-circle" class="w-7 h-7 text-red-500"></i>', 
+    gray: '<i data-lucide="help-circle" class="w-7 h-7 text-gray-400"></i>' 
+  }[state] || '<i data-lucide="help-circle" class="w-7 h-7 text-gray-400"></i>';
 }
 
 // Panggil Edge Function system-health-check, return snapshot atau null jika gagal
@@ -183,7 +191,7 @@ async function loadStatusBar(attentionRows, failCount, healthSnap) {
            : 'yellow';
 
   const lamps = [
-    { key: 'Pembayaran', state: health.pembayaran, note: health.pembayaran === 'red' ? '⚠️ Mismatch Xendit' : '✓' },
+    { key: 'Pembayaran', state: health.pembayaran, note: health.pembayaran === 'red' ? '<i data-lucide="alert-triangle" class="w-3 h-3 inline-block align-text-bottom"></i> Mismatch Xendit' : '✓' },
     { key: 'WA Notif',   state: wa,        note: health.wa_device === 'gray' ? 'Fonnte unknown' : (health.wa_device === 'red' ? 'Device disconnect' : `${failCount} gagal 60m`) },
     { key: 'Order Flow', state: orderFlow, note: `${attentionRows.length} nyangkut` },
     { key: 'Layanan',    state: health.layanan, note: health.layanan === 'red' ? 'Ping gagal' : '✓' },
@@ -193,11 +201,12 @@ async function loadStatusBar(attentionRows, failCount, healthSnap) {
   if (!el) return;
   el.innerHTML = lamps.map(l =>
     `<div style="display:flex;flex-direction:column;align-items:center;background:var(--card);border-radius:12px;padding:10px 14px;min-width:72px;gap:3px">
-      <span style="font-size:22px">${lamp(l.state)}</span>
+      <div style="margin-bottom:2px">${lamp(l.state)}</div>
       <span style="font-size:11px;font-weight:700;color:var(--ink)">${l.key}</span>
       <span style="font-size:10px;color:var(--muted)">${l.note}</span>
     </div>`
   ).join('');
+  if (window.lucide) window.lucide.createIcons();
 }
 
 async function loadVolume() {
@@ -258,13 +267,14 @@ async function loadAlertLog() {
   }
 
   el.innerHTML = data.map(e => {
-    const icon = e.level === 'error' ? '🔴' : e.level === 'warn' ? '🟡' : '✅';
-    return `<div style="padding:8px 12px;background:var(--card);border-radius:10px;margin-bottom:6px;font-size:12px">
-      <span>${icon}</span>
+    const icon = e.level === 'error' ? '<i data-lucide="x-circle" class="w-4 h-4 text-red-500"></i>' : e.level === 'warn' ? '<i data-lucide="alert-triangle" class="w-4 h-4 text-amber-500"></i>' : '<i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-500"></i>';
+    return `<div style="padding:8px 12px;background:var(--card);border-radius:10px;margin-bottom:6px;font-size:12px;display:flex;align-items:center">
+      <span style="display:flex;align-items:center">${icon}</span>
       <span style="color:var(--muted);margin:0 6px">${fmtTimeAgo(e.created_at)}</span>
       <span>${escHtml(e.message)}</span>
     </div>`;
   }).join('');
+  if (window.lucide) window.lucide.createIcons();
 }
 
 async function loadCapacity(healthSnap) {
@@ -283,18 +293,19 @@ async function loadCapacity(healthSnap) {
 
   document.getElementById('capacityPanel').innerHTML = `
     <div style="margin-bottom:12px">
-      <div style="font-size:12px;margin-bottom:4px">📊 Database: ${dbPct}% (${Math.round(cap.db_bytes/1000000)}MB / 500MB)</div>
+      <div style="font-size:12px;margin-bottom:4px;display:flex;align-items:center;gap:4px"><i data-lucide="database" class="w-4 h-4 text-gray-500"></i> Database: ${dbPct}% (${Math.round(cap.db_bytes/1000000)}MB / 500MB)</div>
       <div style="width:100%;height:8px;background:#eee;border-radius:4px;overflow:hidden">
         <div style="width:${dbPct}%;height:100%;background:${dbColor}"></div>
       </div>
     </div>
     <div>
-      <div style="font-size:12px;margin-bottom:4px">💾 Storage: ${storagePct}% (${Math.round(cap.storage_bytes/1000000)}MB / 1000MB)</div>
+      <div style="font-size:12px;margin-bottom:4px;display:flex;align-items:center;gap:4px"><i data-lucide="hard-drive" class="w-4 h-4 text-gray-500"></i> Storage: ${storagePct}% (${Math.round(cap.storage_bytes/1000000)}MB / 1000MB)</div>
       <div style="width:100%;height:8px;background:#eee;border-radius:4px;overflow:hidden">
         <div style="width:${storagePct}%;height:100%;background:${storageColor}"></div>
       </div>
     </div>
   `;
+  if (window.lucide) window.lucide.createIcons();
 }
 
 // ─── Realtime subscribe ───────────────────────────────────────────────────────

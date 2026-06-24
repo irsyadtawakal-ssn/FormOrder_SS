@@ -385,35 +385,16 @@
           updateCartBar();
         }
 
-        // Ubah URL gambar Supabase Storage jadi versi yang dikecilkan di server
-        // (endpoint render/image). Ini membuat banner LAMA yang resolusinya besar
-        // tetap muncul di HP tanpa perlu re-upload — karena server mengirim versi
-        // kecil yang pasti bisa di-decode browser mobile.
-        function supabaseResizedUrl(url, width) {
-          if (!url || typeof url !== "string") return url;
-          if (!url.includes("/storage/v1/object/public/")) return url; // bukan URL storage publik
-          const transformed = url.replace(
-            "/storage/v1/object/public/",
-            "/storage/v1/render/image/public/",
-          );
-          const sep = transformed.includes("?") ? "&" : "?";
-          return `${transformed}${sep}width=${width}&quality=80&resize=contain`;
-        }
-
-        // Pasang src versi kecil; kalau gagal (mis. transform tak aktif di plan),
-        // jatuh balik ke URL asli sekali, lalu biarkan onerror bawaan menyembunyikan.
-        function setImageWithFallback(img, originalUrl, width) {
-          if (!img || !originalUrl) return;
-          const small = supabaseResizedUrl(originalUrl, width);
-          if (small !== originalUrl) {
-            img.onerror = function () {
-              img.onerror = function () {
-                this.style.display = "none";
-              };
-              img.src = originalUrl; // fallback ke gambar asli
-            };
-          }
-          img.src = small;
+        // Pasang src gambar langsung dari Supabase Storage. Gambar sudah dikecilkan
+        // + dikonversi WebP saat upload (lihat admin/settings.html), jadi ringan &
+        // pasti bisa dirender di HP. Catatan: endpoint transform render/image TIDAK
+        // dipakai karena hanya tersedia di plan berbayar (di plan free → 403).
+        function setHeroImage(img, url) {
+          if (!img || !url) return;
+          img.onerror = function () {
+            this.style.display = "none";
+          };
+          img.src = url;
           img.style.display = "block";
         }
 
@@ -426,19 +407,11 @@
             if (data && data.length > 0) {
               const bannerData = data.find((d) => d.key === "hero_banner_url");
               if (bannerData?.value) {
-                setImageWithFallback(
-                  document.getElementById("heroBgImg"),
-                  bannerData.value,
-                  1280,
-                );
+                setHeroImage(document.getElementById("heroBgImg"), bannerData.value);
               }
               const logoData = data.find((d) => d.key === "hero_logo_url");
               if (logoData?.value) {
-                setImageWithFallback(
-                  document.getElementById("heroLogoImg"),
-                  logoData.value,
-                  240,
-                );
+                setHeroImage(document.getElementById("heroLogoImg"), logoData.value);
               }
             }
           });

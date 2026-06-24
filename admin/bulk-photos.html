@@ -1,77 +1,207 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="id">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Bulk Upload Foto Menu — SUKA Admin</title>
-<link rel="stylesheet" href="../assets/css/style.css?v=7" />
+<link rel="manifest" href="/manifest.json" />
 <meta name="theme-color" content="#f29744" />
+<script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="../assets/css/admin-ui.css?v=2" />
+<style type="text/tailwindcss">
+  @theme {
+    --color-brand: #f29744;
+    --color-brand-bg: #fff8f1;
+    --color-brand-dark: #d87c2b;
+  }
+  @utility form-group {
+    @apply flex flex-col gap-1.5 mb-4;
+  }
+  @utility form-label {
+    @apply text-xs font-bold text-gray-600 uppercase tracking-wide;
+  }
+  @utility form-input {
+    @apply w-full bg-white border border-gray-200 text-gray-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all placeholder:text-gray-300;
+  }
+  @utility btn-add-big {
+    @apply w-full bg-brand hover:bg-brand-dark text-white font-bold py-3 rounded-xl transition-all shadow-md shadow-brand/10 text-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  @utility action-btn {
+    @apply border-0 rounded-lg px-3.5 py-1.5 text-xs font-semibold cursor-pointer shrink-0 transition-colors inline-flex items-center justify-center gap-1;
+  }
+  @utility action-primary {
+    @apply bg-brand hover:bg-brand-dark text-white;
+  }
+  @utility action-secondary {
+    @apply bg-gray-100 hover:bg-gray-200 text-gray-700;
+  }
+  @utility action-danger {
+    @apply bg-red-50 hover:bg-red-100 text-red-600;
+  }
+
+  @utility toggle-wrap {
+    @apply relative inline-flex cursor-pointer;
+  }
+  @utility toggle-slider {
+    @apply w-10 h-6 bg-gray-200 rounded-full transition-colors relative block;
+  }
+  .toggle-slider::after {
+    content: "";
+    @apply absolute w-4.5 h-4.5 rounded-full bg-white top-0.75 left-0.75 transition-transform shadow;
+  }
+  .toggle-wrap input {
+    @apply opacity-0 w-0 h-0 absolute;
+  }
+  .toggle-wrap input:checked + .toggle-slider {
+    @apply bg-green-500;
+  }
+  .toggle-wrap input:checked + .toggle-slider::after {
+    @apply translate-x-4;
+  }
+
+  @utility admin-modal-overlay {
+    @apply fixed inset-0 bg-black/50 z-50 flex items-end md:items-center justify-center p-0 md:p-4;
+  }
+  @utility admin-modal-card {
+    @apply bg-white rounded-t-2xl md:rounded-2xl w-full max-w-lg max-h-[92vh] md:max-h-[85vh] overflow-y-auto flex flex-col shadow-xl;
+  }
+  @utility admin-modal-header {
+    @apply p-4 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10 font-bold text-gray-800;
+  }
+  @utility admin-modal-body {
+    @apply p-6 flex-1 overflow-y-auto space-y-4;
+  }
+  @utility admin-modal-footer {
+    @apply p-4 border-t border-gray-100 sticky bottom-0 bg-white;
+  }
+  @utility sheet-close {
+    @apply text-2xl font-light text-gray-400 hover:text-gray-600 transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100;
+  }
+  @utility hint-banner {
+    @apply bg-brand-bg text-brand text-xs font-semibold px-4 py-3 rounded-xl border border-brand/10 flex items-center gap-2;
+  }
+</style>
 </head>
-<body>
-<div class="phone">
+<body class="bg-gray-50 text-gray-900 font-sans antialiased">
+<div class="flex h-screen overflow-hidden">
 
-  <!-- Topbar -->
-  <div class="topbar">
-    <button class="topbar-ic" onclick="history.back()">‹</button>
-    <span class="topbar-title">📷 Bulk Upload Foto</span>
-    <span style="width:32px"></span>
-  </div>
-
-  <div style="padding:12px">
-
-    <!-- Step 1: Pilih foto -->
-    <div class="info-card" id="stepPickCard" style="margin-bottom:12px">
-      <div style="font-weight:700;font-size:14px;margin-bottom:8px">1️⃣ Pilih Semua Foto</div>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5">
-        Pilih semua foto menu sekaligus. Nama file akan dicocokkan otomatis ke nama menu.<br/>
-        <b>Tips:</b> beri nama file mirip nama menu, contoh: <code>shawarma-ayam.jpg</code>
-      </div>
-      <label style="display:flex;align-items:center;gap:10px;padding:14px 12px;border:2px dashed var(--line2);border-radius:10px;cursor:pointer;background:var(--bg)">
-        <span style="font-size:28px">🖼️</span>
-        <div>
-          <div style="font-weight:700;font-size:14px">Pilih Foto (bisa banyak sekaligus)</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:2px">JPG / PNG / WEBP</div>
-        </div>
-        <input type="file" id="filesInput" accept="image/*" multiple style="display:none"
-               onchange="onFilesSelected(this)" />
-      </label>
+  <!-- Sidebar -->
+  <aside class="hidden md:flex flex-col w-64 bg-white border-r border-gray-200 h-full">
+    <div class="p-6 border-b border-gray-200 flex items-center gap-3">
+      <i data-lucide="utensils" class="text-brand w-6 h-6"></i>
+      <span class="font-extrabold text-xl text-brand">SUKA Admin</span>
     </div>
-
-    <!-- Step 2: Review matching -->
-    <div id="matchSection" style="display:none">
-      <div class="info-card" style="margin-bottom:12px">
-        <div style="font-weight:700;font-size:14px;margin-bottom:4px">2️⃣ Cek & Cocokkan</div>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:12px">
-          Pastikan tiap foto cocok ke menu yang benar. Tap dropdown untuk ubah.
-        </div>
-        <div id="matchList"></div>
-      </div>
-
-      <!-- Summary -->
-      <div id="summaryBar" style="padding:10px 12px;border-radius:10px;margin-bottom:12px;font-size:13px"></div>
-
-      <!-- Upload button -->
-      <button class="btn-add-big" id="btnUploadAll" onclick="doUploadAll()" style="width:100%;margin-bottom:80px">
-        🚀 Upload Semua & Simpan
+    <div class="px-6 py-4 flex flex-col gap-1 border-b border-gray-200 bg-gray-50">
+      <span class="text-sm font-bold text-gray-800" id="sidebarName">—</span>
+      <span class="text-xs font-medium text-gray-500" id="sidebarRole">—</span>
+    </div>
+    <nav class="flex-1 overflow-y-auto py-4 flex flex-col gap-2 px-3">
+      <a href="/admin/index.html" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-brand font-medium transition-colors"><i data-lucide="layout-dashboard" class="w-5 h-5"></i><span>Dashboard</span></a>
+      <a href="/admin/orders.html" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-brand font-medium transition-colors"><i data-lucide="clipboard-list" class="w-5 h-5"></i><span>Pesanan</span></a>
+      <a href="/admin/menu.html" class="flex items-center gap-3 px-3 py-2 rounded-lg text-brand bg-brand-bg font-medium transition-colors"><i data-lucide="utensils" class="w-5 h-5"></i><span>Menu</span></a>
+      <a href="/admin/reports.html" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-brand font-medium transition-colors"><i data-lucide="bar-chart-2" class="w-5 h-5"></i><span>Laporan</span></a>
+      <a href="/admin/customers.html" class="admin-only flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-brand font-medium transition-colors"><i data-lucide="users" class="w-5 h-5"></i><span>Pelanggan</span></a>
+      <a href="/admin/promos.html" class="admin-only flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-brand font-medium transition-colors"><i data-lucide="tag" class="w-5 h-5"></i><span>Promo</span></a>
+      <a href="/admin/outlets.html" class="admin-only flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-brand font-medium transition-colors"><i data-lucide="map-pin" class="w-5 h-5"></i><span>Outlet</span></a>
+      <a href="/admin/users.html" class="admin-only flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-brand font-medium transition-colors"><i data-lucide="user-cog" class="w-5 h-5"></i><span>Pengguna</span></a>
+      <a href="/admin/monitoring.html" class="admin-only flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-brand font-medium transition-colors"><i data-lucide="activity" class="w-5 h-5"></i><span>Monitoring</span></a>
+      <a href="/admin/settings.html" class="admin-only flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100 hover:text-brand font-medium transition-colors"><i data-lucide="settings" class="w-5 h-5"></i><span>Pengaturan</span></a>
+    </nav>
+    <div class="p-4 border-t border-gray-200">
+      <button onclick="adminSignOut()" class="flex items-center justify-center gap-2 text-red-600 bg-red-50 hover:bg-red-100 py-2.5 px-4 rounded-xl w-full transition-colors font-bold shadow-sm cursor-pointer">
+        <i data-lucide="log-out" class="w-5 h-5"></i> Keluar
       </button>
     </div>
+  </aside>
 
-    <!-- Empty state menu items (sebelum file dipilih) -->
-    <div id="menuGrid" style="display:none;margin-bottom:80px">
-      <div style="font-weight:700;font-size:14px;margin-bottom:10px">📋 Semua Menu Item</div>
-      <div id="menuGridList"></div>
-    </div>
+  <!-- Main Content -->
+  <div class="flex-1 flex flex-col h-full overflow-hidden relative">
 
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm z-10">
+      <div class="flex items-center gap-3">
+        <a href="menu.html" class="flex items-center gap-1 text-gray-500 hover:text-brand font-semibold text-sm transition-colors cursor-pointer">
+          <i data-lucide="chevron-left" class="w-5 h-5"></i>
+          <span class="hidden md:inline">Kembali ke Menu</span>
+        </a>
+        <span class="text-gray-300 hidden md:inline">|</span>
+        <div class="font-bold text-gray-800 text-base md:text-lg flex items-center gap-2">
+          <i data-lucide="camera" class="w-5 h-5 text-brand"></i> Bulk Upload Foto
+        </div>
+      </div>
+      <button onclick="adminSignOut()" class="md:hidden flex items-center gap-1 text-xs font-bold text-red-600 bg-red-50 px-3 py-1.5 rounded-full">
+        <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Keluar
+      </button>
+    </header>
+
+    <!-- Scrollable Content Area -->
+    <main class="flex-1 overflow-y-auto p-4 md:p-8 pb-24 md:pb-8 bg-gray-50">
+      <div id="pageContent" class="max-w-4xl mx-auto space-y-6">
+
+        <!-- Step 1: Pilih foto -->
+        <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm" id="stepPickCard">
+          <h2 class="text-base font-extrabold text-gray-800 flex items-center gap-2 mb-2">
+            <span class="w-6 h-6 rounded-full bg-brand-bg text-brand flex items-center justify-center text-xs font-bold font-mono">1</span>
+            Pilih Semua Foto
+          </h2>
+          <p class="text-xs text-gray-500 leading-relaxed mb-4">
+            Pilih semua foto menu sekaligus. Nama file akan dicocokkan otomatis ke nama menu.<br/>
+            <strong>Tips:</strong> beri nama file mirip nama menu, contoh: <code class="bg-gray-50 px-1 py-0.5 rounded text-brand font-mono font-bold">shawarma-ayam.jpg</code>
+          </p>
+          <label class="flex flex-col items-center justify-center gap-3 py-8 px-4 border-2 border-dashed border-gray-200 hover:border-brand rounded-2xl cursor-pointer bg-gray-50 hover:bg-brand-bg/10 transition-all text-center">
+            <i data-lucide="image" class="w-8 h-8 text-gray-400"></i>
+            <div>
+              <span class="font-bold text-sm text-gray-700">Pilih Foto (bisa banyak sekaligus)</span>
+              <span class="block text-xs text-gray-400 mt-1">JPG / PNG / WEBP</span>
+            </div>
+            <input type="file" id="filesInput" accept="image/*" multiple class="hidden" onchange="onFilesSelected(this)" />
+          </label>
+        </div>
+
+        <!-- Step 2: Review matching -->
+        <div id="matchSection" class="space-y-4" style="display:none">
+          <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+            <h2 class="text-base font-extrabold text-gray-800 flex items-center gap-2 mb-2">
+              <span class="w-6 h-6 rounded-full bg-brand-bg text-brand flex items-center justify-center text-xs font-bold font-mono">2</span>
+              Cek & Cocokkan
+            </h2>
+            <p class="text-xs text-gray-500 leading-relaxed mb-4">
+              Pastikan tiap foto cocok ke menu yang benar. Tap dropdown untuk ubah.
+            </p>
+            <div id="matchList" class="space-y-4"></div>
+          </div>
+
+          <!-- Summary -->
+          <div id="summaryBar" class="p-4 rounded-xl border font-semibold text-sm"></div>
+
+          <!-- Upload button -->
+          <button class="btn-add-big" id="btnUploadAll" onclick="doUploadAll()">
+            <i data-lucide="rocket" class="w-4 h-4"></i> Upload Semua & Simpan
+          </button>
+        </div>
+
+        <!-- Empty state menu items (sebelum file dipilih) -->
+        <div id="menuGrid" class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm" style="display:none">
+          <h2 class="text-base font-extrabold text-gray-800 flex items-center gap-2 mb-4">
+            <i data-lucide="clipboard-list" class="w-5 h-5 text-brand"></i>
+            Semua Menu Item
+          </h2>
+          <div id="menuGridList" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+        </div>
+
+      </div>
+    </main>
   </div>
 
-  <!-- Bottom nav -->
-    <nav class="admin-nav">
-    <a href="/admin/index.html"><span>🏠</span><span>Dashboard</span></a>
-    <a href="/admin/orders.html"><span>📋</span><span>Pesanan</span></a>
-    <a href="/admin/menu.html"><span>🌯</span><span>Menu</span></a>
-    <a href="/admin/reports.html"><span>📊</span><span>Laporan</span></a>
-    <a href="/admin/monitoring.html" class="admin-only"><span>🔍</span><span>Monitor</span></a>
-    <a href="/admin/settings.html" class="admin-only"><span>⚙️</span><span>Pengaturan</span></a>
+  <!-- Mobile Bottom Nav -->
+  <nav class="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 flex items-center justify-around pb-safe pt-1 z-20 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+    <a href="/admin/index.html" class="flex flex-col items-center gap-1 py-2 px-2 text-gray-500 hover:text-brand"><i data-lucide="layout-dashboard" class="w-5 h-5"></i><span class="text-[10px] font-medium">Dashboard</span></a>
+    <a href="/admin/orders.html" class="flex flex-col items-center gap-1 py-2 px-2 text-gray-500 hover:text-brand"><i data-lucide="clipboard-list" class="w-5 h-5"></i><span class="text-[10px] font-medium">Pesanan</span></a>
+    <a href="/admin/menu.html" class="flex flex-col items-center gap-1 py-2 px-2 text-brand font-bold"><i data-lucide="utensils" class="w-5 h-5"></i><span class="text-[10px] font-bold">Menu</span></a>
+    <a href="/admin/reports.html" class="flex flex-col items-center gap-1 py-2 px-2 text-gray-500 hover:text-brand"><i data-lucide="bar-chart-2" class="w-5 h-5"></i><span class="text-[10px] font-medium">Laporan</span></a>
+    <a href="/admin/settings.html" class="admin-only flex flex-col items-center gap-1 py-2 px-2 text-gray-500 hover:text-brand"><i data-lucide="settings" class="w-5 h-5"></i><span class="text-[10px] font-medium">Pengaturan</span></a>
   </nav>
 
 </div>
@@ -81,17 +211,19 @@
 <script src="../config.js"></script>
 <script src="../assets/js/supabase.js"></script>
 <script src="../assets/js/utils.js"></script>
-<script src="../assets/js/admin.js"></script>
+<script src="../assets/js/admin.js?v=2"></script>
 <script>
-let menuItems = []; // semua menu item dari DB
-let matches   = []; // [{ file, menuItemId, preview }]
+let menuItems = []; 
+let matches   = []; 
 
-// ─── Init ─────────────────────────────────────────────────────────────────────
 (async function init() {
   const u = await requireAuth();
   if (!u) return;
   await loadMenuItems();
   renderMenuGrid();
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
 })();
 
 async function loadMenuItems() {
@@ -102,33 +234,33 @@ async function loadMenuItems() {
   menuItems = data || [];
 }
 
-// ─── Render grid menu (status foto saat ini) ──────────────────────────────────
 function renderMenuGrid() {
   const el = document.getElementById('menuGridList');
   el.innerHTML = menuItems.map(item => `
-    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)">
-      <div style="width:48px;height:48px;border-radius:8px;overflow:hidden;flex-shrink:0;
-                  background:linear-gradient(135deg,#fde2c4,#ffb088);
-                  display:flex;align-items:center;justify-content:center;font-size:22px">
+    <div class="flex items-center gap-3 py-2 border-b border-gray-100 last:border-b-0">
+      <div class="w-12 h-12 rounded-xl shrink-0 overflow-hidden bg-gradient-to-br from-amber-100 to-orange-200 flex items-center justify-center text-xl">
         ${item.photo_url
-          ? `<img src="${item.photo_url}" style="width:100%;height:100%;object-fit:cover" />`
-          : '🌯'}
+          ? `<img src="${item.photo_url}" class="w-full h-full object-cover" />`
+          : `<i data-lucide="utensils" class="w-5 h-5 text-brand"></i>`}
       </div>
-      <div style="flex:1;min-width:0">
-        <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${item.name}</div>
-        <div style="font-size:11px;color:${item.photo_url ? 'var(--green,#22c55e)' : 'var(--muted)'}">
-          ${item.photo_url ? '✅ Sudah ada foto' : '⬜ Belum ada foto'}
+      <div class="flex-1 min-w-0">
+        <div class="font-semibold text-gray-800 text-xs md:text-sm truncate">${item.name}</div>
+        <div class="text-[11px] mt-0.5 flex items-center gap-1 font-semibold ${item.photo_url ? 'text-green-600' : 'text-gray-400'}">
+          <i data-lucide="${item.photo_url ? 'check-circle-2' : 'image-off'}" class="w-3.5 h-3.5"></i>
+          ${item.photo_url ? 'Sudah ada foto' : 'Belum ada foto'}
         </div>
       </div>
     </div>`).join('');
   document.getElementById('menuGrid').style.display = '';
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
 }
 
-// ─── Normalize nama untuk matching ───────────────────────────────────────────
 function normalize(str) {
   return str
     .toLowerCase()
-    .replace(/[^a-z0-9]/g, '') // hapus semua non-alphanumeric
+    .replace(/[^a-z0-9]/g, '') 
     .trim();
 }
 
@@ -137,14 +269,13 @@ function similarity(a, b) {
   const nb = normalize(b);
   if (na === nb) return 1;
   if (na.includes(nb) || nb.includes(na)) return 0.9;
-  // Hitung overlap karakter
   let common = 0;
   for (const ch of na) { if (nb.includes(ch)) common++; }
   return common / Math.max(na.length, nb.length);
 }
 
 function bestMatch(filename) {
-  const base = filename.replace(/\.[^.]+$/, ''); // hapus ekstensi
+  const base = filename.replace(/\.[^.]+$/, ''); 
   let best = null, bestScore = 0;
   for (const item of menuItems) {
     const score = similarity(base, item.name);
@@ -153,7 +284,6 @@ function bestMatch(filename) {
   return bestScore >= 0.3 ? best : null;
 }
 
-// ─── Files selected ───────────────────────────────────────────────────────────
 function onFilesSelected(input) {
   const files = Array.from(input.files);
   if (!files.length) return;
@@ -170,7 +300,6 @@ function onFilesSelected(input) {
   updateSummary();
 }
 
-// ─── Render daftar matching ───────────────────────────────────────────────────
 function renderMatches() {
   const el = document.getElementById('matchList');
   el.innerHTML = matches.map((m, idx) => {
@@ -179,31 +308,37 @@ function renderMatches() {
     ).join('');
 
     return `
-      <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)" id="match-${idx}">
-        <!-- Preview foto -->
-        <div style="width:52px;height:52px;border-radius:8px;overflow:hidden;flex-shrink:0">
-          <img src="${m.preview}" style="width:100%;height:100%;object-fit:cover" />
+      <div class="flex items-start gap-3 py-3 border-b border-gray-100 last:border-b-0" id="match-${idx}">
+        <div class="w-14 h-14 rounded-xl overflow-hidden shrink-0 border border-gray-200">
+          <img src="${m.preview}" class="w-full h-full object-cover" />
         </div>
-        <!-- Info & dropdown -->
-        <div style="flex:1;min-width:0">
-          <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px">
-            📄 ${m.file.name}
+        <div class="flex-1 min-w-0">
+          <div class="text-[11px] text-gray-400 truncate mb-1.5 flex items-center gap-1">
+            <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+            <span>${m.file.name}</span>
           </div>
-          <select class="form-input" style="font-size:12px;padding:6px 8px"
-                  onchange="onMatchChange(${idx}, this.value)">
-            <option value="">— Tidak dipakai —</option>
-            ${opts}
-          </select>
-          <div id="match-status-${idx}" style="font-size:11px;margin-top:4px">
+          <div class="relative w-full max-w-xs">
+            <select class="form-input text-xs py-1.5 pr-8 appearance-none"
+                    onchange="onMatchChange(${idx}, this.value)">
+              <option value="">— Tidak dipakai —</option>
+              ${opts}
+            </select>
+            <i data-lucide="chevron-down" class="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"></i>
+          </div>
+          <div id="match-status-${idx}" class="text-[11px] mt-1.5">
             ${m.menuItemId
-              ? `<span style="color:var(--green,#22c55e)">✅ Auto-match: ${menuItems.find(x=>x.id===m.menuItemId)?.name}</span>`
-              : `<span style="color:var(--muted)">⬜ Belum dicocokkan — pilih dari dropdown</span>`}
+              ? `<span class="text-green-600 font-semibold flex items-center gap-1"><i data-lucide="check" class="w-3.5 h-3.5"></i> Auto-match: ${menuItems.find(x=>x.id===m.menuItemId)?.name}</span>`
+              : `<span class="text-gray-400 flex items-center gap-1"><i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> Belum dicocokkan — pilih dari dropdown</span>`}
           </div>
         </div>
-        <!-- Remove -->
-        <button onclick="removeMatch(${idx})" style="background:none;border:none;font-size:18px;color:var(--muted);cursor:pointer;flex-shrink:0;padding:0">×</button>
+        <button onclick="removeMatch(${idx})" class="text-gray-400 hover:text-red-500 cursor-pointer p-1 rounded-full hover:bg-gray-100 transition-colors shrink-0">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
       </div>`;
   }).join('');
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
 }
 
 function onMatchChange(idx, menuItemId) {
@@ -211,9 +346,12 @@ function onMatchChange(idx, menuItemId) {
   const statusEl = document.getElementById(`match-status-${idx}`);
   if (menuItemId) {
     const name = menuItems.find(x => x.id === menuItemId)?.name || '';
-    statusEl.innerHTML = `<span style="color:var(--green,#22c55e)">✅ ${name}</span>`;
+    statusEl.innerHTML = `<span class="text-green-600 font-semibold flex items-center gap-1"><i data-lucide="check" class="w-3.5 h-3.5"></i> ${name}</span>`;
   } else {
-    statusEl.innerHTML = `<span style="color:var(--muted)">⬜ Tidak dipakai</span>`;
+    statusEl.innerHTML = `<span class="text-gray-400 flex items-center gap-1"><i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> Tidak dipakai</span>`;
+  }
+  if (window.lucide) {
+    window.lucide.createIcons();
   }
   updateSummary();
 }
@@ -230,22 +368,29 @@ function updateSummary() {
   const unmatched = total - matched;
   const bar       = document.getElementById('summaryBar');
 
-  let color = '#166534', bg = '#f0fdf4';
-  if (unmatched > 0) { color = '#92400e'; bg = '#fffbeb'; }
+  let colorClasses = 'bg-green-50 text-green-700 border-green-200';
+  if (unmatched > 0) { colorClasses = 'bg-amber-50 text-amber-800 border-amber-200'; }
 
-  bar.style.background = bg;
-  bar.style.color      = color;
+  bar.className = `p-4 rounded-xl border font-semibold text-sm flex items-center gap-2 ${colorClasses}`;
   bar.innerHTML = `
-    <b>${matched} dari ${total} foto</b> siap diupload.
-    ${unmatched > 0 ? `<span style="color:#dc2626"> ${unmatched} belum dicocokkan (akan dilewati).</span>` : ' Semua cocok! 🎉'}
+    <span>
+      <strong>${matched} dari ${total} foto</strong> siap diupload.
+      ${unmatched > 0 ? `<span class="text-red-600 font-medium"> ${unmatched} belum dicocokkan (akan dilewati).</span>` : ' Semua cocok! <i data-lucide="party-popper" class="w-4 h-4 inline text-green-600 fill-green-100"></i>'}
+    </span>
   `;
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
 
   const btn = document.getElementById('btnUploadAll');
   btn.disabled = matched === 0;
-  btn.style.opacity = matched === 0 ? '0.5' : '1';
+  if (matched === 0) {
+    btn.classList.add('opacity-50', 'cursor-not-allowed');
+  } else {
+    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+  }
 }
 
-// ─── Upload semua ─────────────────────────────────────────────────────────────
 let isUploading = false;
 
 async function doUploadAll() {
@@ -268,18 +413,15 @@ async function doUploadAll() {
       const ext  = m.file.name.split('.').pop().toLowerCase() || 'jpg';
       const path = `menu/${Date.now()}-${Math.random().toString(36).slice(2,6)}.${ext}`;
 
-      // Upload ke storage
       const { error: upErr } = await window.db.storage
         .from('menu-photo')
         .upload(path, m.file, { upsert: false, contentType: m.file.type });
 
       if (upErr) throw new Error(upErr.message);
 
-      // Ambil public URL
       const { data: urlData } = window.db.storage.from('menu-photo').getPublicUrl(path);
       const publicUrl = urlData.publicUrl;
 
-      // Update menu_item
       const { error: dbErr } = await window.db
         .from('menu_items')
         .update({ photo_url: publicUrl })
@@ -287,13 +429,14 @@ async function doUploadAll() {
 
       if (dbErr) throw new Error(dbErr.message);
 
-      // Update local state
       const localIdx = menuItems.findIndex(x => x.id === m.menuItemId);
       if (localIdx >= 0) menuItems[localIdx].photo_url = publicUrl;
 
-      // Tandai row sukses
       const row = document.getElementById(`match-status-${matches.indexOf(m)}`);
-      if (row) row.innerHTML = `<span style="color:var(--green,#22c55e)">✅ Uploaded!</span>`;
+      if (row) {
+        row.innerHTML = `<span class="text-green-600 font-semibold flex items-center gap-1"><i data-lucide="check" class="w-3.5 h-3.5"></i> Uploaded!</span>`;
+        if (window.lucide) window.lucide.createIcons();
+      }
 
       done++;
     } catch (e) {
@@ -304,7 +447,8 @@ async function doUploadAll() {
 
   isUploading = false;
   btn.disabled = false;
-  btn.textContent = `🚀 Upload Semua & Simpan`;
+  btn.innerHTML = `<i data-lucide="rocket" class="w-4 h-4"></i> Upload Semua & Simpan`;
+  if (window.lucide) window.lucide.createIcons();
 
   adminToast(`✅ Selesai: ${done} foto berhasil${failed ? `, ${failed} gagal` : ''}`);
 
