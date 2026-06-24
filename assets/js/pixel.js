@@ -4,11 +4,12 @@
 window._sukaPixelQueue = [];
 
 // Antrian event sebelum pixel siap
-window.sukaPixelTrack = function(event, params) {
+// options.eventID dipakai untuk deduplikasi dengan Conversions API (server-side)
+window.sukaPixelTrack = function(event, params, options) {
   if (typeof fbq !== 'undefined') {
-    fbq('track', event, params || {});
+    fbq('track', event, params || {}, options || undefined);
   } else {
-    window._sukaPixelQueue.push({ event: event, params: params || {} });
+    window._sukaPixelQueue.push({ event: event, params: params || {}, options: options || undefined });
   }
 };
 
@@ -58,7 +59,7 @@ window.sukaPixelTrack = function(event, params) {
 
   // Flush event yang sudah antri sebelum pixel siap
   (window._sukaPixelQueue || []).forEach(function(item) {
-    fbq('track', item.event, item.params);
+    fbq('track', item.event, item.params, item.options || undefined);
   });
   window._sukaPixelQueue = [];
 })();
