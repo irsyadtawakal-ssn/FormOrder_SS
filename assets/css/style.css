@@ -1509,34 +1509,54 @@ h6,
   position: relative;
 }
 .how-to-steps {
-  padding: 16px;
+  padding: 24px 20px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 24px;
+  position: relative;
+}
+.how-to-steps::before {
+  content: '';
+  position: absolute;
+  left: 33px; /* 20px + 13px */
+  top: 40px;
+  bottom: 40px;
+  width: 2px;
+  background: rgba(242, 151, 68, 0.25);
+  z-index: 0;
 }
 .how-to-step {
   display: flex;
-  gap: 14px;
+  gap: 16px;
   align-items: flex-start;
+  position: relative;
+  z-index: 1;
 }
 .how-to-num {
   min-width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: var(--brand);
-  color: #fff;
+  background: #fff;
+  border: 2px solid var(--brand);
+  color: var(--brand);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 800;
   flex-shrink: 0;
-  margin-top: 1px;
+  margin-top: 2px;
+  box-shadow: 0 0 0 6px #fff;
+}
+.how-to-step:last-child .how-to-num {
+  background: var(--brand);
+  color: #fff;
 }
 .how-to-title {
-  font-weight: 700;
-  font-size: 14px;
-  margin-bottom: 2px;
+  font-weight: 800;
+  font-size: 15px;
+  margin-bottom: 4px;
+  color: #1f2937;
 }
 .how-to-desc {
   font-size: 13px;

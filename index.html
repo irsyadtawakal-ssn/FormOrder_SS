@@ -64,7 +64,7 @@
         <div class="modal-box how-to-box">
           <button
             class="modal-close"
-            style="position: absolute; top: 10px; right: 12px"
+            style="position: absolute; top: 10px; right: 12px; z-index: 10;"
             onclick="
               document.getElementById('howToModal').style.display = 'none'
             "
@@ -105,10 +105,9 @@
             <div class="how-to-step">
               <div class="how-to-num">4</div>
               <div>
-                <div class="how-to-title">Transfer & Upload Bukti</div>
+                <div class="how-to-title">Selesaikan Pembayaran</div>
                 <div class="how-to-desc">
-                  Lakukan transfer sesuai nominal, lalu upload foto/screenshot
-                  bukti pembayaran.
+                  Bayar pesanan secara otomatis dan aman melalui (QRIS Dan VA).
                 </div>
               </div>
             </div>
@@ -117,7 +116,7 @@
               <div>
                 <div class="how-to-title">Ambil Pesanan</div>
                 <div class="how-to-desc">
-                  Setelah pembayaran dikonfirmasi, datang ke outlet sesuai waktu
+                  Setelah berhasil bayar, datang ke outlet sesuai waktu
                   pickup yang dipilih.
                   <i
                     data-lucide="party-popper"
@@ -126,6 +125,7 @@
                       height: 16px;
                       vertical-align: text-bottom;
                       display: inline-block;
+                      color: var(--brand);
                     "
                   ></i>
                 </div>
