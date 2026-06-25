@@ -5,13 +5,6 @@
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover"
-<!doctype html>
-<html lang="id">
-  <head>
-    <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
     <title>Order Sukashawarma</title>
     <meta
@@ -20,23 +13,21 @@
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
+    <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="preload" href="assets/css/style.css?v=9" as="style" />
     <link rel="stylesheet" href="assets/css/style.css?v=9" />
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#f29744" />
     
     <!-- Deferred Scripts for Performance -->
-    <script src="https://unpkg.com/lucide@latest" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" defer></script>
     <script src="config.js" defer></script>
     <script src="assets/js/supabase.js" defer></script>
     <script src="assets/js/utils.js" defer></script>
     <script src="assets/js/pixel.js" defer></script>
     <script src="assets/js/app.js" defer></script>
+    <script src="assets/js/index.js" defer></script>
   </head>
   <body>
     <div class="phone">
@@ -60,8 +51,12 @@
           <img
             id="heroLogoImg"
             src="assets/img/logo.webp"
-            alt="SUKA Shawarma"
+            alt="SUKA Shawarma Logo"
+            class="topbar-logo"
             fetchpriority="high"
+            width="150"
+            height="150"
+            style="width:150px;height:auto;object-fit:contain;"
             onerror="this.style.display = 'none'"
           />
         </div>

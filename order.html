@@ -93,16 +93,16 @@
 <!-- QR library (untuk render order number QR di state ready) -->
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
 <!-- Lucide Icons -->
-<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
 <!-- Lucide Icons -->
-<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
 <!-- Supabase SDK -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="config.js"></script>
-<script src="assets/js/supabase.js"></script>
-<script src="assets/js/utils.js"></script>
-<script src="assets/js/pixel.js"></script>
-<script src="assets/js/app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" defer></script>
+<script src="config.js" defer></script>
+<script src="assets/js/supabase.js" defer></script>
+<script src="assets/js/utils.js" defer></script>
+<script src="assets/js/pixel.js" defer></script>
+<script src="assets/js/app.js" defer></script>
 <script>
 // ─── State ────────────────────────────────────────────────────────────────────
 const orderNumber = getParam('order');
@@ -123,7 +123,7 @@ const EWALLET_ICONS    = { GOPAY: '<i data-lucide="wallet" color="#00a550"></i>'
 function getChannel(o) { return o._payment_channel || o.payment_channel || 'QRIS'; }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
-(async function init() {
+window.addEventListener('DOMContentLoaded', async function init() {
   if (!orderNumber) {
     renderError('Order tidak ditemukan. <a href="index.html">Kembali ke beranda</a>');
     return;
@@ -133,7 +133,7 @@ function getChannel(o) { return o._payment_channel || o.payment_channel || 'QRIS
   const cached = readCachedOrder();
 
   await loadOrder(cached);
-})();
+});
 
 function readCachedOrder() {
   try {

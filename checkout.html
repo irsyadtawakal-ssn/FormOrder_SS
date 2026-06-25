@@ -11,8 +11,13 @@
 <link rel="stylesheet" href="assets/css/style.css?v=9" />
 <link rel="manifest" href="/manifest.json" />
 <meta name="theme-color" content="#f29744" />
-<script src="https://unpkg.com/lucide@latest"></script>
-</head>
+<script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" defer></script>
+<script src="config.js" defer></script>
+<script src="assets/js/supabase.js" defer></script>
+<script src="assets/js/utils.js" defer></script>
+<script src="assets/js/pixel.js" defer></script>
+<script src="assets/js/app.js" defer></script>
 <body>
 <div class="phone">
 
@@ -64,7 +69,7 @@
 <div class="toast" id="toast"></div>
 
 <!-- Scripts -->
-<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script src="assets/js/supabase.js"></script>
@@ -351,24 +356,29 @@ async function fetchPromoPreview(subtotal) {
 }
 
 // ─── Init — baca sessionStorage dan render halaman ───────────────────────────
-const raw = sessionStorage.getItem('suka_checkout');
 let checkoutData = null;
-try { checkoutData = raw ? JSON.parse(raw) : null; } catch { checkoutData = null; }
 
-if (!checkoutData || !checkoutData.cart || !checkoutData.cart.length) {
-  document.getElementById('pageContent').innerHTML = `
-    <div class="error-box" style="margin:24px 16px">
-      <p>Data pesanan tidak ditemukan.<br/>Silakan kembali dan coba lagi.</p>
-      <button class="btn-retry" onclick="window.location.href='index.html'">Ke Halaman Utama</button>
-    </div>`;
-  if (window.lucide) { lucide.createIcons(); }
-} else {
-  const subtotal = getCartTotal(checkoutData.cart);
-  fetchPromoPreview(subtotal).then(() => {
-    renderPage();
-    sukaPixelTrack('InitiateCheckout', { value: subtotal - previewDiscount, currency: 'IDR' });
-  });
-}
+window.addEventListener('DOMContentLoaded', () => {
+  const raw = sessionStorage.getItem('suka_checkout');
+  try { checkoutData = raw ? JSON.parse(raw) : null; } catch { checkoutData = null; }
+
+  if (!checkoutData || !checkoutData.cart || !checkoutData.cart.length) {
+    document.getElementById('pageContent').innerHTML = `
+      <div class="error-box" style="margin:24px 16px">
+        <p>Data pesanan tidak ditemukan.<br/>Silakan kembali dan coba lagi.</p>
+        <button class="btn-retry" onclick="window.location.href='index.html'">Ke Halaman Utama</button>
+      </div>`;
+    if (window.lucide) { lucide.createIcons(); }
+  } else {
+    const subtotal = getCartTotal(checkoutData.cart);
+    fetchPromoPreview(subtotal).then(() => {
+      renderPage();
+      if (typeof sukaPixelTrack === 'function') {
+        sukaPixelTrack('InitiateCheckout', { value: subtotal - previewDiscount, currency: 'IDR' });
+      }
+    });
+  }
+});
 </script>
 <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
 <script>if(window.lucide) { lucide.createIcons(); }</script>
