@@ -33,7 +33,7 @@
   --font:
     "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", sans-serif;
-  --font-display: "Lilita One", system-ui, sans-serif;
+  --font-display: "Space Mono", ui-monospace, "Courier New", monospace;
 }
 
 /* ─── Reset & base ──────────────────────────────────────────────────────────── */
@@ -70,6 +70,8 @@ img {
 }
 
 /* Headings and Display typography (Stitch Design System) */
+/* Lilita One HANYA untuk judul & branding (teks pendek). Nama menu, harga, label,
+   angka, dan tab pakai font tubuh (Plus Jakarta Sans) agar lebih ringan & mudah dibaca. */
 h1,
 h2,
 h3,
@@ -81,20 +83,12 @@ h6,
 .outlet-sel-name,
 .outlet-drop-name,
 .outlet-hdr-name,
-.deal-name,
-.deal-price,
 .deal-section-title,
 .sheet-title,
-.variant-label,
 .how-to-title,
-.how-to-num,
-.order-number-big,
 .qris-title,
-.qris-amount,
 .status-title,
-.cart-total,
-.cart-cta,
-.tab {
+.cart-cta {
   font-family: var(--font-display);
 }
 
@@ -420,6 +414,7 @@ h6,
   border: 1px solid #7c6252;
   border-radius: 999px;
   font-size: 13px;
+  font-weight: 600;
   background: transparent;
   cursor: pointer;
   white-space: nowrap;
@@ -1648,7 +1643,8 @@ h6,
   letter-spacing: 0.5px;
   line-height: 1.1;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  font-family: var(--font-display);
+  /* Judul banner sengaja TETAP Lilita One — jangan ikut --font-display */
+  font-family: "Lilita One", system-ui, sans-serif;
 }
 .hero-banner-tagline,
 .hero-header-tagline {
@@ -1658,6 +1654,8 @@ h6,
   letter-spacing: 1px;
   text-transform: uppercase;
   margin-top: 4px;
+  /* Tagline banner sengaja TETAP Lilita One — samakan dengan judul banner */
+  font-family: "Lilita One", system-ui, sans-serif;
 }
 
 /* ─── Outlet header – menu page (TikTok-style) ──────────────────────────────── */
