@@ -936,7 +936,7 @@
       function renderItemSheet() {
         let html = `
     <div class="item-hero">
-      ${currentItem.photo_url ? `<img src="${currentItem.photo_url}" alt="${currentItem.name}" />` : '<i data-lucide="sandwich" style="width:40px;height:40px;color:var(--faint)"></i>'}
+      ${currentItem.photo_url ? `<img id="itemSheetImg" src="${currentItem.photo_url}" alt="${currentItem.name}" />` : '<i id="itemSheetImg" data-lucide="sandwich" style="width:40px;height:40px;color:var(--faint)"></i>'}
     </div>
     ${currentItem.description ? `<p style="color:var(--muted);font-size:14px;margin:0 0 18px">${escHtml(currentItem.description)}</p>` : ""}`;
 
@@ -1032,6 +1032,64 @@
         return true;
       }
 
+      function animateFlyToCart() {
+        const sourceImg = document.getElementById("itemSheetImg");
+        const cartBar = document.getElementById("cartBar");
+        
+        if (!sourceImg || !cartBar) return;
+        
+        // Buat clone dari gambar
+        const clone = sourceImg.cloneNode(true);
+        const rect = sourceImg.getBoundingClientRect();
+        
+        // Buat ukurannya menjadi kotak yang sama sisi
+        const size = Math.min(rect.width, rect.height);
+        
+        clone.classList.add("flying-food");
+        // Posisi awal persis di atas gambar asli
+        clone.style.top = rect.top + "px";
+        clone.style.left = rect.left + "px";
+        clone.style.width = size + "px";
+        clone.style.height = size + "px";
+        clone.style.margin = "0"; 
+        clone.style.objectFit = "cover";
+        // Border radius 8px diatur via class CSS
+        
+        document.body.appendChild(clone);
+        
+        // Force reflow agar transisi berjalan
+        clone.offsetWidth;
+        
+        // Target spesifik ke ikon hitungan/badge keranjang
+        const cartCountBadge = document.getElementById("cartCount");
+        const cartRect = cartCountBadge ? cartCountBadge.getBoundingClientRect() : cartBar.getBoundingClientRect();
+        
+        // Target presisi ke tengah badge
+        const targetX = cartRect.left + (cartRect.width / 2); 
+        const targetY = cartRect.top + (cartRect.height / 2);
+        
+        // Hitung jarak (pusat ke pusat)
+        const deltaX = targetX - (rect.left + size / 2);
+        const deltaY = targetY - (rect.top + size / 2);
+        
+        // Jalankan animasi dengan transform hardware-accelerated
+        // Putar sedikit agar lebih hidup
+        clone.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(0.1) rotate(180deg)`;
+        clone.style.opacity = "0.3"; // tidak sampai hilang sempurna, masih berbayang
+        
+        // Hapus clone setelah animasi selesai (1.2 detik)
+        setTimeout(() => {
+          if (clone.parentNode) clone.parentNode.removeChild(clone);
+          cartBar.classList.add("bump");
+          if (window.navigator && window.navigator.vibrate) {
+            window.navigator.vibrate(50); // Haptic feedback
+          }
+          setTimeout(() => {
+            cartBar.classList.remove("bump");
+          }, 300);
+        }, 1000); // Sinkron dengan durasi transition CSS
+      }
+
       function addToCart() {
         if (!validateSelections()) {
           showToast("Pilih semua opsi yang wajib terlebih dahulu");
@@ -1064,6 +1122,10 @@
           note,
         });
         setCart(outletSlug, cart);
+        
+        // Trigger animasi terbang
+        animateFlyToCart();
+        
         updateCartBar();
         closeAllSheets();
         showToast("✓ " + currentItem.name + " ditambahkan");

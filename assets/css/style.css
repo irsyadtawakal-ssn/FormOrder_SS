@@ -2590,3 +2590,35 @@ input:focus, select:focus, textarea:focus {
   box-shadow: var(--shadow-lg);
   border: 1px solid var(--line);
 }
+
+/* --- Micro-Animation: Flying Food & Cart Bump --- */
+.flying-food {
+  position: fixed;
+  z-index: 9999;
+  border-radius: 8px; /* Square shape with slightly rounded corners */
+  box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+  pointer-events: none;
+  /* Hardware-accelerated transitions */
+  transition: transform 1s cubic-bezier(0.25, 1, 0.5, 1), opacity 1s ease-in;
+  will-change: transform, opacity;
+}
+
+@keyframes cartBump {
+  0% { transform: translateX(-50%) scale(1); }
+  50% { transform: translateX(-50%) scale(1.08); }
+  100% { transform: translateX(-50%) scale(1); }
+}
+
+@keyframes floatCart {
+  0% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-4px); }
+  100% { transform: translateX(-50%) translateY(0); }
+}
+
+.cart-bar:not(.hidden) {
+  animation: floatCart 3s ease-in-out infinite;
+}
+
+.cart-bar.bump {
+  animation: cartBump 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
