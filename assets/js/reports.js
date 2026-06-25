@@ -1,10 +1,10 @@
 // assets/js/reports.js — Logic halaman laporan
 
-let _user       = null; // adminUser dari admin.js
-let _chartInst  = null; // instance Chart.js
-let _rawData    = [];   // rows [{date, outlet_name, item_name, qty, unit_price}]
-let _sortCol    = 'date';
-let _sortAsc    = false;
+let _user = null; // adminUser dari admin.js
+let _chartInst = null; // instance Chart.js
+let _rawData = [];   // rows [{date, outlet_name, item_name, qty, unit_price}]
+let _sortCol = 'date';
+let _sortAsc = false;
 let _menuItemsMap = {}; // map menu name to photo_url
 
 function _esc(s) {
@@ -35,10 +35,10 @@ function _esc(s) {
 // ─── Date helpers ─────────────────────────────────────────────────────────────
 
 function _setDefaultDates() {
-  const to   = new Date();
+  const to = new Date();
   const from = new Date();
   from.setDate(from.getDate() - 6); // 7 hari inklusif
-  document.getElementById('dateTo').value   = _toYmd(to);
+  document.getElementById('dateTo').value = _toYmd(to);
   document.getElementById('dateFrom').value = _toYmd(from);
 }
 
@@ -51,7 +51,7 @@ function _toYmd(d) {
 
 function _getActiveDates() {
   const preset = document.getElementById('rangePreset').value;
-  const today  = new Date();
+  const today = new Date();
   let from, to;
 
   if (preset === 'today') {
@@ -67,7 +67,7 @@ function _getActiveDates() {
     from = _toYmd(f); to = _toYmd(today);
   } else {
     from = document.getElementById('dateFrom').value;
-    to   = document.getElementById('dateTo').value;
+    to = document.getElementById('dateTo').value;
   }
   return { from, to };
 }
@@ -75,9 +75,9 @@ function _getActiveDates() {
 // Hitung tanggal periode sebelumnya (panjang sama)
 function _prevPeriod(from, to) {
   const msFrom = new Date(from).getTime();
-  const msTo   = new Date(to).getTime();
-  const len    = msTo - msFrom + 86400000; // inklusif
-  const prevTo   = new Date(msFrom - 86400000);
+  const msTo = new Date(to).getTime();
+  const len = msTo - msFrom + 86400000; // inklusif
+  const prevTo = new Date(msFrom - 86400000);
   const prevFrom = new Date(msFrom - len);
   return { from: _toYmd(prevFrom), to: _toYmd(prevTo) };
 }
@@ -85,7 +85,7 @@ function _prevPeriod(from, to) {
 // ─── UI helpers ───────────────────────────────────────────────────────────────
 
 function onPresetChange() {
-  const val  = document.getElementById('rangePreset').value;
+  const val = document.getElementById('rangePreset').value;
   const wrap = document.getElementById('customRange');
   wrap.style.display = val === 'custom' ? 'flex' : 'none';
   // Auto-terapkan: preset selain "Kustom" langsung memuat laporan.
@@ -96,7 +96,7 @@ function onPresetChange() {
 // Auto-terapkan saat tanggal kustom diubah (hanya jika kedua tanggal terisi).
 function onCustomDateChange() {
   const from = document.getElementById('dateFrom').value;
-  const to   = document.getElementById('dateTo').value;
+  const to = document.getElementById('dateTo').value;
   if (from && to) loadReport();
 }
 
@@ -113,7 +113,7 @@ async function _populateOutletFilter() {
     opt.value = o.id; opt.textContent = o.name;
     sel.appendChild(opt);
   });
-  
+
   if (window.outletTsInstance) {
     window.outletTsInstance.destroy();
   }
@@ -139,7 +139,7 @@ async function _fetchRows(from, to, outletId) {
     `)
     .in('status', ['paid', 'preparing', 'ready', 'done'])
     .gte('created_at', from + 'T00:00:00+07:00')
-    .lte('created_at', to   + 'T23:59:59+07:00');
+    .lte('created_at', to + 'T23:59:59+07:00');
 
   if (outletId) q = q.eq('outlet_id', outletId);
 
@@ -162,15 +162,15 @@ async function _fetchRows(from, to, outletId) {
 
     (order.order_items || []).forEach(item => {
       rows.push({
-        order_id:    order.id,
+        order_id: order.id,
         order_number: order.order_number,
-        date:        order.created_at.split('T')[0],
-        time:        order.created_at.split('T')[1].substring(0, 5),
+        date: order.created_at.split('T')[0],
+        time: order.created_at.split('T')[1].substring(0, 5),
         outlet_name: order.outlets?.name || '—',
-        item_name:   item.item_name,
-        qty:         item.quantity,
-        unit_price:  item.unit_price,
-        subtotal:    item.quantity * item.unit_price,
+        item_name: item.item_name,
+        qty: item.quantity,
+        unit_price: item.unit_price,
+        subtotal: item.quantity * item.unit_price,
       });
     });
   });
@@ -180,7 +180,7 @@ async function _fetchRows(from, to, outletId) {
 // ─── Main load ────────────────────────────────────────────────────────────────
 
 async function loadReport() {
-  const { from, to }  = _getActiveDates();
+  const { from, to } = _getActiveDates();
   const outletId = _user.role === 'super_admin'
     ? document.getElementById('outletFilter').value
     : _user.outlet_id;
@@ -216,8 +216,8 @@ async function loadReport() {
 
 function _renderMetricsSkeleton() {
   document.getElementById('metricsGrid').innerHTML = `
-    ${_metricCardHTML('Total Revenue',   '<div class="skeleton-line" style="height:28px;width:80px;margin-top:4px"></div>', '', 'banknote')}
-    ${_metricCardHTML('Jumlah Item',     '<div class="skeleton-line" style="height:28px;width:40px;margin-top:4px"></div>', '', 'shopping-bag')}
+    ${_metricCardHTML('Total Revenue', '<div class="skeleton-line" style="height:28px;width:80px;margin-top:4px"></div>', '', 'banknote')}
+    ${_metricCardHTML('Jumlah Item Terjual', '<div class="skeleton-line" style="height:28px;width:40px;margin-top:4px"></div>', '', 'shopping-bag')}
     ${_metricCardHTML('Rata-rata Order', '<div class="skeleton-line" style="height:28px;width:60px;margin-top:4px"></div>', '', 'bar-chart-2')}
     ${_metricCardHTML('vs Periode Lalu', '<div class="skeleton-line" style="height:28px;width:50px;margin-top:4px"></div>', '', 'trending-up')}
   `;
@@ -240,30 +240,30 @@ function _metricCardHTML(label, value, growth, icon) {
 }
 
 function _renderMetrics(rows, rowsPrev) {
-  const revenue      = rows.reduce((s, r) => s + r.subtotal, 0);
-  const orderSet     = new Set(rows.map(r => r.order_id));
+  const revenue = rows.reduce((s, r) => s + r.subtotal, 0);
+  const orderSet = new Set(rows.map(r => r.order_id));
   const uniqueOrders = orderSet.size;
-  const itemCount    = rows.reduce((s, r) => s + (r.qty || 0), 0);
-  const avg          = uniqueOrders ? revenue / uniqueOrders : 0;
+  const itemCount = rows.reduce((s, r) => s + (r.qty || 0), 0);
+  const avg = uniqueOrders ? revenue / uniqueOrders : 0;
 
   const revenuePrev = rowsPrev.reduce((s, r) => s + r.subtotal, 0);
-  const growth      = revenuePrev === 0
+  const growth = revenuePrev === 0
     ? null
     : ((revenue - revenuePrev) / revenuePrev * 100);
 
   let growthObj = { cls: 'flat', text: '—' };
   if (growth !== null) {
-    if (growth > 0)  growthObj = { cls: 'up',   text: `▲ ${growth.toFixed(1)}% vs lalu` };
+    if (growth > 0) growthObj = { cls: 'up', text: `▲ ${growth.toFixed(1)}% vs lalu` };
     else if (growth < 0) growthObj = { cls: 'down', text: `▼ ${Math.abs(growth).toFixed(1)}% vs lalu` };
     else growthObj = { cls: 'flat', text: 'Stabil' };
   }
 
   document.getElementById('metricsGrid').innerHTML =
-    _metricCardHTML('Total Revenue',   formatRupiah(revenue),                  null, 'banknote') +
-    _metricCardHTML('Jumlah Item',     `${itemCount}`,                         null, 'shopping-bag') +
-    _metricCardHTML('Rata-rata Order', formatRupiah(avg),                      null, 'calculator') +
+    _metricCardHTML('Total Revenue', formatRupiah(revenue), null, 'banknote') +
+    _metricCardHTML('Jumlah Item Terjual', `${itemCount}`, null, 'shopping-bag') +
+    _metricCardHTML('Rata-rata Order', formatRupiah(avg), null, 'calculator') +
     _metricCardHTML('vs Periode Lalu', formatRupiah(revenuePrev), growthObj, 'trending-up');
-    
+
   if (window.lucide) window.lucide.createIcons();
 }
 
@@ -323,8 +323,8 @@ function _renderChart(rows, from, to) {
           beginAtZero: true,
           ticks: {
             callback: v => v >= 1000000
-              ? `${(v/1000000).toFixed(1)}jt`
-              : v >= 1000 ? `${(v/1000).toFixed(0)}rb` : v,
+              ? `${(v / 1000000).toFixed(1)}jt`
+              : v >= 1000 ? `${(v / 1000).toFixed(0)}rb` : v,
             font: { size: 11, family: 'Inter, sans-serif' },
             color: '#6b7280',
             padding: 8
@@ -332,8 +332,8 @@ function _renderChart(rows, from, to) {
           grid: { color: '#f3f4f6', drawBorder: false },
           border: { display: false }
         },
-        x: { 
-          ticks: { font: { size: 11, family: 'Inter, sans-serif' }, color: '#6b7280', padding: 8 }, 
+        x: {
+          ticks: { font: { size: 11, family: 'Inter, sans-serif' }, color: '#6b7280', padding: 8 },
           grid: { display: false },
           border: { display: false }
         }
@@ -355,7 +355,7 @@ function _renderPodium(rows) {
   const byItem = {};
   rows.forEach(r => {
     if (!byItem[r.item_name]) byItem[r.item_name] = { qty: 0, revenue: 0 };
-    byItem[r.item_name].qty     += r.qty;
+    byItem[r.item_name].qty += r.qty;
     byItem[r.item_name].revenue += r.subtotal;
   });
   const totalRevenue = rows.reduce((s, r) => s + r.subtotal, 0);
@@ -366,12 +366,12 @@ function _renderPodium(rows) {
   wrap.innerHTML = `<div class="flex flex-col gap-3 w-full">` + sorted.map(([name, d], i) => {
     const pct = totalRevenue ? (d.revenue / totalRevenue * 100).toFixed(1) : '0';
     const imgUrl = _menuItemsMap[name] || `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=f3f4f6&color=9ca3af&bold=true&size=128`;
-    
+
     return `
       <div class="flex items-center gap-4 py-3 border-b border-gray-100 last:border-0 hover:bg-gray-50/50 transition-colors rounded-xl px-2">
         <div class="relative">
           <img src="${imgUrl}" class="w-14 h-14 rounded-2xl object-cover border border-gray-100 shadow-sm" onerror="this.src='https://ui-avatars.com/api/?name=NA&background=f3f4f6&color=9ca3af'" alt="Menu">
-          <div class="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-white shadow-sm border border-gray-100 flex items-center justify-center text-xs font-black text-brand">${i+1}</div>
+          <div class="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-white shadow-sm border border-gray-100 flex items-center justify-center text-xs font-black text-brand">${i + 1}</div>
         </div>
         <div class="flex-1 min-w-0">
           <div class="font-bold text-gray-800 text-sm truncate mb-0.5">${_esc(name)}</div>
@@ -425,12 +425,12 @@ function _renderTable(rows) {
   });
 
   const colDefs = [
-    { key: 'date',         label: 'TANGGAL'    },
+    { key: 'date', label: 'TANGGAL' },
     { key: 'order_number', label: 'NO PESANAN' },
-    { key: 'outlet_name',  label: 'OUTLET'     },
-    { key: 'item_name',   label: 'ITEM'      },
-    { key: 'qty',         label: 'QTY TOTAL' },
-    { key: 'subtotal',    label: 'SUBTOTAL'  },
+    { key: 'outlet_name', label: 'OUTLET' },
+    { key: 'item_name', label: 'ITEM' },
+    { key: 'qty', label: 'QTY TOTAL' },
+    { key: 'subtotal', label: 'SUBTOTAL' },
   ];
 
   const thead = colDefs.map(c => {
@@ -457,7 +457,7 @@ function _renderTable(rows) {
       <thead class="bg-[#fcf5ef]"><tr>${thead}</tr></thead>
       <tbody class="divide-y divide-gray-100/50">${tbody}</tbody>
     </table>`;
-    
+
   if (window.lucide) window.lucide.createIcons();
 }
 
@@ -473,7 +473,7 @@ function exportCSV() {
   if (!_rawData.length) { showToast('Tidak ada data untuk diexport.'); return; }
 
   const { from, to } = _getActiveDates();
-  const outletLabel  = _user.role === 'super_admin'
+  const outletLabel = _user.role === 'super_admin'
     ? (document.getElementById('outletFilter').selectedOptions[0]?.text || 'semua')
     : (_user.outlet_id || 'outlet');
 
@@ -495,7 +495,7 @@ function exportCSV() {
   const byItem = {};
   _rawData.forEach(r => {
     if (!byItem[r.item_name]) byItem[r.item_name] = { qty: 0, revenue: 0 };
-    byItem[r.item_name].qty     += r.qty;
+    byItem[r.item_name].qty += r.qty;
     byItem[r.item_name].revenue += r.subtotal;
   });
   Object.entries(byItem)
@@ -504,12 +504,12 @@ function exportCSV() {
       lines.push(`${i + 1},${q(name)},${d.qty},${d.revenue}`);
     });
 
-  const csv  = lines.join('\n');
+  const csv = lines.join('\n');
   const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href     = url;
-  a.download = `laporan-${outletLabel.replace(/\s+/g,'-')}-${from}-${to}.csv`;
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `laporan-${outletLabel.replace(/\s+/g, '-')}-${from}-${to}.csv`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -521,7 +521,7 @@ async function exportPDF() {
   showToast('Membuat PDF, harap tunggu...', 'info');
 
   const { from, to } = _getActiveDates();
-  const outletLabel  = _user.role === 'super_admin'
+  const outletLabel = _user.role === 'super_admin'
     ? (document.getElementById('outletFilter').selectedOptions[0]?.text || 'Semua Outlet')
     : (_user.outlet_id ? 'Outlet' : 'Semua Outlet');
 
@@ -571,7 +571,7 @@ async function exportPDF() {
     const doc = new jsPDF();
 
     let finalY = 15;
-    
+
     // Helper to check page break
     const checkY = (neededSpace) => {
       if (finalY + neededSpace > doc.internal.pageSize.getHeight() - 15) {
@@ -596,10 +596,10 @@ async function exportPDF() {
     sortedDates.forEach((d, index) => {
       const s = summary[d];
       const avg = s.count > 0 ? (s.revenue / s.count) : 0;
-      
+
       if (index > 0) finalY += 10;
       checkY(35);
-      
+
       // Date Header
       doc.setFontSize(14);
       doc.setTextColor(255, 255, 255);
@@ -629,7 +629,7 @@ async function exportPDF() {
         // Table for each transaction
         doc.autoTable({
           startY: finalY,
-          head: [[`Order #${trx.order_number || (i+1)} (Jam: ${trx.time})`, 'Qty', 'Harga Satuan', 'Subtotal']],
+          head: [[`Order #${trx.order_number || (i + 1)} (Jam: ${trx.time})`, 'Qty', 'Harga Satuan', 'Subtotal']],
           body: trx.itemsList.map(item => [
             item.name,
             item.qty.toString(),
@@ -648,10 +648,10 @@ async function exportPDF() {
           },
           margin: { left: 14, right: 14 }
         });
-        
+
         finalY = doc.lastAutoTable.finalY + 12; // Jarak antar order
       });
-      
+
     });
 
     // Grand Summary
@@ -678,7 +678,7 @@ async function exportPDF() {
       margin: { left: 14, right: 14 }
     });
 
-    doc.save(`Laporan-Pesanan-${outletLabel.replace(/\s+/g,'-')}-${from}-sd-${to}.pdf`);
+    doc.save(`Laporan-Pesanan-${outletLabel.replace(/\s+/g, '-')}-${from}-sd-${to}.pdf`);
     showToast('PDF berhasil didownload!');
   } catch (err) {
     console.error('PDF error:', err);
