@@ -86,24 +86,22 @@
             <p class="text-sm text-gray-500">Pantau performa penjualan dan menu terlaris.</p>
           </div>
           <div class="flex gap-2 flex-wrap items-center bg-white p-2 rounded-2xl shadow-sm border border-gray-100" id="filterBar">
-            <select id="outletFilter" class="admin-only bg-gray-50 border border-transparent hover:border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold text-gray-700 outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all cursor-pointer" style="display:none">
+            <select id="outletFilter" onchange="loadReport()" class="admin-only bg-gray-50 border border-transparent hover:border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold text-gray-700 outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all cursor-pointer" style="display:none">
               <option value="">Semua Outlet</option>
             </select>
             <div class="h-8 w-px bg-gray-200 hidden md:block mx-1"></div>
             <select id="rangePreset" onchange="onPresetChange()" class="bg-gray-50 border border-transparent hover:border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold text-gray-700 outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all cursor-pointer">
               <option value="today">Hari Ini</option>
+              <option value="yesterday">Kemarin</option>
               <option value="7d" selected>7 Hari Terakhir</option>
               <option value="30d">30 Hari Terakhir</option>
               <option value="custom">Kustom</option>
             </select>
             <div id="customRange" style="display:none; gap:8px;" class="items-center ml-2">
-              <input type="date" id="dateFrom" class="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-medium text-gray-700 outline-none focus:border-brand" />
+              <input type="date" id="dateFrom" onchange="onCustomDateChange()" class="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-medium text-gray-700 outline-none focus:border-brand" />
               <span class="text-gray-400 font-medium">-</span>
-              <input type="date" id="dateTo" class="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-medium text-gray-700 outline-none focus:border-brand" />
+              <input type="date" id="dateTo" onchange="onCustomDateChange()" class="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-medium text-gray-700 outline-none focus:border-brand" />
             </div>
-            <button onclick="loadReport()" class="bg-brand hover:bg-brand-dark text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm transition-colors cursor-pointer flex items-center gap-2 ml-1">
-              <i data-lucide="filter" class="w-4 h-4"></i> Terapkan
-            </button>
             <div class="h-8 w-px bg-gray-200 hidden md:block mx-1"></div>
             <label class="flex items-center gap-2 text-sm font-semibold text-gray-600 cursor-pointer hover:text-gray-800 transition-colors">
               <input type="checkbox" id="hideTestOrders" checked onchange="loadReport()" class="w-4 h-4 rounded border-gray-300 text-brand focus:ring-brand cursor-pointer">

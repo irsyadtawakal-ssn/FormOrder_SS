@@ -56,6 +56,9 @@ function _getActiveDates() {
 
   if (preset === 'today') {
     from = to = _toYmd(today);
+  } else if (preset === 'yesterday') {
+    const y = new Date(); y.setDate(y.getDate() - 1);
+    from = to = _toYmd(y);
   } else if (preset === '7d') {
     const f = new Date(); f.setDate(f.getDate() - 6);
     from = _toYmd(f); to = _toYmd(today);
@@ -85,6 +88,16 @@ function onPresetChange() {
   const val  = document.getElementById('rangePreset').value;
   const wrap = document.getElementById('customRange');
   wrap.style.display = val === 'custom' ? 'flex' : 'none';
+  // Auto-terapkan: preset selain "Kustom" langsung memuat laporan.
+  // Untuk "Kustom", tunggu user mengisi tanggal (lihat onCustomDateChange).
+  if (val !== 'custom') loadReport();
+}
+
+// Auto-terapkan saat tanggal kustom diubah (hanya jika kedua tanggal terisi).
+function onCustomDateChange() {
+  const from = document.getElementById('dateFrom').value;
+  const to   = document.getElementById('dateTo').value;
+  if (from && to) loadReport();
 }
 
 async function _populateOutletFilter() {
