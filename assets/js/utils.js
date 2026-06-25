@@ -165,3 +165,21 @@ function startCountdown(expiresAt, onTick, onExpire) {
 function getParam(name) {
   return new URLSearchParams(window.location.search).get(name);
 }
+// --- Service Worker Auto-Update ---
+if ('serviceWorker' in navigator) {
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!refreshing) {
+      window.location.reload();
+      refreshing = true;
+    }
+  });
+
+  navigator.serviceWorker.ready.then(reg => {
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        reg.update();
+      }
+    });
+  });
+}
