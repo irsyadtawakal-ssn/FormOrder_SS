@@ -128,7 +128,7 @@ let pollTimer       = null;
 const TERMINAL_STATUSES = ['paid', 'done', 'cancelled', 'expired'];
 
 // Channel groupings — satu sumber kebenaran, dipakai di renderStatus & post-render
-const VA_CHANNELS      = ['BCA', 'BNI', 'BRI', 'MANDIRI'];
+const VA_CHANNELS      = ['BCA', 'BNI', 'BRI', 'MANDIRI', 'BJB', 'BSI', 'CIMB'];
 const EWALLET_CHANNELS = ['GOPAY', 'OVO', 'DANA'];
 const EWALLET_ICONS    = { GOPAY: '<i data-lucide="wallet" color="#00a550"></i>', OVO: '<i data-lucide="wallet" color="#4c3494"></i>', DANA: '<i data-lucide="wallet" color="#118ee9"></i>' };
 
@@ -334,6 +334,9 @@ function renderStatus(o) {
           BNI:     'ATM / m-Banking BNI → Virtual Account Billing → Bayar Tagihan',
           BRI:     'ATM / m-Banking BRImo → Pembayaran → Virtual Account',
           MANDIRI: 'ATM / Livin → Bayar → Multi Payment → kode 70012',
+          BJB:     'ATM / DIGI by bank bjb → Transfer → Virtual Account',
+          BSI:     'ATM / BSI Mobile → Bayar → Akademik/Institusi → Virtual Account',
+          CIMB:    'ATM / OCTO Mobile → Transfer → Virtual Account',
         };
         paymentContent = `
           <div class="info-card" style="padding:16px 16px 14px">

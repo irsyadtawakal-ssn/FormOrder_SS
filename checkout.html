@@ -82,9 +82,10 @@ const PAYMENT_CHANNELS = [
     { id: 'BNI',     label: 'BNI',     icon: '<i data-lucide="building-2"></i>', desc: 'Virtual Account BNI • Biaya admin Rp 4.000' },
     { id: 'BRI',     label: 'BRI',     icon: '<i data-lucide="building-2"></i>', desc: 'Virtual Account BRI • Biaya admin Rp 4.000' },
     { id: 'MANDIRI', label: 'Mandiri', icon: '<i data-lucide="building-2"></i>', desc: 'Virtual Account Mandiri • Biaya admin Rp 4.000' },
-    // BJB, BSI, CIMB disembunyikan sementara — Xendit menolak channel VA-nya (HTTP 502).
-    // Aktifkan lagi setelah channel code Xendit-nya benar (lihat CHANNEL_CONFIG di edge function)
-    // dan tambahkan ke VA_CHANNELS di order.html agar tampil sebagai Virtual Account.
+    { id: 'BJB',     label: 'BJB',     icon: '<i data-lucide="building-2"></i>', desc: 'Virtual Account BJB • Biaya admin Rp 4.000' },
+    { id: 'BSI',     label: 'BSI',     icon: '<i data-lucide="building-2"></i>', desc: 'Virtual Account BSI • Biaya admin Rp 4.000' },
+    // CIMB disembunyikan — Xendit menolak channel VA-nya (HTTP 502); aktifkan VA CIMB
+    // di Dashboard Xendit dulu, lalu tambahkan kembali baris CIMB di sini.
   ]},
 ];
 
