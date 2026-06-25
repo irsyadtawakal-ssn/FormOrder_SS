@@ -2591,16 +2591,40 @@ input:focus, select:focus, textarea:focus {
   border: 1px solid var(--line);
 }
 
-/* --- Micro-Animation: Flying Food & Cart Bump --- */
-.flying-food {
+/* --- Animasi Masuk Keranjang Premium --- */
+.flying-wrapper {
   position: fixed;
   z-index: 9999;
-  border-radius: 8px; /* Square shape with slightly rounded corners */
-  box-shadow: 0 10px 20px rgba(0,0,0,0.15);
   pointer-events: none;
-  /* Hardware-accelerated transitions */
-  transition: transform 1s cubic-bezier(0.25, 1, 0.5, 1), opacity 1s ease-in;
+  /* Animasi linear untuk sumbu X agar kecepatan pergerakan mendatar stabil */
+  transition: transform 0.8s linear;
+  will-change: transform;
+}
+
+.flying-inner {
+  display: block;
+  border-radius: 50%; /* Ubah menjadi lingkaran penuh agar rapi saat terbang */
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+  /* Rahasia Pop-Out dan Parabolic Arc:
+     Sumbu Y dan Scale menggunakan cubic-bezier dengan sumbu control awal bernilai negatif (-0.5).
+     Ini memaksa gambar membesar/melompat ke arah berlawanan di awal, sebelum akhirnya
+     terlempar jatuh ke arah keranjang (scale 0.1).
+  */
+  transition: transform 0.8s cubic-bezier(0.4, -0.5, 0.8, 1), opacity 0.8s ease-in;
   will-change: transform, opacity;
+}
+
+/* Animasi Pantulan (Jelly Pop) pada Ikon Angka Keranjang */
+.badge-pop {
+  animation: jellyPop 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+@keyframes jellyPop {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.4); }
+  50% { transform: scale(0.85); }
+  75% { transform: scale(1.1); }
+  100% { transform: scale(1); }
 }
 
 @keyframes cartBump {

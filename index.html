@@ -1038,27 +1038,30 @@
         
         if (!sourceImg || !cartBar) return;
         
-        // Buat clone dari gambar
-        const clone = sourceImg.cloneNode(true);
         const rect = sourceImg.getBoundingClientRect();
-        
-        // Buat ukurannya menjadi kotak yang sama sisi
         const size = Math.min(rect.width, rect.height);
         
-        clone.classList.add("flying-food");
-        // Posisi awal persis di atas gambar asli
-        clone.style.top = rect.top + "px";
-        clone.style.left = rect.left + "px";
-        clone.style.width = size + "px";
-        clone.style.height = size + "px";
+        // Buat elemen pembungkus luar (untuk pergerakan sumbu X secara stabil/linear)
+        const wrapper = document.createElement("div");
+        wrapper.classList.add("flying-wrapper");
+        wrapper.style.top = rect.top + "px";
+        wrapper.style.left = rect.left + "px";
+        wrapper.style.width = size + "px";
+        wrapper.style.height = size + "px";
+        
+        // Buat elemen dalam (untuk pergerakan sumbu Y dengan gravitasi + scale + rotate)
+        const clone = sourceImg.cloneNode(true);
+        clone.classList.add("flying-inner");
+        clone.style.width = "100%";
+        clone.style.height = "100%";
         clone.style.margin = "0"; 
         clone.style.objectFit = "cover";
-        // Border radius 8px diatur via class CSS
         
-        document.body.appendChild(clone);
+        wrapper.appendChild(clone);
+        document.body.appendChild(wrapper);
         
         // Force reflow agar transisi berjalan
-        clone.offsetWidth;
+        wrapper.offsetWidth;
         
         // Target spesifik ke ikon hitungan/badge keranjang
         const cartCountBadge = document.getElementById("cartCount");
@@ -1072,22 +1075,29 @@
         const deltaX = targetX - (rect.left + size / 2);
         const deltaY = targetY - (rect.top + size / 2);
         
-        // Jalankan animasi dengan transform hardware-accelerated
-        // Putar sedikit agar lebih hidup
-        clone.style.transform = `translate(${deltaX}px, ${deltaY}px) scale(0.1) rotate(180deg)`;
-        clone.style.opacity = "0.3"; // tidak sampai hilang sempurna, masih berbayang
+        // 1. Wrapper terbang secara linear ke arah X
+        wrapper.style.transform = `translateX(${deltaX}px)`;
         
-        // Hapus clone setelah animasi selesai (1.2 detik)
+        // 2. Inner terbang ke arah Y dengan kurva khusus yang menghasilkan efek pop-out & parabola
+        clone.style.transform = `translateY(${deltaY}px) scale(0.15) rotate(15deg)`;
+        clone.style.opacity = "0.8"; 
+        
+        // Hapus elemen setelah animasi selesai (0.8 detik disinkronisasi dari CSS)
         setTimeout(() => {
-          if (clone.parentNode) clone.parentNode.removeChild(clone);
-          cartBar.classList.add("bump");
-          if (window.navigator && window.navigator.vibrate) {
-            window.navigator.vibrate(50); // Haptic feedback
+          if (wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
+          
+          // Efek jelly pantulan saat barang masuk
+          if (cartCountBadge) {
+            cartCountBadge.classList.add("badge-pop");
+            setTimeout(() => {
+              cartCountBadge.classList.remove("badge-pop");
+            }, 500); // durasi jelly
           }
-          setTimeout(() => {
-            cartBar.classList.remove("bump");
-          }, 300);
-        }, 1000); // Sinkron dengan durasi transition CSS
+          
+          if (window.navigator && window.navigator.vibrate) {
+            window.navigator.vibrate([30, 50, 30]); // Haptic feedback ala startup besar
+          }
+        }, 800); 
       }
 
       function addToCart() {
