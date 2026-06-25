@@ -1,5 +1,5 @@
 // Service Worker — SUKA Shawarma
-const CACHE = 'suka-v17'; // Naikkan versi setiap kali ada perubahan shell
+const CACHE = 'suka-v18'; // Naikkan versi setiap kali ada perubahan shell
 
 // File shell yang di-cache (cache-first)
 const SHELL = [
@@ -34,9 +34,21 @@ const SHELL = [
 // Install — cache shell
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE).then(c =>
-      Promise.allSettled(SHELL.map(url => c.add(url).catch(() => null)))
-    ).then(() => self.skipWaiting())
+    caches.open(CACHE).then(c => {
+      // WAJIB: bypass HTTP Cache browser dengan cache-buster & no-store
+      // Agar saat update versi, SW benar-benar menarik file terbaru dari server
+      return Promise.allSettled(SHELL.map(url => {
+        const bypassUrl = url + (url.includes('?') ? '&' : '?') + '_cb=' + Date.now();
+        const req = new Request(bypassUrl, { cache: 'no-store' });
+        
+        return fetch(req).then(resp => {
+          if (resp.ok) {
+            // Simpan ke cache menggunakan URL ASLI
+            return c.put(url, resp);
+          }
+        });
+      }));
+    }).then(() => self.skipWaiting())
   );
 });
 
@@ -66,10 +78,18 @@ self.addEventListener('fetch', e => {
 
   // Gunakan Network-First untuk SEMUA aset (HTML, CSS, JS) agar UI selalu up-to-date
   // dan user tidak perlu hapus cache manual saat ada perubahan.
+  
+  // Buat request baru untuk mem-bypass HTTP Cache browser HP yang sangat agresif
+  let fetchReq = e.request;
+  if (url.origin === location.origin) {
+    const bypassUrl = url.href + (url.href.includes('?') ? '&' : '?') + '_cb=' + Date.now();
+    fetchReq = new Request(bypassUrl, { cache: 'no-store' });
+  }
+
   e.respondWith(
-    fetch(e.request)
+    fetch(fetchReq)
       .then(resp => {
-        // Simpan salinan terbaru untuk fallback offline
+        // Simpan salinan terbaru untuk fallback offline menggunakan URL ASLI (e.request)
         const copy = resp.clone();
         caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {});
         return resp;
