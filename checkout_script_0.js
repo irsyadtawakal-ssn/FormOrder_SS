@@ -1,76 +1,4 @@
 
-<!doctype html>
-<html lang="id">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Order Sukashawarma</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="assets/css/style.css?v=9" />
-<link rel="manifest" href="/manifest.json" />
-<meta name="theme-color" content="#f29744" />
-</head>
-<body>
-<div class="phone">
-
-  <!-- Topbar -->
-  <div class="topbar">
-    <button class="topbar-ic" onclick="history.back()">‹</button>
-    <span class="topbar-title">Konfirmasi Pesanan</span>
-    <span style="width:32px"></span>
-  </div>
-
-  <!-- Stepper: step 2 dari 3 -->
-  <div style="padding:10px 16px 0;background:var(--card);border-bottom:1px solid var(--line)">
-    <div class="stepper">
-      <div class="step on"></div>
-      <div class="step on"></div>
-      <div class="step"></div>
-    </div>
-  </div>
-
-  <!-- Konten utama -->
-  <div id="pageContent">
-    <!-- diisi oleh JS -->
-  </div>
-
-  <!-- Footer bayar -->
-  <div class="sheet-footer" id="footerPay" style="
-    position:fixed;bottom:0;left:50%;transform:translateX(-50%);
-    width:100%;max-width:480px;background:var(--card);
-    padding:12px 16px;border-top:1px solid var(--line);z-index:30;
-    display:none;
-  ">
-    <button class="btn-add-big" id="btnBayar" onclick="doCheckout()">
-      <span>Konfirmasi Pesanan</span>
-      <span id="fTotal">—</span>
-    </button>
-  </div>
-
-</div><!-- .phone -->
-
-<!-- Loading overlay -->
-<div class="loading-overlay" id="loadingOverlay" style="display:none">
-  <div class="loading-card">
-    <div class="spinner"></div>
-    <p>Memproses pesanan…</p>
-  </div>
-</div>
-
-<!-- Toast -->
-<div class="toast" id="toast"></div>
-
-<!-- Scripts -->
-<script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="config.js"></script>
-<script src="assets/js/supabase.js"></script>
-<script src="assets/js/utils.js"></script>
-<script src="assets/js/pixel.js"></script>
-<script src="assets/js/app.js"></script>
-<script>
 // ─── Pilihan metode bayar ─────────────────────────────────────────────────────
 let selectedChannel = 'QRIS'; // default
 
@@ -82,9 +10,9 @@ const PAYMENT_CHANNELS = [
     { id: 'BNI',     label: 'BNI',     icon: '<i data-lucide="building-2"></i>', desc: 'Virtual Account BNI • Biaya admin Rp 4.000' },
     { id: 'BRI',     label: 'BRI',     icon: '<i data-lucide="building-2"></i>', desc: 'Virtual Account BRI • Biaya admin Rp 4.000' },
     { id: 'MANDIRI', label: 'Mandiri', icon: '<i data-lucide="building-2"></i>', desc: 'Virtual Account Mandiri • Biaya admin Rp 4.000' },
-    // BJB, BSI, CIMB disembunyikan sementara — Xendit menolak channel VA-nya (HTTP 502).
-    // Aktifkan lagi setelah channel code Xendit-nya benar (lihat CHANNEL_CONFIG di edge function)
-    // dan tambahkan ke VA_CHANNELS di order.html agar tampil sebagai Virtual Account.
+    { id: 'BJB',     label: 'BJB',     icon: '<i data-lucide="building-2"></i>', desc: 'Virtual Account BJB • Biaya admin Rp 4.000' },
+    { id: 'BSI',     label: 'BSI',     icon: '<i data-lucide="building-2"></i>', desc: 'Virtual Account BSI • Biaya admin Rp 4.000' },
+    { id: 'CIMB',    label: 'CIMB',    icon: '<i data-lucide="building-2"></i>', desc: 'Virtual Account CIMB • Biaya admin Rp 4.000' },
   ]},
 ];
 
@@ -352,7 +280,7 @@ async function fetchPromoPreview(subtotal) {
 // ─── Init — baca sessionStorage dan render halaman ───────────────────────────
 let checkoutData = null;
 
-function initCheckout() {
+window.addEventListener('DOMContentLoaded', () => {
   const raw = sessionStorage.getItem('suka_checkout');
   try { checkoutData = raw ? JSON.parse(raw) : null; } catch { checkoutData = null; }
 
@@ -362,7 +290,7 @@ function initCheckout() {
         <p>Data pesanan tidak ditemukan.<br/>Silakan kembali dan coba lagi.</p>
         <button class="btn-retry" onclick="window.location.href='index.html'">Ke Halaman Utama</button>
       </div>`;
-    if (window.lucide) { window.lucide.createIcons(); }
+    if (window.lucide) { lucide.createIcons(); }
   } else {
     const subtotal = getCartTotal(checkoutData.cart);
     fetchPromoPreview(subtotal).then(() => {
@@ -372,15 +300,4 @@ function initCheckout() {
       }
     });
   }
-}
-
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initCheckout);
-} else {
-  initCheckout();
-}
-</script>
-<script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
-<script>if(window.lucide) { lucide.createIcons(); }</script>
-</body>
-</html>
+});

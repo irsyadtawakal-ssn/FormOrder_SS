@@ -6,12 +6,18 @@ const STUCK_PENDING_MIN = 15;  // order pending_payment dianggap nyangkut setela
 const STUCK_PAID_MIN    = 20;  // order paid belum preparing dianggap nyangkut setelah X menit
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', async function () {
+async function initMonitoring() {
   const u = await requireSuperAdmin(); // redirect ke index.html jika bukan super_admin
   if (!u) return;
   await refreshAll();
   setupRealtime();
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initMonitoring);
+} else {
+  initMonitoring();
+}
 
 // ─── Refresh semua panel ──────────────────────────────────────────────────────
 async function refreshAll() {

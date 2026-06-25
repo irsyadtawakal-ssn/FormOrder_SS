@@ -36,7 +36,7 @@ function json(data: unknown, status = 200) {
 }
 
 // ─── Konfigurasi channel yang didukung ───────────────────────────────────────
-type ChannelType = "QRIS" | "BCA" | "BNI" | "BRI" | "MANDIRI" | "GOPAY" | "OVO" | "DANA";
+type ChannelType = "QRIS" | "BCA" | "BNI" | "BRI" | "MANDIRI" | "BJB" | "BSI" | "CIMB" | "GOPAY" | "OVO" | "DANA";
 
 const CHANNEL_CONFIG: Record<ChannelType, {
   type: "QR_CODE" | "VIRTUAL_ACCOUNT" | "EWALLET";
@@ -49,6 +49,9 @@ const CHANNEL_CONFIG: Record<ChannelType, {
   BNI:     { type: "VIRTUAL_ACCOUNT", paymentMethod: "xendit_va",      label: "BNI",           expireMinutes: 1440 },
   BRI:     { type: "VIRTUAL_ACCOUNT", paymentMethod: "xendit_va",      label: "BRI",           expireMinutes: 1440 },
   MANDIRI: { type: "VIRTUAL_ACCOUNT", paymentMethod: "xendit_va",      label: "Mandiri",       expireMinutes: 1440 },
+  BJB:     { type: "VIRTUAL_ACCOUNT", paymentMethod: "xendit_va",      label: "BJB",           expireMinutes: 1440 },
+  BSI:     { type: "VIRTUAL_ACCOUNT", paymentMethod: "xendit_va",      label: "BSI",           expireMinutes: 1440 },
+  CIMB:    { type: "VIRTUAL_ACCOUNT", paymentMethod: "xendit_va",      label: "CIMB",          expireMinutes: 1440 },
   GOPAY:   { type: "EWALLET",         paymentMethod: "xendit_ewallet", label: "GoPay",         expireMinutes: 15  },
   OVO:     { type: "EWALLET",         paymentMethod: "xendit_ewallet", label: "OVO",           expireMinutes: 15  },
   DANA:    { type: "EWALLET",         paymentMethod: "xendit_ewallet", label: "DANA",          expireMinutes: 15  },
@@ -177,12 +180,19 @@ serve(async (req: Request) => {
   } = body as Record<string, unknown>;
 
   // ─── Validasi & normalisasi payment_channel ──────────────────────────────
-  const channel = (
+  // Default QRIS HANYA jika channel tidak dikirim. Jika dikirim tapi tidak dikenal,
+  // tolak dengan error — JANGAN diam-diam jadi QRIS (bikin "pilih VA → muncul QRIS").
+  let channel: ChannelType;
+  if (payment_channel == null || payment_channel === "") {
+    channel = "QRIS";
+  } else if (
     typeof payment_channel === "string" &&
     Object.keys(CHANNEL_CONFIG).includes(payment_channel.toUpperCase())
-      ? payment_channel.toUpperCase()
-      : "QRIS"
-  ) as ChannelType;
+  ) {
+    channel = payment_channel.toUpperCase() as ChannelType;
+  } else {
+    return json({ error: `Metode pembayaran tidak didukung: ${payment_channel}` }, 400);
+  }
 
   // ─── Validasi input ──────────────────────────────────────────────────────
   if (!outlet_slug || typeof outlet_slug !== "string") {
@@ -420,57 +430,76 @@ serve(async (req: Request) => {
   const mo = String(nowWib.getUTCMonth() + 1).padStart(2, "0");
   const yy = String(nowWib.getUTCFullYear()).slice(2);
 
-  const startOfDay = new Date(
-    Date.UTC(nowWib.getUTCFullYear(), nowWib.getUTCMonth(), nowWib.getUTCDate()) - 7 * 3600000,
-  ).toISOString();
-  const endOfDay = new Date(
-    Date.UTC(nowWib.getUTCFullYear(), nowWib.getUTCMonth(), nowWib.getUTCDate() + 1) - 7 * 3600000,
-  ).toISOString();
+  // ─── Hitung nomor urut berbasis MAX (bukan COUNT) ─────────────────────────
+  // COUNT rapuh: kalau ada order yang dihapus, count meleset & nomor bisa tabrakan
+  // dengan order lama (UNIQUE violation → "Gagal membuat order"). MAX selalu ambil
+  // urutan tertinggi yang ada, jadi tahan terhadap penghapusan.
+  const numPrefix = `${outletCode}-${dd}${mo}${yy}-`;
+  async function nextSeq(): Promise<number> {
+    const { data: rows } = await supabase
+      .from("orders")
+      .select("order_number")
+      .eq("outlet_id", outlet.id)
+      .like("order_number", `${numPrefix}%`)
+      .order("order_number", { ascending: false })
+      .limit(1);
+    const last = rows?.[0]?.order_number as string | undefined;
+    const m = last?.match(/-(\d+)$/);
+    return (m ? parseInt(m[1], 10) : 0) + 1;
+  }
 
-  const { count: todayCount } = await supabase
-    .from("orders")
-    .select("id", { count: "exact", head: true })
-    .eq("outlet_id", outlet.id)
-    .gte("created_at", startOfDay)
-    .lt("created_at", endOfDay);
+  // Field order yang tetap sama di setiap percobaan (order_number diisi di loop)
+  const orderRow = {
+    outlet_id: outlet.id,
+    customer_name: customer_name.trim(),
+    customer_wa: waNorm,
+    pickup_time: String(pickup_time).trim(),
+    notes: notes ? String(notes).trim() : null,
+    subtotal,
+    discount,
+    promo_id: promoId,
+    promo_name: promoName,
+    service_fee: serviceFee,
+    total,
+    status: "pending_payment",
+    payment_method: CHANNEL_CONFIG[channel].paymentMethod,
+    payment_channel: channel,
+    tripay_merchant_ref: referenceId,
+    tripay_reference: null,
+    qris_url: null,
+    va_number: null,
+    va_bank: null,
+    ewallet_deeplink: null,
+    expires_at: expiredAt.toISOString(),
+  };
 
-  const seq = String((todayCount ?? 0) + 1).padStart(3, "0");
-  const orderNum = `${outletCode}-${dd}${mo}${yy}-${seq}`;
+  // ─── INSERT order dengan retry anti-tabrakan ──────────────────────────────
+  // Kalau nomor tabrakan (race / data lama), Postgres balas 23505; ambil nomor
+  // berikutnya & coba lagi (maks 6x) — bukan langsung gagal.
+  let order: { id: string; order_number: string } | null = null;
+  // deno-lint-ignore no-explicit-any
+  let orderErr: any = null;
+  let baseSeq = await nextSeq();
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const seq = String(baseSeq + attempt).padStart(3, "0");
+    const candidate = `${numPrefix}${seq}`;
+    const res = await supabase
+      .from("orders")
+      .insert({ ...orderRow, order_number: candidate })
+      .select("id, order_number")
+      .single();
+    if (!res.error && res.data) { order = res.data; break; }
+    orderErr = res.error;
+    // 23505 = unique_violation → nomor tabrakan, coba seq berikutnya
+    if (res.error?.code !== "23505") break;
+    if (attempt === 2) baseSeq = await nextSeq(); // recompute kalau tabrakan beruntun
+  }
 
-  // ─── INSERT order ─────────────────────────────────────────────────────────
-  const { data: order, error: orderErr } = await supabase
-    .from("orders")
-    .insert({
-      outlet_id: outlet.id,
-      customer_name: customer_name.trim(),
-      customer_wa: waNorm,
-      pickup_time: String(pickup_time).trim(),
-      notes: notes ? String(notes).trim() : null,
-      subtotal,
-      discount,
-      promo_id: promoId,
-      promo_name: promoName,
-      service_fee: serviceFee,
-      total,
-      status: "pending_payment",
-      payment_method: CHANNEL_CONFIG[channel].paymentMethod,
-      payment_channel: channel,
-      order_number: orderNum,
-      tripay_merchant_ref: referenceId,
-      tripay_reference: null,
-      qris_url: null,
-      va_number: null,
-      va_bank: null,
-      ewallet_deeplink: null,
-      expires_at: expiredAt.toISOString(),
-    })
-    .select("id, order_number")
-    .single();
-
-  if (orderErr || !order) {
+  if (!order) {
     console.error("Gagal insert order:", orderErr);
     return json({ error: "Gagal membuat order. Silakan coba lagi." }, 500);
   }
+  const orderNum = order.order_number;
 
   // ─── INSERT order_items ───────────────────────────────────────────────────
   const { error: itemsErr } = await supabase

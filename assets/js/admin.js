@@ -435,4 +435,8 @@ function setActiveNav() {
   });
 }
 
-document.addEventListener('DOMContentLoaded', setActiveNav);
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', setActiveNav);
+} else {
+  setActiveNav();
+}
