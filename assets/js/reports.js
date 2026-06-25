@@ -118,6 +118,7 @@ async function _fetchRows(from, to, outletId) {
     .from('orders')
     .select(`
       id,
+      order_number,
       created_at,
       outlet_id,
       outlets(name),
@@ -149,6 +150,7 @@ async function _fetchRows(from, to, outletId) {
     (order.order_items || []).forEach(item => {
       rows.push({
         order_id:    order.id,
+        order_number: order.order_number,
         date:        order.created_at.split('T')[0],
         time:        order.created_at.split('T')[1].substring(0, 5),
         outlet_name: order.outlets?.name || '—',
@@ -202,7 +204,7 @@ async function loadReport() {
 function _renderMetricsSkeleton() {
   document.getElementById('metricsGrid').innerHTML = `
     ${_metricCardHTML('Total Revenue',   '<div class="skeleton-line" style="height:28px;width:80px;margin-top:4px"></div>', '', 'banknote')}
-    ${_metricCardHTML('Jumlah Order',    '<div class="skeleton-line" style="height:28px;width:40px;margin-top:4px"></div>', '', 'shopping-cart')}
+    ${_metricCardHTML('Jumlah Item',     '<div class="skeleton-line" style="height:28px;width:40px;margin-top:4px"></div>', '', 'shopping-bag')}
     ${_metricCardHTML('Rata-rata Order', '<div class="skeleton-line" style="height:28px;width:60px;margin-top:4px"></div>', '', 'bar-chart-2')}
     ${_metricCardHTML('vs Periode Lalu', '<div class="skeleton-line" style="height:28px;width:50px;margin-top:4px"></div>', '', 'trending-up')}
   `;
@@ -225,10 +227,11 @@ function _metricCardHTML(label, value, growth, icon) {
 }
 
 function _renderMetrics(rows, rowsPrev) {
-  const revenue     = rows.reduce((s, r) => s + r.subtotal, 0);
-  const orderSet    = new Set(rows.map(r => r.order_id));
-  const orderCount  = orderSet.size;
-  const avg         = orderCount ? revenue / orderCount : 0;
+  const revenue      = rows.reduce((s, r) => s + r.subtotal, 0);
+  const orderSet     = new Set(rows.map(r => r.order_id));
+  const uniqueOrders = orderSet.size;
+  const itemCount    = rows.reduce((s, r) => s + (r.qty || 0), 0);
+  const avg          = uniqueOrders ? revenue / uniqueOrders : 0;
 
   const revenuePrev = rowsPrev.reduce((s, r) => s + r.subtotal, 0);
   const growth      = revenuePrev === 0
@@ -244,7 +247,7 @@ function _renderMetrics(rows, rowsPrev) {
 
   document.getElementById('metricsGrid').innerHTML =
     _metricCardHTML('Total Revenue',   formatRupiah(revenue),                  null, 'banknote') +
-    _metricCardHTML('Jumlah Order',    `${orderCount}`,                        null, 'receipt') +
+    _metricCardHTML('Jumlah Item',     `${itemCount}`,                         null, 'shopping-bag') +
     _metricCardHTML('Rata-rata Order', formatRupiah(avg),                      null, 'calculator') +
     _metricCardHTML('vs Periode Lalu', formatRupiah(revenuePrev), growthObj, 'trending-up');
     
@@ -383,6 +386,7 @@ function _renderTable(rows) {
     if (!ordersMap[r.order_id]) {
       ordersMap[r.order_id] = {
         order_id: r.order_id,
+        order_number: r.order_number,
         date: r.date,
         outlet_name: r.outlet_name,
         items: [],
@@ -408,8 +412,9 @@ function _renderTable(rows) {
   });
 
   const colDefs = [
-    { key: 'date',        label: 'TANGGAL'   },
-    { key: 'outlet_name', label: 'OUTLET'    },
+    { key: 'date',         label: 'TANGGAL'    },
+    { key: 'order_number', label: 'NO PESANAN' },
+    { key: 'outlet_name',  label: 'OUTLET'     },
     { key: 'item_name',   label: 'ITEM'      },
     { key: 'qty',         label: 'QTY TOTAL' },
     { key: 'subtotal',    label: 'SUBTOTAL'  },
@@ -426,6 +431,7 @@ function _renderTable(rows) {
     return `
     <tr class="hover:bg-gray-50/50 transition-colors">
       <td class="px-6 py-4 text-sm text-gray-600 font-medium whitespace-nowrap align-top">${d}</td>
+      <td class="px-6 py-4 text-sm text-gray-600 font-medium whitespace-nowrap align-top">${_esc(r.order_number || '-')}</td>
       <td class="px-6 py-4 text-sm text-gray-600 font-medium whitespace-nowrap align-top">${_esc(r.outlet_name)}</td>
       <td class="px-6 py-4 text-sm text-gray-600 font-medium align-top max-w-xs truncate" title="${r.item_name}">${r.item_name}</td>
       <td class="px-6 py-4 text-sm text-gray-600 font-medium text-right align-top">${r.qty}</td>
@@ -463,9 +469,9 @@ function exportCSV() {
   // Bagian 1: detail order
   const lines = [
     '# Detail Order',
-    'Tanggal,Outlet,Item,Qty,Subtotal',
+    'Tanggal,No Pesanan,Outlet,Item,Qty,Subtotal',
     ..._rawData.map(r =>
-      `${r.date},${q(r.outlet_name)},${q(r.item_name)},${r.qty},${r.subtotal}`
+      `${r.date},${q(r.order_number || '-')},${q(r.outlet_name)},${q(r.item_name)},${r.qty},${r.subtotal}`
     ),
     '',
     '# Ranking Menu',
@@ -516,6 +522,7 @@ async function exportPDF() {
   _rawData.forEach(r => {
     if (!ordersMap[r.order_id]) {
       ordersMap[r.order_id] = {
+        order_number: r.order_number,
         date: r.date,
         time: r.time,
         itemsList: [],
@@ -609,7 +616,7 @@ async function exportPDF() {
         // Table for each transaction
         doc.autoTable({
           startY: finalY,
-          head: [[`Order #${i+1} (Jam: ${trx.time})`, 'Qty', 'Harga Satuan', 'Subtotal']],
+          head: [[`Order #${trx.order_number || (i+1)} (Jam: ${trx.time})`, 'Qty', 'Harga Satuan', 'Subtotal']],
           body: trx.itemsList.map(item => [
             item.name,
             item.qty.toString(),
