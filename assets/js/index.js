@@ -572,7 +572,7 @@
       function renderItemSheet() {
         let html = `
     <div class="item-hero">
-      ${currentItem.photo_url ? `<img id="itemSheetImg" src="${currentItem.photo_url}" alt="${currentItem.name}" />` : '<i id="itemSheetImg" data-lucide="sandwich" style="width:40px;height:40px;color:var(--faint)"></i>'}
+      ${currentItem.photo_url ? `<img id="itemSheetImg" src="${currentItem.photo_url}" alt="${currentItem.name}" decoding="async" fetchpriority="high" />` : '<i id="itemSheetImg" data-lucide="sandwich" style="width:40px;height:40px;color:var(--faint)"></i>'}
     </div>
     ${currentItem.description ? `<p style="color:var(--muted);font-size:14px;margin:0 0 18px">${escHtml(currentItem.description)}</p>` : ""}`;
 
@@ -612,8 +612,11 @@
       </div>
     </div>`;
 
-        document.getElementById("sheetItemBody").innerHTML = html;
-        if (window.lucide) {
+        const sheetBody = document.getElementById("sheetItemBody");
+        sheetBody.innerHTML = html;
+        // Hanya jalankan lucide jika ada ikon yang perlu dirender (mis. item tanpa foto).
+        // Item dengan foto tidak punya data-lucide, jadi lewati scan dokumen yang berat.
+        if (window.lucide && sheetBody.querySelector("[data-lucide]")) {
           lucide.createIcons();
         }
         updateSheetPrice();
@@ -628,7 +631,10 @@
         } else {
           currentSel[variantId] = name;
         }
-        renderItemSheet();
+        // Input (radio/checkbox) berada di dalam <label>, jadi browser sudah
+        // meng-update tampilan centang secara native. Cukup hitung ulang harga —
+        // tidak perlu rebuild seluruh sheet (yang berat & men-decode ulang foto).
+        updateSheetPrice();
       }
 
       function changeQty(delta) {
