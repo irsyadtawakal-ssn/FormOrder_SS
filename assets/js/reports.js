@@ -283,8 +283,8 @@ function _renderChart(rows, from, to) {
       datasets: [{
         label: 'Revenue',
         data: values,
-        backgroundColor: 'rgba(242, 151, 68, 0.8)', // warna brand aksen (orange)
-        hoverBackgroundColor: '#d87c2b', // brand dark
+        backgroundColor: 'rgba(225, 105, 0, 0.8)', // warna brand aksen (orange)
+        hoverBackgroundColor: '#c75a00', // brand dark
         borderRadius: 4,
         borderSkipped: false,
         barPercentage: 0.6
@@ -569,7 +569,7 @@ async function exportPDF() {
 
     // Title
     doc.setFontSize(18);
-    doc.setTextColor(242, 151, 68); // #f29744
+    doc.setTextColor(225, 105, 0); // #e16900
     doc.text("Laporan Rekapitulasi Pesanan", 14, finalY);
     finalY += 8;
 

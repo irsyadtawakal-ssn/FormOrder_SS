@@ -9,8 +9,8 @@
 
 :root {
   --ui-brand: #f29744;
-  --ui-brand-dark: #d87c2b;
-  --ui-brand-bg: #fff8f1;
+  --ui-brand-dark: #ee8a2c;
+  --ui-brand-bg: #fff7ed;
   --ui-ink: #1f2937;
   --ui-ink2: #374151;
   --ui-muted: #6b7280;
@@ -26,8 +26,8 @@
      dari JavaScript (admin.js dan render inline tiap halaman). Dipetakan ke
      palet baru agar tidak perlu menyentuh logika JS. */
   --brand: #f29744;
-  --brand-dark: #d87c2b;
-  --brand-bg: #fff8f1;
+  --brand-dark: #ee8a2c;
+  --brand-bg: #fff7ed;
   --ink: #1f2937;
   --ink2: #374151;
   --muted: #6b7280;
