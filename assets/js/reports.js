@@ -124,6 +124,22 @@ async function _populateOutletFilter() {
   });
 }
 
+// Konversi timestamptz (UTC) dari Supabase ke tanggal & jam WIB (Asia/Jakarta)
+function _toJakartaDateTime(isoUtc) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Jakarta',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hour12: false
+  }).formatToParts(new Date(isoUtc)).reduce((acc, p) => {
+    acc[p.type] = p.value;
+    return acc;
+  }, {});
+  return {
+    date: `${parts.year}-${parts.month}-${parts.day}`,
+    time: `${parts.hour}:${parts.minute}`
+  };
+}
+
 // ─── Data fetch ───────────────────────────────────────────────────────────────
 
 async function _fetchRows(from, to, outletId) {
@@ -160,12 +176,14 @@ async function _fetchRows(from, to, outletId) {
       if (hasTest) return;
     }
 
+    const { date: wibDate, time: wibTime } = _toJakartaDateTime(order.created_at);
+
     (order.order_items || []).forEach(item => {
       rows.push({
         order_id: order.id,
         order_number: order.order_number,
-        date: order.created_at.split('T')[0],
-        time: order.created_at.split('T')[1].substring(0, 5),
+        date: wibDate,
+        time: wibTime,
         outlet_name: order.outlets?.name || '—',
         item_name: item.item_name,
         qty: item.quantity,
