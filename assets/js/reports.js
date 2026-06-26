@@ -236,7 +236,7 @@ function _renderMetricsSkeleton() {
   document.getElementById('metricsGrid').innerHTML = `
     ${_metricCardHTML('Total Revenue', '<div class="skeleton-line" style="height:28px;width:80px;margin-top:4px"></div>', '', 'banknote')}
     ${_metricCardHTML('Jumlah Item Terjual', '<div class="skeleton-line" style="height:28px;width:40px;margin-top:4px"></div>', '', 'shopping-bag')}
-    ${_metricCardHTML('Rata-rata Order', '<div class="skeleton-line" style="height:28px;width:60px;margin-top:4px"></div>', '', 'bar-chart-2')}
+    ${_metricCardHTML('Jumlah Order', '<div class="skeleton-line" style="height:28px;width:60px;margin-top:4px"></div>', '', 'bar-chart-2')}
     ${_metricCardHTML('vs Periode Lalu', '<div class="skeleton-line" style="height:28px;width:50px;margin-top:4px"></div>', '', 'trending-up')}
   `;
 }
@@ -279,7 +279,7 @@ function _renderMetrics(rows, rowsPrev) {
   document.getElementById('metricsGrid').innerHTML =
     _metricCardHTML('Total Revenue', formatRupiah(revenue), null, 'banknote') +
     _metricCardHTML('Jumlah Item Terjual', `${itemCount}`, null, 'shopping-bag') +
-    _metricCardHTML('Rata-rata Order', formatRupiah(avg), null, 'calculator') +
+    _metricCardHTML('Jumlah Order', `${uniqueOrders}`, null, 'calculator') +
     _metricCardHTML('vs Periode Lalu', formatRupiah(revenuePrev), growthObj, 'trending-up');
 
   if (window.lucide) window.lucide.createIcons();
