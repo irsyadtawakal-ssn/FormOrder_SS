@@ -539,9 +539,14 @@ async function exportPDF() {
   showToast('Membuat PDF, harap tunggu...', 'info');
 
   const { from, to } = _getActiveDates();
+  const selectedOutletId = _user.role === 'super_admin'
+    ? document.getElementById('outletFilter').value
+    : _user.outlet_id;
   const outletLabel = _user.role === 'super_admin'
     ? (document.getElementById('outletFilter').selectedOptions[0]?.text || 'Semua Outlet')
     : (_user.outlet_id ? 'Outlet' : 'Semua Outlet');
+  // Mode "Semua Outlet": tampilkan nama outlet di tiap order (hanya saat tidak difilter ke 1 outlet)
+  const showOutletPerOrder = !selectedOutletId;
 
   // Grouping logic (same as the previous script)
   const summary = {};
@@ -556,6 +561,7 @@ async function exportPDF() {
         order_number: r.order_number,
         date: r.date,
         time: r.time,
+        outlet_name: r.outlet_name,
         itemsList: [],
         total: 0,
         totalQty: 0
@@ -645,9 +651,12 @@ async function exportPDF() {
 
       s.transactions.forEach((trx, i) => {
         // Table for each transaction
+        const orderTitle = showOutletPerOrder
+          ? `Order #${trx.order_number || (i + 1)} (Jam: ${trx.time}) — ${trx.outlet_name || '—'}`
+          : `Order #${trx.order_number || (i + 1)} (Jam: ${trx.time})`;
         doc.autoTable({
           startY: finalY,
-          head: [[`Order #${trx.order_number || (i + 1)} (Jam: ${trx.time})`, 'Qty', 'Harga Satuan', 'Subtotal']],
+          head: [[orderTitle, 'Qty', 'Harga Satuan', 'Subtotal']],
           body: trx.itemsList.map(item => [
             item.name,
             item.qty.toString(),
