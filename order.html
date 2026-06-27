@@ -212,39 +212,41 @@ function startPolling() {
   stopPolling();
   if (!order || TERMINAL_STATUSES.includes(order.status)) return;
 
+  // Poll DB setiap 2 detik agar lebih responsif
   pollTimer = setInterval(async () => {
     if (!order || TERMINAL_STATUSES.includes(order.status)) { stopPolling(); return; }
 
     xenditPollCounter++;
 
-    // Tiap 10 detik (2x 5 detik), kita panggil Edge Function untuk cek langsung ke Xendit
-    // Ini berguna sebagai fallback otomatis jika Webhook Xendit gagal/telat masuk
-    if (xenditPollCounter >= 2) {
+    // Tiap 12 detik (6 x 2 detik), panggil Edge Function cek ke Xendit
+    // Asynchronous agar tidak ngeblok DB polling di bawahnya
+    if (xenditPollCounter >= 6) {
       xenditPollCounter = 0;
-      try {
-        const result = await checkOrderStatus(orderNumber);
+      checkOrderStatus(orderNumber).then(async (result) => {
         if (result && result.status && result.status !== 'pending_payment') {
           await loadOrder(null);
-          return; // loadOrder akan memanggil renderStatus dan stopPolling
         }
-      } catch (err) {
+      }).catch(err => {
         console.warn('Silent check Xendit failed', err);
+      });
+    }
+
+    try {
+      const { data } = await window.db
+        .from('orders')
+        .select('status, cancelled_at, cancel_reason')
+        .eq('order_number', orderNumber)
+        .single();
+
+      if (data && data.status !== order.status) {
+        order = { ...order, ...data };
+        renderStatus(order);
+        if (TERMINAL_STATUSES.includes(data.status)) stopPolling();
       }
+    } catch (dbErr) {
+      console.warn('Silent DB poll failed', dbErr);
     }
-
-    const { data } = await window.db
-      .from('orders')
-      .select('status, cancelled_at, cancel_reason')
-      .eq('order_number', orderNumber)
-      .single();
-
-    if (data && data.status !== order.status) {
-      // Status berubah — reload penuh supaya semua data segar
-      order = { ...order, ...data };
-      renderStatus(order);
-      if (TERMINAL_STATUSES.includes(data.status)) stopPolling();
-    }
-  }, 5000);
+  }, 2000);
 }
 
 function stopPolling() {
