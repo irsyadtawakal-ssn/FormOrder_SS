@@ -206,12 +206,31 @@ async function loadOrder(cached) {
 }
 
 // ─── Polling fallback (backup jika Realtime tidak terpicu) ────────────────────
+let xenditPollCounter = 0;
+
 function startPolling() {
   stopPolling();
   if (!order || TERMINAL_STATUSES.includes(order.status)) return;
 
   pollTimer = setInterval(async () => {
     if (!order || TERMINAL_STATUSES.includes(order.status)) { stopPolling(); return; }
+
+    xenditPollCounter++;
+
+    // Tiap 10 detik (2x 5 detik), kita panggil Edge Function untuk cek langsung ke Xendit
+    // Ini berguna sebagai fallback otomatis jika Webhook Xendit gagal/telat masuk
+    if (xenditPollCounter >= 2) {
+      xenditPollCounter = 0;
+      try {
+        const result = await checkOrderStatus(orderNumber);
+        if (result.synced && result.status !== 'pending_payment') {
+          await loadOrder(null);
+          return; // loadOrder akan memanggil renderStatus dan stopPolling
+        }
+      } catch (err) {
+        console.warn('Silent check Xendit failed', err);
+      }
+    }
 
     const { data } = await window.db
       .from('orders')
