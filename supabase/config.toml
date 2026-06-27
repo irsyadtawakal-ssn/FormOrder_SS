@@ -8,3 +8,12 @@ project_id = "qntuhtkujpwudcpudwbj"
 # (yang tak membawa Authorization) ditolak gateway dengan 401 → CORS gagal di browser.
 [functions.create-admin-user]
 verify_jwt = false
+
+[functions.kasir-order-done]
+verify_jwt = false
+
+[functions.kasir-order-cancel]
+verify_jwt = false
+
+[functions.sync-status-to-pos]
+verify_jwt = false
