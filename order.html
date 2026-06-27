@@ -223,7 +223,7 @@ function startPolling() {
       xenditPollCounter = 0;
       try {
         const result = await checkOrderStatus(orderNumber);
-        if (result.synced && result.status !== 'pending_payment') {
+        if (result && result.status && result.status !== 'pending_payment') {
           await loadOrder(null);
           return; // loadOrder akan memanggil renderStatus dan stopPolling
         }
