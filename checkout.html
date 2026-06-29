@@ -322,31 +322,59 @@ async function doCheckout() {
 let previewDiscount = 0;
 let previewPromoName = '';
 
-async function fetchPromoPreview(subtotal) {
+async function fetchPromoPreview(subtotal, cart) {
   if (!window.db) return;
   const nowIso = new Date().toISOString();
   try {
     const { data } = await window.db
       .from('promos')
-      .select('id, name, discount_type, discount_value, max_discount, min_purchase')
+      .select('id, name, discount_type, discount_value, max_discount, min_purchase, applies_to, item_ids')
       .eq('is_active', true)
-      .eq('applies_to', 'all')
       .lte('min_purchase', subtotal)
       .or(`start_at.is.null,start_at.lte."${nowIso}"`)
       .or(`end_at.is.null,end_at.gte."${nowIso}"`)
-      .order('priority', { ascending: false })
-      .order('discount_value', { ascending: false })
-      .limit(1);
-    const p = data?.[0];
-    if (!p) return;
-    if (p.discount_type === 'percent') {
-      previewDiscount = Math.round(subtotal * Number(p.discount_value) / 100);
-      if (p.max_discount != null) previewDiscount = Math.min(previewDiscount, Number(p.max_discount));
-    } else {
-      previewDiscount = Math.min(Number(p.discount_value), subtotal);
+      .order('priority', { ascending: false });
+
+    if (!data || !data.length) return;
+
+    let bestDiscount = 0;
+    let bestPromoName = '';
+
+    for (const p of data) {
+      let applicableSubtotal = subtotal;
+
+      if (p.applies_to === 'item' && p.item_ids && p.item_ids.length > 0) {
+        applicableSubtotal = cart.reduce((sum, item) => {
+          if (p.item_ids.includes(item.menuItemId)) {
+            return sum + (item.unitPrice * item.qty);
+          }
+          return sum;
+        }, 0);
+      }
+
+      if (applicableSubtotal <= 0) continue;
+
+      let discount = 0;
+      if (p.discount_type === 'percent') {
+        discount = Math.round(applicableSubtotal * Number(p.discount_value) / 100);
+        if (p.max_discount != null) discount = Math.min(discount, Number(p.max_discount));
+      } else {
+        discount = Math.min(Number(p.discount_value), applicableSubtotal);
+      }
+      discount = Math.max(0, discount);
+
+      // If we find the first one that gives a discount, we can take it since it's ordered by priority
+      // However, ordering by discount_value is lost since we do client-side calculation.
+      // Let's just pick the one with max discount among the highest priority tier,
+      // or simply the highest discount overall. Let's just track bestDiscount.
+      if (discount > bestDiscount) {
+        bestDiscount = discount;
+        bestPromoName = p.name;
+      }
     }
-    previewDiscount = Math.max(0, previewDiscount);
-    previewPromoName = p.name;
+
+    previewDiscount = bestDiscount;
+    previewPromoName = bestPromoName;
   } catch { /* promo preview gagal, lanjut tanpa diskon */ }
 }
 
@@ -366,7 +394,7 @@ function initCheckout() {
     if (window.lucide) { window.lucide.createIcons(); }
   } else {
     const subtotal = getCartTotal(checkoutData.cart);
-    fetchPromoPreview(subtotal).then(() => {
+    fetchPromoPreview(subtotal, checkoutData.cart).then(() => {
       renderPage();
       if (typeof sukaPixelTrack === 'function') {
         sukaPixelTrack('InitiateCheckout', { value: subtotal - previewDiscount, currency: 'IDR' });

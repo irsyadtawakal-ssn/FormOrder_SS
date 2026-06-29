@@ -1,5 +1,6 @@
 // admin-promos.js — CRUD promo (super_admin only)
 let allPromos = [];
+let allMenus = [];
 
 (async function init() {
   const u = await requireAuth();
@@ -9,8 +10,19 @@ let allPromos = [];
       '<p style="padding:32px;text-align:center;color:var(--muted)">Akses terbatas untuk Super Admin.</p>';
     return;
   }
+  await loadMenus();
   await loadPromos();
 })();
+
+async function loadMenus() {
+  const { data, error } = await window.db
+    .from('menu_items')
+    .select('id, name')
+    .eq('is_active', true)
+    .order('name', { ascending: true });
+  if (!error) allMenus = data || [];
+}
+
 
 async function loadPromos() {
   const { data, error } = await window.db
@@ -58,6 +70,11 @@ function discountSummary(p) {
   const val = p.discount_type === 'percent' ? `${p.discount_value}%` : rupiah(p.discount_value);
   const parts = [val, `min ${rupiah(p.min_purchase)}`];
   if (p.max_discount != null) parts.push(`maks ${rupiah(p.max_discount)}`);
+  
+  if (p.applies_to === 'item' && p.item_ids?.length) {
+    parts.push(`Hanya ${p.item_ids.length} menu`);
+  }
+  
   // Add usage display if limit is set
   if (p.usage_limit != null) {
     parts.push(`${p.usage_count ?? 0}/${p.usage_limit} pembeli`);
@@ -119,6 +136,22 @@ function openPromoForm(id) {
       <label class="form-label">Selesai (opsional)</label>
       <input id="pEnd" type="datetime-local" class="form-input" value="${p ? toLocalInput(p.end_at) : ''}" />
 
+      <label class="form-label">Berlaku Untuk</label>
+      <select id="pAppliesTo" class="form-input" onchange="document.getElementById('promoItemsWrapper').style.display = this.value === 'item' ? 'block' : 'none'">
+        <option value="all" ${!p || p.applies_to !== 'item' ? 'selected' : ''}>Semua Menu</option>
+        <option value="item" ${p && p.applies_to === 'item' ? 'selected' : ''}>Menu Tertentu</option>
+      </select>
+      
+      <div id="promoItemsWrapper" style="display:${p && p.applies_to === 'item' ? 'block' : 'none'}; margin-top:8px; margin-bottom:8px; padding:12px; background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px; max-height:200px; overflow-y:auto;">
+        <div style="font-weight:700;font-size:12px;margin-bottom:8px">Pilih Menu:</div>
+        ${allMenus.map(m => `
+          <label style="display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:13px;cursor:pointer">
+            <input type="checkbox" class="p-item-check" value="${m.id}" ${p && p.item_ids && p.item_ids.includes(m.id) ? 'checked' : ''} />
+            ${escHtml(m.name)}
+          </label>
+        `).join('')}
+      </div>
+
       <label class="form-label">Prioritas</label>
       <input id="pPriority" type="number" class="form-input" value="${p ? p.priority : 1}" />
 
@@ -162,12 +195,20 @@ async function savePromo(id) {
   const maxRaw = document.getElementById('pMax').value;
   const startRaw = document.getElementById('pStart').value;
   const endRaw = document.getElementById('pEnd').value;
+  const appliesTo = document.getElementById('pAppliesTo').value;
+  
+  const itemIds = [];
+  if (appliesTo === 'item') {
+    document.querySelectorAll('.p-item-check:checked').forEach(cb => itemIds.push(cb.value));
+  }
+
   const priority = Number(document.getElementById('pPriority').value || 1);
   const limitRaw = document.getElementById('pLimit').value;
   const usageLimit = limitRaw === '' ? null : Number(limitRaw);
   const isActive = document.getElementById('pActive').checked;
 
   if (!name) { showToast('Nama promo wajib diisi'); return; }
+  if (appliesTo === 'item' && itemIds.length === 0) { showToast('Pilih setidaknya satu menu'); return; }
   if (!(value > 0)) { showToast('Nilai diskon harus > 0'); return; }
   if (type === 'percent' && value > 100) { showToast('Diskon persen maks 100'); return; }
   if (startRaw && endRaw && new Date(endRaw) <= new Date(startRaw)) {
@@ -179,6 +220,8 @@ async function savePromo(id) {
     max_discount: maxRaw === '' ? null : Number(maxRaw),
     start_at: startRaw ? new Date(startRaw).toISOString() : null,
     end_at: endRaw ? new Date(endRaw).toISOString() : null,
+    applies_to: appliesTo,
+    item_ids: appliesTo === 'item' ? itemIds : null,
     priority, is_active: isActive,
     usage_limit: usageLimit,
     updated_at: new Date().toISOString(),

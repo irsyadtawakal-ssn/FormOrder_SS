@@ -368,36 +368,56 @@ serve(async (req: Request) => {
   const nowIso = new Date().toISOString();
   const { data: promoRows } = await supabase
     .from("promos")
-    .select("id, name, discount_type, discount_value, max_discount, min_purchase, usage_limit, usage_count")
+    .select("id, name, discount_type, discount_value, max_discount, min_purchase, usage_limit, usage_count, applies_to, item_ids")
     .eq("is_active", true)
-    .eq("applies_to", "all")
     .lte("min_purchase", subtotal)
     .or(`start_at.is.null,start_at.lte."${nowIso}"`)
     .or(`end_at.is.null,end_at.gte."${nowIso}"`)
-    .order("priority", { ascending: false })
-    .order("discount_value", { ascending: false })
-    .limit(1);
+    .order("priority", { ascending: false });
 
-  const promo = promoRows?.[0];
-  if (promo) {
-    if (promo.usage_limit != null && promo.usage_count >= promo.usage_limit) {
-      // Usage limit reached, skip discount
-      discount = 0;
-      promoId = null;
-      promoName = null;
-    } else {
-      // Hitung diskon normal
-      if (promo.discount_type === "percent") {
-        discount = Math.round(subtotal * Number(promo.discount_value) / 100);
-        if (promo.max_discount != null) {
-          discount = Math.min(discount, Number(promo.max_discount));
+  if (promoRows && promoRows.length > 0) {
+    let bestDiscount = 0;
+    let bestPromo: any = null;
+
+    for (const p of promoRows) {
+      if (p.usage_limit != null && p.usage_count >= p.usage_limit) {
+        continue;
+      }
+      
+      let applicableSubtotal = subtotal;
+      
+      if (p.applies_to === "item" && p.item_ids && p.item_ids.length > 0) {
+        applicableSubtotal = validatedItems.reduce((sum, item) => {
+          if (p.item_ids.includes(item.menu_item_id)) {
+            return sum + item.subtotal;
+          }
+          return sum;
+        }, 0);
+      }
+      
+      if (applicableSubtotal <= 0) continue;
+      
+      let pDiscount = 0;
+      if (p.discount_type === "percent") {
+        pDiscount = Math.round(applicableSubtotal * Number(p.discount_value) / 100);
+        if (p.max_discount != null) {
+          pDiscount = Math.min(pDiscount, Number(p.max_discount));
         }
       } else {
-        discount = Math.min(Number(promo.discount_value), subtotal);
+        pDiscount = Math.min(Number(p.discount_value), applicableSubtotal);
       }
-      discount = Math.max(0, discount);
-      promoId = promo.id;
-      promoName = promo.name;
+      pDiscount = Math.max(0, pDiscount);
+      
+      if (pDiscount > bestDiscount) {
+        bestDiscount = pDiscount;
+        bestPromo = p;
+      }
+    }
+    
+    if (bestPromo) {
+      discount = bestDiscount;
+      promoId = bestPromo.id;
+      promoName = bestPromo.name;
     }
   }
 
