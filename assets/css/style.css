@@ -1820,6 +1820,26 @@ h6,
   background: rgba(0, 0, 0, 0.75);
   color: #fff;
 }
+.promo-badge {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  background: #E3000F; /* Elegant striking red */
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 999px; /* Pill shape */
+  box-shadow: 0 4px 10px rgba(227, 0, 15, 0.35);
+  max-width: calc(100% - 16px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  z-index: 2;
+  font-family: var(--font-display);
+}
 .deal-body {
   padding: 16px 16px 16px 4px;
   display: flex;
