@@ -277,12 +277,15 @@
           window.db.from("menu_items").select("*").eq("is_active", true).order("sort_order"),
           window.db.from("menu_variants").select("*").order("sort_order"),
           window.db.from("menu_variant_options").select("*").order("sort_order"),
+          window.db.from("promos").select("*").eq("is_active", true)
+            .or(`start_at.is.null,start_at.lte."${new Date().toISOString()}"`)
+            .or(`end_at.is.null,end_at.gte."${new Date().toISOString()}"`),
         ];
         if (!isViewOnly && outlet) {
           promises.push(window.db.from("outlet_menu_overrides").select("*").eq("outlet_id", outlet.id));
         }
 
-        const [catRes, itemRes, varRes, optRes, overrideRes] = await Promise.all(promises);
+        const [catRes, itemRes, varRes, optRes, promoRes, overrideRes] = await Promise.all(promises);
 
         if (catRes.error || itemRes.error) {
           document.getElementById("menuContent").innerHTML =
@@ -297,6 +300,7 @@
         const items = itemRes.data || [];
         const variants = varRes.data || [];
         const options = optRes.data || [];
+        const promos = promoRes.data || [];
         const overrides = overrideRes ? overrideRes.data || [] : [];
 
         const overrideMap = {};
@@ -325,10 +329,36 @@
 
         items.forEach((item) => {
           const ov = overrideMap[item.id];
+          let basePrice = ov?.price_override ?? item.base_price;
+          let bestDiscount = 0;
+          let promoName = null;
+          
+          // Calculate if any promo applies to this item
+          for (const p of promos) {
+             if (p.applies_to === 'item' && p.item_ids && p.item_ids.includes(item.id)) {
+                let discount = 0;
+                if (p.discount_type === 'percent') {
+                  discount = Math.round(basePrice * Number(p.discount_value) / 100);
+                  if (p.max_discount != null) discount = Math.min(discount, Number(p.max_discount));
+                } else {
+                  discount = Math.min(Number(p.discount_value), basePrice);
+                }
+                if (discount > bestDiscount) {
+                  bestDiscount = discount;
+                  promoName = p.name;
+                }
+             }
+          }
+
+          let effectivePrice = basePrice - bestDiscount;
+          // Set compare_price to basePrice if there's a discount, otherwise fallback to item.compare_price
+          let comparePrice = bestDiscount > 0 ? basePrice : (item.compare_price ?? null);
+
           const enriched = {
             ...item,
-            effectivePrice: ov?.price_override ?? item.base_price,
-            compare_price: item.compare_price ?? null,
+            effectivePrice: effectivePrice,
+            compare_price: comparePrice,
+            promo_name: promoName,
             isAvailable: isViewOnly ? false : (ov ? ov.is_available : true),
             isViewOnly: isViewOnly,
             variants: varsByItem[item.id] || [],
@@ -508,7 +538,7 @@
             </div>
             ${item.is_best_seller ? `<span class="deal-img-badge">BEST SELLER</span>` : ""}
             ${!item.isAvailable && !item.isViewOnly ? `<span class="deal-img-badge sold-out">HABIS</span>` : ""}
-            ${hasDiscount ? `<span class="deal-img-badge" style="top:auto;bottom:5px;left:5px;background:#ff6b00">-${discountPct}%</span>` : ""}
+            ${hasDiscount ? `<span class="deal-img-badge" style="top:auto;bottom:5px;left:5px;background:#ff6b00">${item.promo_name ? item.promo_name : `-${discountPct}%`}</span>` : ""}
           </div>
           <div class="deal-body">
             <div class="deal-name">${escHtml(item.name)}</div>
@@ -520,7 +550,7 @@
                   hasDiscount
                     ? `<div class="deal-price-meta">
                   <span class="deal-compare">${formatRupiah(item.compare_price)}</span>
-                  <span class="deal-discount">-${discountPct}%</span>
+                  ${!item.promo_name ? `<span class="deal-discount">-${discountPct}%</span>` : ''}
                 </div>`
                     : ""
                 }

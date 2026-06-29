@@ -1811,6 +1811,10 @@ h6,
   letter-spacing: 0.5px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   font-family: var(--font-display);
+  max-width: 90%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .deal-img-badge.sold-out {
   background: rgba(0, 0, 0, 0.75);
