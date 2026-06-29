@@ -17,7 +17,7 @@ let allMenus = [];
 async function loadMenus() {
   const { data, error } = await window.db
     .from('menu_items')
-    .select('id, name, image_url')
+    .select('id, name, photo_url')
     .eq('is_active', true)
     .order('name', { ascending: true });
   if (!error) allMenus = data || [];
@@ -188,7 +188,7 @@ function openPromoForm(id) {
             <label class="menu-select-card ${isChecked ? 'active' : ''}">
               <input type="checkbox" class="p-item-check" value="${m.id}" ${isChecked ? 'checked' : ''} style="display:none" onchange="this.parentElement.classList.toggle('active', this.checked); const svg = this.parentElement.querySelector('svg'); if(this.checked) { svg.style.display='block'; } else { svg.style.display='none'; }" />
               <div style="width:40px;height:40px;border-radius:6px;background:#f3f4f6;flex-shrink:0;overflow:hidden;border:1px solid var(--line2)">
-                ${m.image_url ? `<img src="${escHtml(m.image_url)}" style="width:100%;height:100%;object-fit:cover" />` : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:10px">No Img</div>'}
+                ${m.photo_url ? `<img src="${escHtml(m.photo_url)}" style="width:100%;height:100%;object-fit:cover" />` : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:10px">No Img</div>'}
               </div>
               <div style="font-size:12px;font-weight:600;line-height:1.3;flex:1">${escHtml(m.name)}</div>
               <div class="check-icon">
