@@ -1822,28 +1822,17 @@ h6,
 }
 .promo-badge {
   position: absolute;
-  bottom: 16px;
-  left: 16px;
-  background: #ee4d2d; /* E-commerce red */
+  top: 10px;
+  left: 10px;
+  background: #00B14F; /* GrabFood Green */
   color: #ffffff;
   font-size: 10px;
-  font-weight: 700;
-  padding: 3px 6px;
-  border-radius: 4px;
-  max-width: calc(100% - 32px);
-  display: flex;
-  align-items: center;
+  font-weight: 800;
+  padding: 4px 8px;
+  border-radius: 14px 0 8px 0; /* Hug top left corner */
   z-index: 2;
-  box-shadow: 0 2px 4px rgba(238, 77, 45, 0.3);
-}
-.promo-badge i {
-  flex-shrink: 0;
-  margin-right: 4px;
-}
-.promo-badge .promo-text {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.15);
+  letter-spacing: 0.5px;
 }
 .deal-body {
   padding: 16px 16px 16px 4px;
@@ -1888,6 +1877,7 @@ h6,
   flex-direction: column;
   align-items: flex-start;
   gap: 2px;
+  min-width: 0; /* Allow flex children to truncate */
 }
 .deal-compare {
   font-size: 10px;
@@ -1898,10 +1888,15 @@ h6,
   font-size: 9px;
   font-weight: 700;
   color: #fff;
-  background: var(--brand);
+  background: #E3000F; /* Red for discount to stand out against the green badge */
   padding: 2px 6px;
   border-radius: 4px;
-  box-shadow: 0 2px 6px rgba(234, 88, 12, 0.3);
+  box-shadow: 0 2px 6px rgba(227, 0, 15, 0.3);
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-block;
 }
 .deal-add-btn {
   width: 32px;
