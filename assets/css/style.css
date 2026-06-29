@@ -1822,26 +1822,28 @@ h6,
 }
 .promo-badge {
   position: absolute;
-  bottom: 8px;
-  left: 8px;
-  background: #E3000F; /* Elegant striking red */
+  bottom: 16px;
+  left: 16px;
+  background: #ee4d2d; /* E-commerce red */
   color: #ffffff;
   font-size: 10px;
-  font-weight: 800;
-  padding: 4px 10px;
-  border-radius: 999px; /* Pill shape */
-  box-shadow: 0 4px 10px rgba(227, 0, 15, 0.35);
-  max-width: calc(100% - 16px);
+  font-weight: 700;
+  padding: 3px 6px;
+  border-radius: 4px;
+  max-width: calc(100% - 32px);
+  display: flex;
+  align-items: center;
+  z-index: 2;
+  box-shadow: 0 2px 4px rgba(238, 77, 45, 0.3);
+}
+.promo-badge i {
+  flex-shrink: 0;
+  margin-right: 4px;
+}
+.promo-badge .promo-text {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  z-index: 2;
-  font-family: var(--font-display);
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 .deal-body {
   padding: 16px 16px 16px 4px;

@@ -538,7 +538,7 @@
             </div>
             ${item.is_best_seller ? `<span class="deal-img-badge">BEST SELLER</span>` : ""}
             ${!item.isAvailable && !item.isViewOnly ? `<span class="deal-img-badge sold-out">HABIS</span>` : ""}
-            ${hasDiscount ? `<span class="promo-badge"><i data-lucide="tag" style="width:10px;height:10px;margin-right:3px;"></i>${item.promo_name ? item.promo_name : `-${discountPct}%`}</span>` : ""}
+            ${hasDiscount ? `<span class="promo-badge"><i data-lucide="tag" style="width:12px;height:12px;"></i><span class="promo-text">${item.promo_name ? item.promo_name : `-${discountPct}%`}</span></span>` : ""}
           </div>
           <div class="deal-body">
             <div class="deal-name">${escHtml(item.name)}</div>
