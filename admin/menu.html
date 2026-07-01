@@ -152,6 +152,9 @@
         </div>
       </div>
       <div class="flex items-center gap-2">
+        <button class="admin-only flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold px-3.5 py-2 rounded-xl text-xs transition-colors cursor-pointer" onclick="openCategoryManager()">
+          <i data-lucide="tag" class="w-4 h-4"></i> Kelola Kategori
+        </button>
         <a href="/admin/bulk-photos.html" class="admin-only flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold px-3.5 py-2 rounded-xl text-xs transition-colors" style="text-decoration:none">
           <i data-lucide="camera" class="w-4 h-4"></i> Bulk Upload
         </a>
@@ -250,14 +253,132 @@ async function loadCategories() {
   categories = data || [];
 
   const tabs = document.getElementById('catTabs');
+  // Bersihkan tab lama (sisakan tombol "Semua" yang statis) agar bisa dipanggil ulang
+  tabs.querySelectorAll('.filter-tab[data-cat]:not([data-cat=""])').forEach(b => b.remove());
   categories.forEach(c => {
     const btn = document.createElement('button');
     btn.className = 'filter-tab';
     btn.dataset.cat = c.id;
     btn.textContent = c.name;
+    if (c.is_active === false) btn.style.opacity = '0.5';
     btn.onclick = () => setCat(c.id);
     tabs.appendChild(btn);
   });
+}
+
+// ─── Kelola Kategori (super_admin) ────────────────────────────────────────────
+function openCategoryManager() {
+  if (!isSuperAdmin) return;
+
+  const rows = categories.length === 0
+    ? `<div class="text-gray-400 text-xs py-3 text-center">Belum ada kategori</div>`
+    : categories.map(c => {
+        const count = allItems.filter(i => i.category_id === c.id).length;
+        return `<div class="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2.5 mb-2" style="opacity:${c.is_active === false ? 0.55 : 1}">
+          <div class="flex-1 min-w-0">
+            <div class="font-semibold text-sm text-gray-800 truncate">${escHtml(c.name)}</div>
+            <div class="text-[11px] text-gray-500 mt-0.5">Urutan ${c.sort_order} · ${count} menu${c.is_active === false ? ' · nonaktif' : ''}</div>
+          </div>
+          <label class="toggle-wrap" title="Aktif/nonaktif">
+            <input type="checkbox" ${c.is_active !== false ? 'checked' : ''} onchange="toggleCategory('${c.id}',this.checked)" />
+            <span class="toggle-slider"></span>
+          </label>
+          <button class="action-btn action-secondary" style="font-size:11px;padding:4px 10px" onclick="openCategoryForm('${c.id}')">Edit</button>
+          <button class="action-btn action-danger" style="font-size:11px;padding:4px 10px" onclick="hapusCategory('${c.id}')">Hapus</button>
+        </div>`;
+      }).join('');
+
+  openModal('Kelola Kategori', `
+    <div id="catList">${rows}</div>
+    <button class="action-btn action-primary" style="width:100%;margin-top:8px;padding:10px" onclick="openCategoryForm(null)">
+      <i data-lucide="plus" class="w-4 h-4 mr-1"></i> Tambah Kategori
+    </button>
+  `);
+
+  if (window.lucide) window.lucide.createIcons();
+}
+
+function openCategoryForm(catId) {
+  if (!isSuperAdmin) return;
+  const cat   = catId ? categories.find(c => c.id === catId) : null;
+  const isNew = !cat;
+  const nextSort = categories.length
+    ? Math.max(...categories.map(c => c.sort_order || 0)) + 1 : 0;
+
+  openModal(isNew ? '+ Tambah Kategori' : 'Edit Kategori', `
+    <div class="form-group">
+      <label class="form-label">Nama Kategori</label>
+      <input id="cName" class="form-input" value="${cat ? escHtml(cat.name) : ''}" placeholder="Nama kategori" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Urutan Tampil</label>
+      <input id="cSort" class="form-input" type="number" min="0" value="${cat ? cat.sort_order : nextSort}" />
+    </div>
+    <label style="display:flex;align-items:center;gap:6px;font-size:13px;margin-top:2px">
+      <input id="cActive" type="checkbox" ${cat?.is_active !== false ? 'checked' : ''} /> Aktif
+    </label>
+  `,
+  `<button class="btn-add-big" style="width:100%" onclick="saveCategory(${cat ? `'${cat.id}'` : 'null'})">
+     ${isNew ? 'Tambah Kategori' : 'Simpan Perubahan'}
+   </button>`);
+}
+
+async function saveCategory(catId) {
+  const name   = document.getElementById('cName').value.trim();
+  const sort   = parseInt(document.getElementById('cSort').value) || 0;
+  const active = document.getElementById('cActive').checked;
+
+  if (!name) { adminToast('❌ Nama kategori wajib diisi'); return; }
+
+  const payload = { name, sort_order: sort, is_active: active };
+
+  if (catId) {
+    const { error } = await window.db.from('categories').update(payload).eq('id', catId);
+    if (error) { adminToast('❌ ' + error.message); return; }
+    adminToast('✅ Kategori diperbarui');
+  } else {
+    const { error } = await window.db.from('categories').insert(payload);
+    if (error) { adminToast('❌ ' + error.message); return; }
+    adminToast('✅ Kategori ditambahkan');
+  }
+
+  closeModal();
+  await loadCategories();
+  setCat(currentCat);      // pulihkan tab aktif
+  applyFilter();
+}
+
+async function toggleCategory(catId, active) {
+  const { error } = await window.db.from('categories').update({ is_active: active }).eq('id', catId);
+  if (error) { adminToast('❌ ' + error.message); return; }
+  const c = categories.find(x => x.id === catId);
+  if (c) c.is_active = active;
+  adminToast(active ? '✅ Kategori diaktifkan' : '⏸ Kategori dinonaktifkan');
+  await loadCategories();
+  setCat(currentCat);
+}
+
+async function hapusCategory(catId) {
+  const cat = categories.find(c => c.id === catId);
+  if (!cat) return;
+  const count = allItems.filter(i => i.category_id === catId).length;
+  const warn = count
+    ? `\n\n${count} menu memakai kategori ini — menu tidak terhapus, hanya kategorinya dikosongkan.`
+    : '';
+  if (!confirm(`Hapus kategori "${cat.name}"?${warn}\n\nAksi ini tidak bisa dibatalkan.`)) return;
+
+  const { error } = await window.db.from('categories').delete().eq('id', catId);
+  if (error) { adminToast('❌ ' + error.message); return; }
+
+  // Kategori di-set NULL pada menu_items (ON DELETE SET NULL) — sinkronkan state lokal
+  allItems.forEach(i => { if (i.category_id === catId) { i.category_id = null; i.categories = null; } });
+  if (currentCat === catId) currentCat = '';
+
+  adminToast(`Kategori "${cat.name}" dihapus.`);
+  closeModal();
+  await loadCategories();
+  setCat(currentCat);
+  applyFilter();
 }
 
 async function loadItems() {
