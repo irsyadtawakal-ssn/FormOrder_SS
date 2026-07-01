@@ -335,7 +335,7 @@
           
           // Calculate if any promo applies to this item
           for (const p of promos) {
-             if (p.applies_to === 'item' && p.item_ids && p.item_ids.includes(item.id)) {
+             if (p.applies_to === 'all' || (p.applies_to === 'item' && p.item_ids && p.item_ids.includes(item.id))) {
                 let discount = 0;
                 if (p.discount_type === 'percent') {
                   discount = Math.round(basePrice * Number(p.discount_value) / 100);
@@ -406,15 +406,32 @@
 
       // ─── Render tabs ──────────────────────────────────────────────────────────────
       function renderTabs() {
+        let hasPromo = false;
+        if (menuData) {
+          menuData.forEach((cat) => {
+            cat.items.forEach((item) => {
+              if (item.compare_price && item.compare_price > item.effectivePrice) {
+                hasPromo = true;
+              }
+            });
+          });
+        }
+
         const allCats = [
           { id: "Semua", label: "Semua" },
-          {
-            id: "Best Seller",
-            label:
-              '<i data-lucide="star" style="width:14px;height:14px;vertical-align:text-bottom;fill:currentColor;margin-right:4px;"></i>Best Seller',
-          },
-          ...menuData.map((c) => ({ id: c.name, label: c.name })),
         ];
+        if (hasPromo) {
+          allCats.push({
+            id: "Promo",
+            label: '<i data-lucide="tag" style="width:14px;height:14px;vertical-align:text-bottom;fill:currentColor;margin-right:4px;"></i>Promo'
+          });
+        }
+        allCats.push({
+          id: "Best Seller",
+          label:
+            '<i data-lucide="star" style="width:14px;height:14px;vertical-align:text-bottom;fill:currentColor;margin-right:4px;"></i>Best Seller',
+        });
+        allCats.push(...menuData.map((c) => ({ id: c.name, label: c.name })));
         document.getElementById("tabs").innerHTML = allCats
           .map(
             (c) =>
@@ -447,11 +464,23 @@
 
         let sections = [];
 
-        // Kumpulkan item Best Seller dari semua kategori
+        // Kumpulkan item Promo dan Best Seller dari semua kategori
+        let promoItems = [];
         let bestSellerItems = [];
+        
         menuData.forEach((cat) => {
           cat.items.forEach((item) => {
-            if (item.is_best_seller) {
+            const isPromo = item.compare_price && item.compare_price > item.effectivePrice;
+            
+            if (isPromo) {
+              if (
+                q &&
+                !item.name.toLowerCase().includes(q) &&
+                !(item.description || "").toLowerCase().includes(q)
+              )
+                return;
+              promoItems.push(item);
+            } else if (item.is_best_seller) {
               if (
                 q &&
                 !item.name.toLowerCase().includes(q) &&
@@ -463,7 +492,17 @@
           });
         });
 
-        // Masukkan section Best Seller jika sedang di tab Semua atau tab Best Seller
+        // Masukkan section Promo
+        if (activeCategory === "Semua" || activeCategory === "Promo") {
+          if (promoItems.length > 0) {
+            sections.push({
+              name: "Promo",
+              items: promoItems,
+            });
+          }
+        }
+
+        // Masukkan section Best Seller
         if (activeCategory === "Semua" || activeCategory === "Best Seller") {
           if (bestSellerItems.length > 0) {
             sections.push({
@@ -473,14 +512,18 @@
           }
         }
 
-        // Masukkan kategori reguler jika bukan sedang di tab Best Seller
-        if (activeCategory !== "Best Seller") {
+        // Masukkan kategori reguler
+        if (activeCategory !== "Best Seller" && activeCategory !== "Promo") {
           menuData.forEach((cat) => {
             if (activeCategory !== "Semua" && cat.name !== activeCategory) return;
 
             let items = cat.items.filter((item) => {
-              // Jika di tab Semua, jangan tampilkan item Best Seller lagi di kategori bawahnya (agar tidak ganda)
-              if (activeCategory === "Semua" && item.is_best_seller) return false;
+              const isPromo = item.compare_price && item.compare_price > item.effectivePrice;
+              
+              if (activeCategory === "Semua") {
+                if (isPromo) return false;
+                if (item.is_best_seller) return false;
+              }
 
               if (
                 q &&
@@ -536,21 +579,23 @@
             <div class="deal-img">
               ${item.photo_url ? `<img src="${item.photo_url}" alt="${escHtml(item.name)}" loading="lazy" />` : '<i data-lucide="sandwich" style="width:40px;height:40px;color:var(--faint)"></i>'}
             </div>
-            ${item.is_best_seller ? `<span class="deal-img-badge">BEST SELLER</span>` : ""}
+            <div class="deal-badge-stack">
+              ${hasDiscount ? `<span class="promo-badge">PROMO</span>` : ""}
+              ${item.is_best_seller ? `<span class="deal-img-badge best-seller"><i data-lucide="star" style="width:10px;height:10px;fill:currentColor"></i> BEST SELLER</span>` : ""}
+            </div>
             ${!item.isAvailable && !item.isViewOnly ? `<span class="deal-img-badge sold-out">HABIS</span>` : ""}
-            ${hasDiscount ? `<span class="promo-badge">PROMO</span>` : ""}
           </div>
           <div class="deal-body">
             <div class="deal-name">${escHtml(item.name)}</div>
             ${item.description ? `<div class="deal-desc">${escHtml(item.description)}</div>` : ""}
             <div class="deal-price-row">
-              <div>
+              <div class="deal-price-info">
                 <div class="deal-price">${formatRupiah(item.effectivePrice)}</div>
                 ${
                   hasDiscount
                     ? `<div class="deal-price-meta">
                   <span class="deal-compare">${formatRupiah(item.compare_price)}</span>
-                  <span class="deal-discount">${item.promo_name ? item.promo_name : `Diskon ${discountPct}%`}</span>
+                  <span class="deal-discount" title="${item.promo_name ? escHtml(item.promo_name) : `Diskon ${discountPct}%`}">${item.promo_name ? escHtml(item.promo_name) : `Diskon ${discountPct}%`}</span>
                 </div>`
                     : ""
                 }

@@ -1796,43 +1796,65 @@ h6,
   object-fit: cover;
   display: block;
 }
-.deal-img-badge {
+.deal-badge-stack {
   position: absolute;
-  top: 16px;
-  left: 16px;
-  background: rgba(255, 255, 255, 0.9);
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+.deal-img-badge {
+  position: static;
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   color: var(--brand);
   font-size: 9px;
-  font-weight: 700;
+  font-weight: 800;
   padding: 4px 8px;
   border-radius: 8px;
   letter-spacing: 0.5px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: -2px 2px 6px rgba(0, 0, 0, 0.08);
   font-family: var(--font-display);
-  max-width: 90%;
   white-space: nowrap;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 2px;
 }
+
 .deal-img-badge.sold-out {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  right: auto;
+  transform: translate(-50%, -50%);
   background: rgba(0, 0, 0, 0.75);
   color: #fff;
+  font-size: 11px;
+  border-radius: 8px;
+  z-index: 3;
 }
 .promo-badge {
-  position: absolute;
-  top: 10px;
-  left: 10px;
+  position: static;
   background: #00B14F; /* GrabFood Green */
   color: #ffffff;
   font-size: 10px;
   font-weight: 800;
   padding: 4px 8px;
-  border-radius: 14px 0 8px 0; /* Hug top left corner */
-  z-index: 2;
+  border-radius: 8px;
   box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.15);
   letter-spacing: 0.5px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .deal-body {
   padding: 16px 16px 16px 4px;
@@ -1864,6 +1886,12 @@ h6,
   justify-content: space-between;
   margin-top: auto;
   gap: 6px;
+}
+.deal-price-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
 }
 .deal-price {
   font-size: 16px;
