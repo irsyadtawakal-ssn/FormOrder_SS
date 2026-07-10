@@ -11,10 +11,6 @@ const CORS = {
 const FONNTE_URL = "https://api.fonnte.com/send";
 
 async function kirimWA(token: string, target: string, message: string): Promise<boolean> {
-  // DIMATIKAN SEMENTARA
-  console.log("WA Notif Disabled Temporarily for:", target);
-  return true;
-  /*
   try {
     const res = await fetch(FONNTE_URL, {
       method: "POST",
@@ -26,7 +22,6 @@ async function kirimWA(token: string, target: string, message: string): Promise<
   } catch {
     return false;
   }
-  */
 }
 
 function formatRupiah(n: number): string {

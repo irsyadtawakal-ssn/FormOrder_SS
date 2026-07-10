@@ -82,15 +82,11 @@ Deno.serve(async (req: Request) => {
         `Pesanan *${order.order_number}* di ${outletName} sudah kedaluwarsa karena pembayaran tidak ` +
         `diselesaikan tepat waktu.\n\n` +
         `Silakan pesan ulang jika masih berminat. Terima kasih 🙏`;
-        
-      console.log("WA Notif Disabled Temporarily for auto-cancel:", order.customer_wa);
-      /* DIMATIKAN SEMENTARA
       await fetch("https://api.fonnte.com/send", {
         method:  "POST",
         headers: { "Authorization": FONNTE_TOKEN, "Content-Type": "application/json" },
         body:    JSON.stringify({ target: order.customer_wa, message: pesan }),
-      }).catch(() => {});
-      */
+      }).catch(() => {/* abaikan error WA agar tidak gagalkan batch */});
     }
   }
 
