@@ -358,11 +358,13 @@ async function doCancel(orderId) {
   if (idx >= 0) { allOrders[idx] = { ...allOrders[idx], status: 'cancelled' }; renderOrders(); }
   adminToast('✅ Pesanan dibatalkan');
   // Kirim WA notif cancelled ke customer
+  /* DIMATIKAN SEMENTARA
   fetch(`${window.SUKA_CONFIG.supabaseUrl}/functions/v1/send-wa-notifications`, {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${window.SUKA_CONFIG.supabaseAnonKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ order_id: orderId, event: 'cancelled' }),
   }).catch(() => {});
+  */
 }
 
 // doVerifyTransfer & _buildProofSection dihapus — tidak dipakai di flow QRIS
