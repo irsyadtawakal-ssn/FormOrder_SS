@@ -203,7 +203,7 @@ function renderPage() {
 
       <div class="form-group">
         <label class="form-label">Kualitas / Ukuran</label>
-        <select id="qrSize" class="form-input">
+        <select id="qrSize" class="form-input" onchange="generateQrPreview()">
           <option value="small">Small (220x220px)</option>
           <option value="medium" selected>Medium (1000x1000px)</option>
           <option value="high">High (3000x3000px)</option>
