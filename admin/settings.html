@@ -203,7 +203,7 @@ function renderPage() {
 
       <div class="form-group">
         <label class="form-label">Kualitas / Ukuran</label>
-        <select id="qrSize" class="form-input" onchange="generateQrPreview()">
+        <select id="qrSize" class="form-input">
           <option value="small">Small (220x220px)</option>
           <option value="medium" selected>Medium (1000x1000px)</option>
           <option value="high">High (3000x3000px)</option>
@@ -769,36 +769,62 @@ async function generateQrPreview() {
   qrReady = false;
   await saveQrBaseUrl();
   const url = buildQrUrl();
-  const px = getQrSizePx();
   const canvas = document.getElementById('qrCanvas');
-  // Resolusi asli canvas ikut ukuran pilihan (untuk kualitas download), tapi
-  // tampilan di layar tetap dikunci 220px supaya card tidak melebar.
+  // Preview di layar selalu resolusi Small — ringan & cepat digambar.
+  // Resolusi asli untuk download (sesuai dropdown ukuran) digenerate
+  // terpisah saat tombol PNG/PDF diklik, tidak memakai canvas preview ini.
   canvas.style.width = '220px';
   canvas.style.height = '220px';
-  QRCode.toCanvas(canvas, url, { width: px, errorCorrectionLevel: 'M' }, (err) => {
+  QRCode.toCanvas(canvas, url, { width: QR_SIZE_PX.small, errorCorrectionLevel: 'M' }, (err) => {
     if (err) { qrReady = false; adminToast('❌ Gagal membuat QR code'); return; }
     document.getElementById('qrLinkPreview').textContent = url;
     qrReady = true;
   });
 }
 
-function downloadQrPng() {
+// Generate QR baru ke canvas tersembunyi (bukan canvas preview) pada resolusi
+// tertentu — dipakai saat download supaya file yang didownload sesuai pilihan
+// ukuran, terlepas dari resolusi preview yang selalu Small.
+function renderQrToCanvas(url, px) {
+  return new Promise((resolve, reject) => {
+    const canvas = document.createElement('canvas');
+    QRCode.toCanvas(canvas, url, { width: px, errorCorrectionLevel: 'M' }, (err) => {
+      if (err) reject(err); else resolve(canvas);
+    });
+  });
+}
+
+async function downloadQrPng() {
   if (!qrReady) { adminToast('❌ QR code belum siap, klik Generate dulu'); return; }
-  const canvas = document.getElementById('qrCanvas');
+  if (typeof QRCode === 'undefined') {
+    adminToast('❌ Gagal memuat library, coba refresh halaman');
+    return;
+  }
+  let canvas;
+  try {
+    canvas = await renderQrToCanvas(buildQrUrl(), getQrSizePx());
+  } catch {
+    adminToast('❌ Gagal membuat QR code'); return;
+  }
   const link = document.createElement('a');
   link.download = 'qr-order-sukshawarma.png';
   link.href = canvas.toDataURL('image/png');
   link.click();
 }
 
-function downloadQrPdf() {
+async function downloadQrPdf() {
   if (!qrReady) { adminToast('❌ QR code belum siap, klik Generate dulu'); return; }
-  if (typeof window.jspdf === 'undefined') {
+  if (typeof window.jspdf === 'undefined' || typeof QRCode === 'undefined') {
     adminToast('❌ Gagal memuat library, coba refresh halaman');
     return;
   }
-  const canvas = document.getElementById('qrCanvas');
-  const url = document.getElementById('qrLinkPreview').textContent;
+  const url = buildQrUrl();
+  let canvas;
+  try {
+    canvas = await renderQrToCanvas(url, getQrSizePx());
+  } catch {
+    adminToast('❌ Gagal membuat QR code'); return;
+  }
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: 'mm', format: 'a5' });
   const pageWidth = doc.internal.pageSize.getWidth();
