@@ -76,6 +76,7 @@
 <script src="../assets/js/utils.js"></script>
 <script src="../assets/js/admin.js"></script>
 <script>
+const QR_BASE_URL = 'https://order.sukshawarma.com';
 let settings   = {}; // key → { id, value, description }
 let templates  = []; // notification_templates rows
 
@@ -145,6 +146,35 @@ function renderPage() {
       </div>
       <div style="margin-top:10px;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:#f0f0f0;position:relative;height:80px;display:flex;align-items:center;justify-content:center;padding:10px">
         <img id="logoPreview" src="${val('hero_logo_url', '../assets/img/logo.png')}" style="max-width:100%;max-height:100%;object-fit:contain" onerror="this.style.display='none'" />
+      </div>
+    </div>
+
+    <!-- ── QR Code Order ──────────────────────────────────────── -->
+    <div class="info-card" style="margin-bottom:12px">
+      <div style="font-weight:700;font-size:14px;margin-bottom:12px">🔗 QR Code Order</div>
+
+      <div style="margin-bottom:12px;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:#fff;display:flex;align-items:center;justify-content:center;padding:16px">
+        <canvas id="qrCanvas" width="220" height="220"></canvas>
+      </div>
+
+      <div id="qrLinkPreview" style="font-size:11px;color:var(--muted);word-break:break-all;margin-bottom:12px;text-align:center">
+        ${QR_BASE_URL}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">UTM / Query Param (opsional)</label>
+        <input id="qrUtm" class="form-input" type="text"
+               placeholder="Contoh: utm_source=flyer-agustus" />
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">Dipakai untuk melacak sumber traffic dari materi promosi tertentu.</div>
+      </div>
+
+      <button class="btn-outline" style="width:100%;margin-bottom:8px" onclick="generateQrPreview()">
+        Generate QR
+      </button>
+
+      <div style="display:flex;gap:8px">
+        <button class="btn-add-big" style="flex:1" onclick="downloadQrPng()">⬇️ PNG</button>
+        <button class="btn-add-big" style="flex:1" onclick="downloadQrPdf()">⬇️ PDF</button>
       </div>
     </div>
 
