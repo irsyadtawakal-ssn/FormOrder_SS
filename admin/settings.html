@@ -678,6 +678,8 @@ async function saveSettings() {
 }
 
 // ─── QR Code Order ────────────────────────────────────────────────────────────
+let qrReady = false; // true hanya setelah QRCode.toCanvas berhasil menggambar canvas
+
 function buildQrUrl() {
   const raw = document.getElementById('qrUtm').value.trim();
   if (!raw) return QR_BASE_URL;
@@ -697,15 +699,18 @@ function generateQrPreview() {
     adminToast('❌ Gagal memuat library, coba refresh halaman');
     return;
   }
+  qrReady = false;
   const url = buildQrUrl();
   const canvas = document.getElementById('qrCanvas');
   QRCode.toCanvas(canvas, url, { width: 220, errorCorrectionLevel: 'M' }, (err) => {
-    if (err) { adminToast('❌ Gagal membuat QR code'); return; }
+    if (err) { qrReady = false; adminToast('❌ Gagal membuat QR code'); return; }
     document.getElementById('qrLinkPreview').textContent = url;
+    qrReady = true;
   });
 }
 
 function downloadQrPng() {
+  if (!qrReady) { adminToast('❌ QR code belum siap, klik Generate dulu'); return; }
   const canvas = document.getElementById('qrCanvas');
   const link = document.createElement('a');
   link.download = 'qr-order-sukshawarma.png';
@@ -714,6 +719,7 @@ function downloadQrPng() {
 }
 
 function downloadQrPdf() {
+  if (!qrReady) { adminToast('❌ QR code belum siap, klik Generate dulu'); return; }
   if (typeof window.jspdf === 'undefined') {
     adminToast('❌ Gagal memuat library, coba refresh halaman');
     return;
