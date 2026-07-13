@@ -97,7 +97,7 @@
 <script src="../assets/js/utils.js"></script>
 <script src="../assets/js/admin.js?v=2"></script>
 <script>
-const QR_BASE_URL = 'https://order.sukshawarma.com';
+const QR_BASE_URL_DEFAULT = 'https://order.sukashawarma.com';
 let settings   = {}; // key → { id, value, description }
 let templates  = []; // notification_templates rows
 
@@ -183,7 +183,15 @@ function renderPage() {
       </div>
 
       <div id="qrLinkPreview" style="font-size:11px;color:var(--muted);word-break:break-all;margin-bottom:12px;text-align:center">
-        ${QR_BASE_URL}
+        ${val('qr_base_url', QR_BASE_URL_DEFAULT)}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Base URL</label>
+        <input id="qrBaseUrl" class="form-input" type="text"
+               value="${val('qr_base_url', QR_BASE_URL_DEFAULT)}"
+               placeholder="${QR_BASE_URL_DEFAULT}" />
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">Link tujuan QR code. Disimpan otomatis saat klik Generate.</div>
       </div>
 
       <div class="form-group">
@@ -706,9 +714,15 @@ async function saveSettings() {
 // ─── QR Code Order ────────────────────────────────────────────────────────────
 let qrReady = false; // true hanya setelah QRCode.toCanvas berhasil menggambar canvas
 
+function getQrBaseUrl() {
+  const raw = document.getElementById('qrBaseUrl')?.value.trim();
+  return raw || QR_BASE_URL_DEFAULT;
+}
+
 function buildQrUrl() {
+  const base = getQrBaseUrl();
   const raw = document.getElementById('qrUtm').value.trim();
-  if (!raw) return QR_BASE_URL;
+  if (!raw) return base;
 
   // Encode tiap pasangan key=value supaya link tetap valid walau ada
   // spasi/karakter aneh yang diketik admin.
@@ -717,15 +731,26 @@ function buildQrUrl() {
     return `${encodeURIComponent(k.trim())}=${encodeURIComponent(v.trim())}`;
   }).filter(p => p && p !== '=');
 
-  return parts.length ? `${QR_BASE_URL}?${parts.join('&')}` : QR_BASE_URL;
+  return parts.length ? `${base}?${parts.join('&')}` : base;
 }
 
-function generateQrPreview() {
+async function saveQrBaseUrl() {
+  const base = getQrBaseUrl();
+  if (val('qr_base_url', QR_BASE_URL_DEFAULT) === base) return; // tidak berubah, skip write
+  const { error } = await window.db
+    .from('app_settings')
+    .upsert({ key: 'qr_base_url', value: base, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+  if (error) { adminToast('❌ Gagal simpan link: ' + error.message); return; }
+  settings['qr_base_url'] = { key: 'qr_base_url', value: base };
+}
+
+async function generateQrPreview() {
   if (typeof QRCode === 'undefined') {
     adminToast('❌ Gagal memuat library, coba refresh halaman');
     return;
   }
   qrReady = false;
+  await saveQrBaseUrl();
   const url = buildQrUrl();
   const canvas = document.getElementById('qrCanvas');
   QRCode.toCanvas(canvas, url, { width: 220, errorCorrectionLevel: 'M' }, (err) => {
