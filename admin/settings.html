@@ -179,7 +179,7 @@ function renderPage() {
       <div style="font-weight:700;font-size:14px;margin-bottom:12px">🔗 QR Code Order</div>
 
       <div style="margin-bottom:12px;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:#fff;display:flex;align-items:center;justify-content:center;padding:16px">
-        <canvas id="qrCanvas" width="220" height="220"></canvas>
+        <canvas id="qrCanvas" width="220" height="220" style="width:220px;height:220px"></canvas>
       </div>
 
       <div id="qrLinkPreview" style="font-size:11px;color:var(--muted);word-break:break-all;margin-bottom:12px;text-align:center">
@@ -199,6 +199,16 @@ function renderPage() {
         <input id="qrUtm" class="form-input" type="text"
                placeholder="Contoh: utm_source=flyer-agustus" />
         <div style="font-size:11px;color:var(--muted);margin-top:4px">Dipakai untuk melacak sumber traffic dari materi promosi tertentu.</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Kualitas / Ukuran</label>
+        <select id="qrSize" class="form-input">
+          <option value="small">Small (220x220px)</option>
+          <option value="medium" selected>Medium (800x800px)</option>
+          <option value="high">High (3000x3000px)</option>
+        </select>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">Resolusi file yang didownload. Pilih High untuk cetak besar (banner/X-banner).</div>
       </div>
 
       <button class="btn-outline" style="width:100%;margin-bottom:8px" onclick="generateQrPreview()">
@@ -744,6 +754,13 @@ async function saveQrBaseUrl() {
   settings['qr_base_url'] = { key: 'qr_base_url', value: base };
 }
 
+const QR_SIZE_PX = { small: 220, medium: 800, high: 3000 };
+
+function getQrSizePx() {
+  const choice = document.getElementById('qrSize')?.value || 'medium';
+  return QR_SIZE_PX[choice] || QR_SIZE_PX.medium;
+}
+
 async function generateQrPreview() {
   if (typeof QRCode === 'undefined') {
     adminToast('❌ Gagal memuat library, coba refresh halaman');
@@ -752,8 +769,13 @@ async function generateQrPreview() {
   qrReady = false;
   await saveQrBaseUrl();
   const url = buildQrUrl();
+  const px = getQrSizePx();
   const canvas = document.getElementById('qrCanvas');
-  QRCode.toCanvas(canvas, url, { width: 220, errorCorrectionLevel: 'M' }, (err) => {
+  // Resolusi asli canvas ikut ukuran pilihan (untuk kualitas download), tapi
+  // tampilan di layar tetap dikunci 220px supaya card tidak melebar.
+  canvas.style.width = '220px';
+  canvas.style.height = '220px';
+  QRCode.toCanvas(canvas, url, { width: px, errorCorrectionLevel: 'M' }, (err) => {
     if (err) { qrReady = false; adminToast('❌ Gagal membuat QR code'); return; }
     document.getElementById('qrLinkPreview').textContent = url;
     qrReady = true;
