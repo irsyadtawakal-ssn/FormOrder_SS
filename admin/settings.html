@@ -205,7 +205,7 @@ function renderPage() {
         <label class="form-label">Kualitas / Ukuran</label>
         <select id="qrSize" class="form-input">
           <option value="small">Small (220x220px)</option>
-          <option value="medium" selected>Medium (800x800px)</option>
+          <option value="medium" selected>Medium (1000x1000px)</option>
           <option value="high">High (3000x3000px)</option>
         </select>
         <div style="font-size:11px;color:var(--muted);margin-top:4px">Resolusi file yang didownload. Pilih High untuk cetak besar (banner/X-banner).</div>
@@ -754,7 +754,7 @@ async function saveQrBaseUrl() {
   settings['qr_base_url'] = { key: 'qr_base_url', value: base };
 }
 
-const QR_SIZE_PX = { small: 220, medium: 800, high: 3000 };
+const QR_SIZE_PX = { small: 220, medium: 1000, high: 3000 };
 
 function getQrSizePx() {
   const choice = document.getElementById('qrSize')?.value || 'medium';
