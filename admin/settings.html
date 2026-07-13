@@ -85,6 +85,7 @@ let templates  = []; // notification_templates rows
   if (!u) return;
   await Promise.all([loadSettings(), loadTemplates()]);
   renderPage();
+  generateQrPreview();
   // Perbaiki otomatis banner/logo lama yang resolusinya kebesaran (gagal muncul
   // di HP). Jalan di latar belakang — tidak memblok render halaman.
   autoHealHeroImages();
@@ -674,6 +675,60 @@ async function saveSettings() {
 
   if (error) { adminToast('❌ ' + error.message); return; }
   adminToast('✅ Pengaturan disimpan');
+}
+
+// ─── QR Code Order ────────────────────────────────────────────────────────────
+function buildQrUrl() {
+  const raw = document.getElementById('qrUtm').value.trim();
+  if (!raw) return QR_BASE_URL;
+
+  // Encode tiap pasangan key=value supaya link tetap valid walau ada
+  // spasi/karakter aneh yang diketik admin.
+  const parts = raw.split('&').map(pair => {
+    const [k, v = ''] = pair.split('=');
+    return `${encodeURIComponent(k.trim())}=${encodeURIComponent(v.trim())}`;
+  }).filter(p => p && p !== '=');
+
+  return parts.length ? `${QR_BASE_URL}?${parts.join('&')}` : QR_BASE_URL;
+}
+
+function generateQrPreview() {
+  if (typeof QRCode === 'undefined') {
+    adminToast('❌ Gagal memuat library, coba refresh halaman');
+    return;
+  }
+  const url = buildQrUrl();
+  const canvas = document.getElementById('qrCanvas');
+  QRCode.toCanvas(canvas, url, { width: 220, errorCorrectionLevel: 'M' }, (err) => {
+    if (err) { adminToast('❌ Gagal membuat QR code'); return; }
+    document.getElementById('qrLinkPreview').textContent = url;
+  });
+}
+
+function downloadQrPng() {
+  const canvas = document.getElementById('qrCanvas');
+  const link = document.createElement('a');
+  link.download = 'qr-order-sukshawarma.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+function downloadQrPdf() {
+  if (typeof window.jspdf === 'undefined') {
+    adminToast('❌ Gagal memuat library, coba refresh halaman');
+    return;
+  }
+  const canvas = document.getElementById('qrCanvas');
+  const url = document.getElementById('qrLinkPreview').textContent;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a5' });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const qrSize = 80;
+  const x = (pageWidth - qrSize) / 2;
+  doc.addImage(canvas.toDataURL('image/png'), 'PNG', x, 30, qrSize, qrSize);
+  doc.setFontSize(10);
+  doc.text(url, pageWidth / 2, 30 + qrSize + 10, { align: 'center' });
+  doc.save('qr-order-sukshawarma.pdf');
 }
 
 // ─── Simpan satu notification template ───────────────────────────────────────
