@@ -1,131 +1,157 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="id">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Pelanggan — SUKA Admin</title>
-<link rel="stylesheet" href="../assets/css/style.css?v=7" />
-<link rel="stylesheet" href="../assets/css/admin-desktop.css?v=7" />
 <link rel="manifest" href="/manifest.json" />
 <meta name="theme-color" content="#f29744" />
+<script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="../assets/css/admin-ui.css?v=2" />
+<style type="text/tailwindcss">
+  @theme {
+    --color-brand: #f29744;
+    --color-brand-bg: #fff7ed;
+    --color-brand-dark: #ee8a2c;
+  }
+</style>
 </head>
-<body>
-<div class="phone">
+<body class="bg-gray-50 text-gray-900 font-sans antialiased">
+<div class="flex h-screen overflow-hidden">
 
   <!-- Sidebar -->
-  <aside class="admin-sidebar" style="display:none">
-    <div class="admin-sidebar-logo">🌯 SUKA Admin</div>
-    <div class="admin-sidebar-user">
-      <div class="name" id="sidebarName">—</div>
-      <div class="role" id="sidebarRole">—</div>
+  <aside class="hidden md:flex flex-col w-64 bg-brand h-full shadow-lg z-20 relative">
+    <div class="p-6 flex items-center gap-3">
+      <i data-lucide="utensils" class="text-white w-6 h-6"></i>
+      <span class="font-extrabold text-xl text-white">SUKA Admin</span>
     </div>
-        <nav class="admin-sidebar-nav">
-      <a href="/admin/index.html"><span>🏠</span><span>Dashboard</span></a>
-      <a href="/admin/orders.html"><span>📋</span><span>Pesanan</span></a>
-      <a href="/admin/menu.html"><span>🌯</span><span>Menu</span></a>
-      <a href="/admin/reports.html"><span>📊</span><span>Laporan</span></a>
-      <a href="/admin/customers.html" class="admin-only"><span>🧑‍🤝‍🧑</span><span>Pelanggan</span></a>
-      <!-- LOYALTY FROZEN: <a href="/admin/vouchers.html" class="admin-only"><span>🎟️</span><span>Voucher</span></a> -->
-      <a href="/admin/promos.html" class="admin-only"><span>🏷️</span><span>Promo</span></a>
-      <a href="/admin/outlets.html" class="admin-only"><span>📍</span><span>Outlet</span></a>
-      <a href="/admin/users.html" class="admin-only"><span>👥</span><span>Pengguna</span></a>
-      <a href="/admin/monitoring.html" class="admin-only"><span>🔍</span><span>Monitoring</span></a>
-      <a href="/admin/settings.html" class="admin-only"><span>⚙️</span><span>Pengaturan</span></a>
+    <div class="px-6 py-4 flex flex-col gap-1 bg-brand-dark/20 border-t border-b border-brand-dark/30">
+      <span class="text-sm font-bold text-white" id="sidebarName">—</span>
+      <span class="text-xs font-medium text-orange-200" id="sidebarRole">—</span>
+    </div>
+    <nav class="flex-1 overflow-y-auto py-4 flex flex-col gap-1 px-3">
+      <a href="/" target="_blank" rel="noopener" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition-colors text-white hover:bg-brand-dark"><i data-lucide="external-link" class="w-5 h-5"></i><span>Buka Website Order</span></a>
+      <a href="/admin/index.html" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition-colors text-white hover:bg-brand-dark"><i data-lucide="layout-dashboard" class="w-5 h-5"></i><span>Dashboard</span></a>
+      <a href="/admin/orders.html" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition-colors text-white hover:bg-brand-dark"><i data-lucide="clipboard-list" class="w-5 h-5"></i><span>Pesanan</span></a>
+      <a href="/admin/menu.html" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition-colors text-white hover:bg-brand-dark"><i data-lucide="utensils" class="w-5 h-5"></i><span>Menu</span></a>
+      <a href="/admin/reports.html" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition-colors text-white hover:bg-brand-dark"><i data-lucide="bar-chart-2" class="w-5 h-5"></i><span>Laporan</span></a>
+      <a href="/admin/customers.html" class="admin-only flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition-colors bg-white text-brand shadow-sm"><i data-lucide="users" class="w-5 h-5"></i><span>Pelanggan</span></a>
+      <a href="/admin/promos.html" class="admin-only flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition-colors text-white hover:bg-brand-dark"><i data-lucide="tag" class="w-5 h-5"></i><span>Promo</span></a>
+      <a href="/admin/outlets.html" class="admin-only flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition-colors text-white hover:bg-brand-dark"><i data-lucide="map-pin" class="w-5 h-5"></i><span>Outlet</span></a>
+      <a href="/admin/users.html" class="admin-only flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition-colors text-white hover:bg-brand-dark"><i data-lucide="user-cog" class="w-5 h-5"></i><span>Pengguna</span></a>
+      <a href="/admin/monitoring.html" class="admin-only flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition-colors text-white hover:bg-brand-dark"><i data-lucide="activity" class="w-5 h-5"></i><span>Monitoring</span></a>
+      <a href="/admin/settings.html" class="admin-only flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition-colors text-white hover:bg-brand-dark"><i data-lucide="settings" class="w-5 h-5"></i><span>Pengaturan</span></a>
     </nav>
-    <div class="admin-sidebar-footer">
-      <button onclick="adminSignOut()">🚪 Keluar</button>
+    <div class="p-4 border-t border-brand-dark/30">
+      <button onclick="adminSignOut()" class="flex items-center justify-center gap-2 text-white bg-brand-dark hover:bg-orange-900 py-2.5 px-4 rounded-xl w-full transition-colors font-bold shadow-sm border border-brand-dark/50">
+        <i data-lucide="log-out" class="w-5 h-5"></i> Keluar
+      </button>
     </div>
   </aside>
 
-  <!-- Topbar -->
-  <div class="topbar">
-    <span class="topbar-title">🧑‍🤝‍🧑 Pelanggan</span>
-    <span id="adminName" style="font-size:12px;color:var(--muted)"></span>
+  <!-- Main Content -->
+  <div class="flex-1 flex flex-col h-full overflow-hidden relative">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm z-10">
+      <div class="flex items-center gap-3">
+        <img src="../assets/img/logo.png" alt="SUKA" class="h-8 w-auto md:hidden" onerror="this.style.display='none'">
+        <div class="hidden md:flex items-center gap-2 font-bold text-gray-800 text-lg">
+          <i data-lucide="users" class="w-5 h-5 text-brand"></i> Pelanggan
+        </div>
+        <span class="md:hidden font-bold text-gray-800 flex items-center gap-2"><i data-lucide="users" class="w-5 h-5 text-brand"></i> Pelanggan</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span id="adminName" class="hidden md:block text-xs text-gray-500"></span>
+        <button onclick="adminSignOut()" class="md:hidden flex items-center gap-1 text-xs font-bold text-red-600 bg-red-50 px-3 py-1.5 rounded-full">
+          <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Scrollable Content Area -->
+    <main class="flex-1 overflow-y-auto p-4 md:p-8 pb-24 md:pb-8 bg-brand-bg/50">
+      <div class="admin-content max-w-6xl mx-auto">
+
+        <!-- Tabs -->
+        <div class="tabs" id="custTabs">
+          <button class="tab active" data-tab="all" onclick="switchTab('all')">Semua Pelanggan</button>
+          <button class="tab" data-tab="today" onclick="switchTab('today')">Hari Ini</button>
+        </div>
+
+        <!-- TAB: All Customers -->
+        <div id="tabAll" style="display:block">
+          <div class="search-wrap">
+            <input type="search" id="searchInput" placeholder="Cari nama / WA…" oninput="renderTable()" />
+          </div>
+          <div class="chips" style="padding-bottom:8px">
+            <button class="chip active" data-sort="last_order_at" onclick="setSort('last_order_at')">Terbaru</button>
+            <button class="chip" data-sort="total_orders" onclick="setSort('total_orders')">Order Terbanyak</button>
+            <button class="chip" data-sort="total_spent" onclick="setSort('total_spent')">Pengeluaran</button>
+          </div>
+        </div>
+
+        <!-- TAB: Today Orders -->
+        <div id="tabToday" style="display:none">
+          <div class="search-wrap">
+            <select id="outletFilterToday" onchange="loadTodayOrders()">
+              <option value="">Semua Outlet</option>
+            </select>
+          </div>
+          <div id="todaySummaryBar" style="padding:4px 0 8px;font-size:12px;color:var(--ui-muted)">—</div>
+        </div>
+
+        <!-- Summary bar (All Customers) -->
+        <div id="summaryBar" style="padding:4px 0 8px;font-size:12px;color:var(--ui-muted)">—</div>
+
+        <!-- Table (All Customers) -->
+        <div id="allCustomersTable" class="report-table-wrap" style="overflow-x:auto;padding-bottom:12px;display:block">
+          <table class="report-table" id="custTable">
+            <thead>
+              <tr>
+                <th style="text-align:left">Pelanggan</th>
+                <th style="text-align:right">Order</th>
+                <th style="text-align:right">Total Belanja</th>
+                <th style="text-align:left">Menu Favorit</th>
+                <th style="text-align:left">Outlet Favorit</th>
+                <th style="text-align:right">Terakhir Order</th>
+              </tr>
+            </thead>
+            <tbody id="custBody">
+              <tr><td colspan="6" class="report-empty">Memuat…</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Table (Today Orders) -->
+        <div id="todayOrdersTable" class="report-table-wrap" style="overflow-x:auto;padding-bottom:12px;display:none">
+          <table class="report-table" id="todayTable">
+            <thead>
+              <tr>
+                <th style="text-align:left">Pelanggan</th>
+                <th style="text-align:right">Order</th>
+                <th style="text-align:right">Total Belanja</th>
+              </tr>
+            </thead>
+            <tbody id="todayBody">
+              <tr><td colspan="3" class="report-empty">Memuat…</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </main>
   </div>
 
-  <div class="admin-content">
-
-    <!-- Tabs -->
-    <div class="tabs" id="custTabs">
-      <button class="tab active" data-tab="all" onclick="switchTab('all')">Semua Pelanggan</button>
-      <button class="tab" data-tab="today" onclick="switchTab('today')">Hari Ini</button>
-    </div>
-
-    <!-- TAB: All Customers -->
-    <div id="tabAll" style="display:block">
-      <!-- Search -->
-      <div class="search-wrap">
-        <input type="search" id="searchInput" placeholder="Cari nama / WA…" oninput="renderTable()" />
-      </div>
-
-      <!-- Sort chips -->
-      <div class="chips" style="padding-bottom:4px">
-        <button class="chip active" data-sort="last_order_at" onclick="setSort('last_order_at')">Terbaru</button>
-        <button class="chip" data-sort="total_orders" onclick="setSort('total_orders')">Order Terbanyak</button>
-        <button class="chip" data-sort="total_spent" onclick="setSort('total_spent')">Pengeluaran</button>
-      </div>
-    </div>
-
-    <!-- TAB: Today Orders -->
-    <div id="tabToday" style="display:none">
-      <div class="search-wrap">
-        <select id="outletFilterToday" onchange="loadTodayOrders()">
-          <option value="">Semua Outlet</option>
-        </select>
-      </div>
-      <div id="todaySummaryBar" style="padding:4px 16px 8px;font-size:12px;color:var(--muted)">—</div>
-    </div>
-
-    <!-- Summary bar (All Customers) -->
-    <div id="summaryBar" style="padding:4px 16px 8px;font-size:12px;color:var(--muted)">—</div>
-
-    <!-- Table (All Customers) -->
-    <div id="allCustomersTable" style="overflow-x:auto;padding-bottom:80px">
-      <table class="report-table" id="custTable">
-        <thead>
-          <tr>
-            <th style="text-align:left">Pelanggan</th>
-            <th style="text-align:right">Order</th>
-            <th style="text-align:right">Total Belanja</th>
-            <th style="text-align:left">Menu Favorit</th>
-            <th style="text-align:left">Outlet Favorit</th>
-            <th style="text-align:right">Terakhir Order</th>
-          </tr>
-        </thead>
-        <tbody id="custBody">
-          <tr><td colspan="6" class="report-empty">Memuat…</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Table (Today Orders) -->
-    <div id="todayOrdersTable" style="overflow-x:auto;padding-bottom:80px;display:none">
-      <table class="report-table" id="todayTable">
-        <thead>
-          <tr>
-            <th style="text-align:left">Pelanggan</th>
-            <th style="text-align:right">Order</th>
-            <th style="text-align:right">Total Belanja</th>
-          </tr>
-        </thead>
-        <tbody id="todayBody">
-          <tr><td colspan="3" class="report-empty">Memuat…</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-  </div><!-- /admin-content -->
-
-  <!-- Bottom nav -->
-    <nav class="admin-nav">
-    <a href="/admin/index.html"><span>🏠</span><span>Dashboard</span></a>
-    <a href="/admin/orders.html"><span>📋</span><span>Pesanan</span></a>
-    <a href="/admin/menu.html"><span>🌯</span><span>Menu</span></a>
-    <a href="/admin/reports.html"><span>📊</span><span>Laporan</span></a>
-    <a href="/admin/monitoring.html" class="admin-only"><span>🔍</span><span>Monitor</span></a>
-    <a href="/admin/settings.html" class="admin-only"><span>⚙️</span><span>Pengaturan</span></a>
+  <!-- Mobile Bottom Nav -->
+  <nav class="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 flex items-center justify-around pb-safe pt-1 z-20 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+    <a href="/admin/index.html" class="flex flex-col items-center gap-1 py-2 px-2 text-gray-500 hover:text-brand"><i data-lucide="layout-dashboard" class="w-5 h-5"></i><span class="text-[10px] font-medium">Dashboard</span></a>
+    <a href="/admin/orders.html" class="flex flex-col items-center gap-1 py-2 px-2 text-gray-500 hover:text-brand"><i data-lucide="clipboard-list" class="w-5 h-5"></i><span class="text-[10px] font-medium">Pesanan</span></a>
+    <a href="/admin/menu.html" class="flex flex-col items-center gap-1 py-2 px-2 text-gray-500 hover:text-brand"><i data-lucide="utensils" class="w-5 h-5"></i><span class="text-[10px] font-medium">Menu</span></a>
+    <a href="/admin/reports.html" class="flex flex-col items-center gap-1 py-2 px-2 text-gray-500 hover:text-brand"><i data-lucide="bar-chart-2" class="w-5 h-5"></i><span class="text-[10px] font-medium">Laporan</span></a>
+    <a href="/admin/settings.html" class="admin-only flex flex-col items-center gap-1 py-2 px-2 text-gray-500 hover:text-brand"><i data-lucide="settings" class="w-5 h-5"></i><span class="text-[10px] font-medium">Settings</span></a>
   </nav>
-
 </div>
 <div class="toast" id="toast"></div>
 <div id="adminModal" class="admin-modal-overlay" style="display:none"></div>
@@ -134,7 +160,7 @@
 <script src="../config.js"></script>
 <script src="../assets/js/supabase.js"></script>
 <script src="../assets/js/utils.js"></script>
-<script src="../assets/js/admin.js"></script>
+<script src="../assets/js/admin.js?v=2"></script>
 <script src="../assets/js/loyalty.js"></script>
 <script>
 // ─── State ────────────────────────────────────────────────────────────────────
@@ -151,7 +177,7 @@ let currentTab   = 'all';
   // Halaman ini hanya untuk super_admin
   if (u.role !== 'super_admin') {
     document.querySelector('.admin-content').innerHTML =
-      '<p style="padding:32px;text-align:center;color:var(--muted)">Akses terbatas untuk Super Admin.</p>';
+      '<p style="padding:32px;text-align:center;color:var(--ui-muted)">Akses terbatas untuk Super Admin.</p>';
     return;
   }
   await loadOutlets();
@@ -262,12 +288,13 @@ function renderTodayTable() {
       <tr style="cursor:pointer" onclick="showCustomerDetail('${o.customer_wa}')">
         <td>
           <div style="font-weight:600;font-size:13px">${escHtml(o.name || '—')}</div>
-          <div style="font-size:11px;color:var(--muted)">📱 ${wa}</div>
+          <div style="font-size:11px;color:var(--ui-muted);display:flex;align-items:center;gap:3px"><i data-lucide="phone" class="w-3 h-3"></i> ${wa}</div>
         </td>
         <td style="text-align:right;font-weight:600">${o.orders}×</td>
         <td style="text-align:right">${formatRupiah(o.total)}</td>
       </tr>`;
   }).join('');
+  if (window.lucide) window.lucide.createIcons();
 }
 
 // ─── Summary bar ──────────────────────────────────────────────────────────────
@@ -324,15 +351,16 @@ function renderTable() {
       <tr style="cursor:pointer" onclick="showCustomerDetail('${c.wa_number}')">
         <td>
           <div style="font-weight:600;font-size:13px">${escHtml(c.name || '—')}</div>
-          <div style="font-size:11px;color:var(--muted)">📱 ${wa}</div>
+          <div style="font-size:11px;color:var(--ui-muted);display:flex;align-items:center;gap:3px"><i data-lucide="phone" class="w-3 h-3"></i> ${wa}</div>
         </td>
         <td style="text-align:right;font-weight:600">${c.total_orders || 0}×</td>
         <td style="text-align:right">${formatRupiah(c.total_spent || 0)}</td>
         <td style="font-size:12px">${escHtml(c.favorite_menu || '—')}</td>
         <td style="font-size:12px">${escHtml(outletName)}</td>
-        <td style="text-align:right;font-size:12px;color:var(--muted)">${lastOrder}</td>
+        <td style="text-align:right;font-size:12px;color:var(--ui-muted)">${lastOrder}</td>
       </tr>`;
   }).join('');
+  if (window.lucide) window.lucide.createIcons();
 }
 
 // ─── Escape HTML ──────────────────────────────────────────────────────────────
@@ -355,50 +383,50 @@ function showCustomerDetail(waNumber) {
     ? (allOutlets.find(o => o.id === c.favorite_outlet_id)?.name || '—')
     : '—';
 
-  openAdminModal(`
-    <div class="modal-header">
-      <span>🧑 Detail Pelanggan</span>
-      <button onclick="closeAdminModal()" class="btn-icon">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="info-group">
-        <div class="info-row">
-          <span class="label">Nama</span>
-          <span class="val">${escHtml(c.name || '—')}</span>
-        </div>
-        <div class="info-row">
-          <span class="label">No. WA</span>
-          <span class="val">${c.wa_number}</span>
-        </div>
-        <div class="info-row">
-          <span class="label">Total Order</span>
-          <span class="val" style="font-weight:700">${c.total_orders || 0}×</span>
-        </div>
-        <div class="info-row">
-          <span class="label">Total Belanja</span>
-          <span class="val" style="font-weight:700">${formatRupiah(c.total_spent || 0)}</span>
-        </div>
-        <div class="info-row">
-          <span class="label">Menu Favorit</span>
-          <span class="val">${escHtml(c.favorite_menu || '—')}</span>
-        </div>
-        <div class="info-row">
-          <span class="label">Outlet Favorit</span>
-          <span class="val">${escHtml(outletName)}</span>
-        </div>
-        <div class="info-row">
-          <span class="label">Order Pertama</span>
-          <span class="val">${firstOrder}</span>
-        </div>
-        <div class="info-row">
-          <span class="label">Order Terakhir</span>
-          <span class="val">${lastOrder}</span>
-        </div>
+  openModal('Detail Pelanggan', `
+    <div class="info-group">
+      <div class="info-row">
+        <span class="label">Nama</span>
+        <span class="val">${escHtml(c.name || '—')}</span>
       </div>
-      <!-- LOYALTY FROZEN: voucher section akan ditampilkan kembali saat Phase 9 dilanjutkan -->
+      <div class="info-row">
+        <span class="label">No. WA</span>
+        <span class="val">${c.wa_number}</span>
+      </div>
+      <div class="info-row">
+        <span class="label">Total Order</span>
+        <span class="val" style="font-weight:700">${c.total_orders || 0}×</span>
+      </div>
+      <div class="info-row">
+        <span class="label">Total Belanja</span>
+        <span class="val" style="font-weight:700">${formatRupiah(c.total_spent || 0)}</span>
+      </div>
+      <div class="info-row">
+        <span class="label">Menu Favorit</span>
+        <span class="val">${escHtml(c.favorite_menu || '—')}</span>
+      </div>
+      <div class="info-row">
+        <span class="label">Outlet Favorit</span>
+        <span class="val">${escHtml(outletName)}</span>
+      </div>
+      <div class="info-row">
+        <span class="label">Order Pertama</span>
+        <span class="val">${firstOrder}</span>
+      </div>
+      <div class="info-row">
+        <span class="label">Order Terakhir</span>
+        <span class="val">${lastOrder}</span>
+      </div>
     </div>
+    <!-- LOYALTY FROZEN: voucher section akan ditampilkan kembali saat Phase 9 dilanjutkan -->
   `);
 }
 </script>
+<script>
+  // Render icon shell statis (Lucide tidak auto-run di UMD)
+  (function(){ var f=function(){ if(window.lucide) window.lucide.createIcons(); };
+    document.addEventListener('DOMContentLoaded', f); window.addEventListener('load', f); })();
+</script>
+<script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
 </body>
 </html>

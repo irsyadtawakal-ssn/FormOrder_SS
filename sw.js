@@ -1,5 +1,5 @@
 // Service Worker — SUKA Shawarma
-const CACHE = 'suka-v11'; // Naikkan versi setiap kali ada perubahan shell
+const CACHE = 'suka-v21'; // Naikkan versi setiap kali ada perubahan shell
 
 // File shell yang di-cache (cache-first)
 const SHELL = [
@@ -34,9 +34,21 @@ const SHELL = [
 // Install — cache shell
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE).then(c =>
-      Promise.allSettled(SHELL.map(url => c.add(url).catch(() => null)))
-    ).then(() => self.skipWaiting())
+    caches.open(CACHE).then(c => {
+      // WAJIB: bypass HTTP Cache browser dengan cache-buster & no-store
+      // Agar saat update versi, SW benar-benar menarik file terbaru dari server
+      return Promise.allSettled(SHELL.map(url => {
+        const bypassUrl = url + (url.includes('?') ? '&' : '?') + '_cb=' + Date.now();
+        const req = new Request(bypassUrl, { cache: 'no-store' });
+        
+        return fetch(req).then(resp => {
+          if (resp.ok) {
+            // Simpan ke cache menggunakan URL ASLI
+            return c.put(url, resp);
+          }
+        });
+      }));
+    }).then(() => self.skipWaiting())
   );
 });
 
@@ -64,44 +76,32 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // Network-first untuk HTML/navigasi — supaya update kode (index.html, admin, dll)
-  // selalu sampai ke semua device, tidak terjebak versi lama di cache.
-  // Fallback ke cache hanya kalau benar-benar offline.
-  const isHtml = e.request.mode === 'navigate' ||
-    e.request.destination === 'document' ||
-    (e.request.headers.get('accept') || '').includes('text/html');
-  if (isHtml) {
-    e.respondWith(
-      fetch(e.request)
-        .then(resp => {
-          // Simpan salinan terbaru untuk fallback offline
-          const copy = resp.clone();
-          caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {});
-          return resp;
-        })
-        .catch(() =>
-          caches.match(e.request).then(cached => {
-            if (cached) {
-              return cached.redirected ? new Response(cached.body, cached) : cached;
-            }
-            return offlineFallback(e.request);
-          })
-        )
-    );
-    return;
+  // Gunakan Network-First untuk SEMUA aset (HTML, CSS, JS) agar UI selalu up-to-date
+  // dan user tidak perlu hapus cache manual saat ada perubahan.
+  
+  // Buat request baru untuk mem-bypass HTTP Cache browser HP yang sangat agresif
+  let fetchReq = e.request;
+  if (url.origin === location.origin) {
+    const bypassUrl = url.href + (url.href.includes('?') ? '&' : '?') + '_cb=' + Date.now();
+    fetchReq = new Request(bypassUrl, { cache: 'no-store' });
   }
 
-  // Cache-first untuk aset shell (css/js/img — sudah pakai ?v= untuk busting)
   e.respondWith(
-    caches.match(e.request).then(cached => {
-      if (cached) {
-        // Cached response yang berasal dari redirect (mis. /checkout.html → /checkout
-        // saat dev server clean-URL) membuat browser melempar net::ERR_FAILED kalau
-        // dipakai langsung untuk navigasi. Bungkus ulang jadi Response baru (redirected: false).
-        return cached.redirected ? new Response(cached.body, cached) : cached;
-      }
-      return fetch(e.request).catch(() => offlineFallback(e.request));
-    })
+    fetch(fetchReq)
+      .then(resp => {
+        // Simpan salinan terbaru untuk fallback offline menggunakan URL ASLI (e.request)
+        const copy = resp.clone();
+        caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {});
+        return resp;
+      })
+      .catch(() =>
+        caches.match(e.request).then(cached => {
+          if (cached) {
+            return cached.redirected ? new Response(cached.body, cached) : cached;
+          }
+          return offlineFallback(e.request);
+        })
+      )
   );
 });
 

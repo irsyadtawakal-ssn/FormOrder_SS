@@ -6,7 +6,7 @@
 <title>Order Sukashawarma</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="assets/css/style.css?v=9" />
 <link rel="manifest" href="/manifest.json" />
 <link rel="theme-color" content="#f29744" />
@@ -60,6 +60,19 @@
     opacity: 0;
     animation-fill-mode: forwards;
   }
+  /* Stepper progres pembayaran */
+  .pay-steps { display:flex; align-items:center; justify-content:center; gap:4px; margin:4px 16px 16px; animation: fadeSlideUp .5s ease-out .15s both; }
+  .pay-step { display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .pay-step .dot { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--line); color:var(--muted); transition:all .3s; }
+  .pay-step .dot i { width:18px; height:18px; }
+  .pay-step .lbl { font-size:10.5px; font-weight:700; color:var(--muted); letter-spacing:.2px; }
+  .pay-step.active .dot { background:var(--brand); color:#fff; box-shadow:0 4px 12px rgba(242,151,68,.35); }
+  .pay-step.active .lbl { color:var(--brand); }
+  .pay-line { flex:1; max-width:48px; height:2px; background:var(--line); border-radius:2px; }
+  /* Badge countdown */
+  .pay-countdown { display:flex; align-items:center; justify-content:center; gap:7px; margin:0 16px 14px; padding:11px 14px; background:var(--brand-bg); color:var(--brand); border-radius:12px; font-size:13px; font-weight:700; animation: fadeSlideUp .5s ease-out .2s both; }
+  .pay-countdown i { width:16px; height:16px; flex-shrink:0; }
+  .pay-countdown.urgent { background:#fee2e2; color:#dc2626; animation: pulseGlow 1.6s infinite; }
 </style>
 </head>
 <body>
@@ -91,11 +104,11 @@
 <div class="toast" id="toast"></div>
 
 <!-- QR library (untuk render order number QR di state ready) -->
-<script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <!-- Lucide Icons -->
-<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
 <!-- Lucide Icons -->
-<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
 <!-- Supabase SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -115,15 +128,14 @@ let pollTimer       = null;
 const TERMINAL_STATUSES = ['paid', 'done', 'cancelled', 'expired'];
 
 // Channel groupings — satu sumber kebenaran, dipakai di renderStatus & post-render
-const VA_CHANNELS      = ['BCA', 'BNI', 'BRI', 'MANDIRI'];
+const VA_CHANNELS      = ['BCA', 'BNI', 'BRI', 'MANDIRI', 'BJB', 'BSI', 'CIMB'];
 const EWALLET_CHANNELS = ['GOPAY', 'OVO', 'DANA'];
 const EWALLET_ICONS    = { GOPAY: '<i data-lucide="wallet" color="#00a550"></i>', OVO: '<i data-lucide="wallet" color="#4c3494"></i>', DANA: '<i data-lucide="wallet" color="#118ee9"></i>' };
 
 // Helper — derivasi channel dari order object (field DB atau cache)
 function getChannel(o) { return o._payment_channel || o.payment_channel || 'QRIS'; }
 
-// ─── Init ─────────────────────────────────────────────────────────────────────
-(async function init() {
+async function initOrder() {
   if (!orderNumber) {
     renderError('Order tidak ditemukan. <a href="index.html">Kembali ke beranda</a>');
     return;
@@ -133,7 +145,13 @@ function getChannel(o) { return o._payment_channel || o.payment_channel || 'QRIS
   const cached = readCachedOrder();
 
   await loadOrder(cached);
-})();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initOrder);
+} else {
+  initOrder();
+}
 
 function readCachedOrder() {
   try {
@@ -188,26 +206,47 @@ async function loadOrder(cached) {
 }
 
 // ─── Polling fallback (backup jika Realtime tidak terpicu) ────────────────────
+let xenditPollCounter = 0;
+
 function startPolling() {
   stopPolling();
   if (!order || TERMINAL_STATUSES.includes(order.status)) return;
 
+  // Poll DB setiap 2 detik agar lebih responsif
   pollTimer = setInterval(async () => {
     if (!order || TERMINAL_STATUSES.includes(order.status)) { stopPolling(); return; }
 
-    const { data } = await window.db
-      .from('orders')
-      .select('status, cancelled_at, cancel_reason')
-      .eq('order_number', orderNumber)
-      .single();
+    xenditPollCounter++;
 
-    if (data && data.status !== order.status) {
-      // Status berubah — reload penuh supaya semua data segar
-      order = { ...order, ...data };
-      renderStatus(order);
-      if (TERMINAL_STATUSES.includes(data.status)) stopPolling();
+    // Tiap 12 detik (6 x 2 detik), panggil Edge Function cek ke Xendit
+    // Asynchronous agar tidak ngeblok DB polling di bawahnya
+    if (xenditPollCounter >= 6) {
+      xenditPollCounter = 0;
+      checkOrderStatus(orderNumber).then(async (result) => {
+        if (result && result.status && result.status !== 'pending_payment') {
+          await loadOrder(null);
+        }
+      }).catch(err => {
+        console.warn('Silent check Xendit failed', err);
+      });
     }
-  }, 5000);
+
+    try {
+      const { data } = await window.db
+        .from('orders')
+        .select('status, cancelled_at, cancel_reason')
+        .eq('order_number', orderNumber)
+        .single();
+
+      if (data && data.status !== order.status) {
+        order = { ...order, ...data };
+        renderStatus(order);
+        if (TERMINAL_STATUSES.includes(data.status)) stopPolling();
+      }
+    } catch (dbErr) {
+      console.warn('Silent DB poll failed', dbErr);
+    }
+  }, 2000);
 }
 
 function stopPolling() {
@@ -277,6 +316,17 @@ function renderStatus(o) {
           <span class="status-chip status-pending">BELUM BAYAR</span>
         </div>`;
 
+      // Stepper progres + badge countdown (dipakai semua channel)
+      const payHeaderHtml = `
+        <div class="pay-steps">
+          <div class="pay-step active"><span class="dot"><i data-lucide="wallet"></i></span><span class="lbl">Bayar</span></div>
+          <div class="pay-line"></div>
+          <div class="pay-step"><span class="dot"><i data-lucide="chef-hat"></i></span><span class="lbl">Diproses</span></div>
+          <div class="pay-line"></div>
+          <div class="pay-step"><span class="dot"><i data-lucide="shopping-bag"></i></span><span class="lbl">Siap</span></div>
+        </div>
+        <div class="pay-countdown" id="payCountdown"><i data-lucide="clock"></i> <span id="countdown">Menghitung waktu…</span></div>`;
+
       // ── Konten per channel ──
       let paymentContent = '';
 
@@ -288,11 +338,10 @@ function renderStatus(o) {
               ? `<div id="qrisCanvas" style="display:flex;justify-content:center;margin-bottom:12px"></div>`
               : `<div style="padding:24px 0;color:var(--muted);font-size:13px">QR tidak tersedia.<br/>Silakan muat ulang halaman.</div>`
             }
-            <div style="font-size:22px;font-weight:800;color:var(--brand);margin-bottom:4px">${formatRupiah(o.total)}</div>
-            <div style="font-size:12px;color:var(--muted);margin-bottom:12px" id="countdown">Menghitung waktu…</div>
+            <div style="font-size:22px;font-weight:800;color:var(--brand);margin-bottom:12px">${formatRupiah(o.total)}</div>
             <button id="btnCekStatus" class="btn-add-big" onclick="doCekStatus()"
-              style="background:var(--brand-bg);color:var(--brand);font-weight:700;margin-bottom:0">
-              Sudah Bayar? Cek Status
+              style="display:flex;align-items:center;justify-content:center;gap:7px;background:var(--brand-bg);color:var(--brand);font-weight:700;margin-bottom:0">
+              <i data-lucide="refresh-cw" style="width:16px;height:16px"></i> Sudah Bayar? Cek Status
             </button>
           </div>
           <div style="margin:0 12px 10px;padding:10px 14px;background:#fef9c3;border-radius:10px;font-size:12px;line-height:1.8;color:#854d0e">
@@ -306,39 +355,32 @@ function renderStatus(o) {
           BNI:     'ATM / m-Banking BNI → Virtual Account Billing → Bayar Tagihan',
           BRI:     'ATM / m-Banking BRImo → Pembayaran → Virtual Account',
           MANDIRI: 'ATM / Livin → Bayar → Multi Payment → kode 70012',
+          BJB:     'ATM / DIGI by bank bjb → Transfer → Virtual Account',
+          BSI:     'ATM / BSI Mobile → Bayar → Akademik/Institusi → Virtual Account',
+          CIMB:    'ATM / OCTO Mobile → Transfer → Virtual Account',
         };
         paymentContent = `
-          <div class="info-card">
-            <div style="font-weight:700;font-size:14px;margin-bottom:10px"><i data-lucide="building-2" style="width:16px;height:16px;vertical-align:text-bottom;display:inline-block"></i> Virtual Account ${vaBank}</div>
-            <div class="info-row">
-              <span class="label">Bank</span>
-              <span class="val" style="font-weight:700">${vaBank}</span>
+          <div class="info-card" style="padding:16px 16px 14px">
+            <div style="font-size:12px;color:var(--muted);margin-bottom:4px">Nomor Virtual Account ${vaBank}</div>
+            <div style="font-family:monospace;font-size:20px;font-weight:800;letter-spacing:1px;color:var(--ink);word-break:break-all;margin-bottom:14px">${vaNumber ? groupVA(vaNumber) : '—'}</div>
+            ${vaNumber ? `<button onclick="copyVA('${vaNumber}')" id="btnCopyVA"
+              style="width:100%;display:flex;align-items:center;justify-content:center;gap:7px;background:var(--brand);color:#fff;border:0;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;transition:background .2s">
+              <i data-lucide="copy" style="width:17px;height:17px"></i> Salin nomor VA</button>` : ''}
+            <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px dashed var(--line2);margin-top:14px;padding-top:12px">
+              <span style="font-size:13px;color:var(--ink2)">Total transfer</span>
+              <span style="font-size:20px;font-weight:800;color:var(--brand)">${formatRupiah(o.total)}</span>
             </div>
-            <div class="info-row">
-              <span class="label">Nomor VA</span>
-              <div style="display:flex;align-items:center;gap:8px;flex:1">
-                <span style="font-weight:800;font-family:monospace;font-size:16px;letter-spacing:1px">${vaNumber || '—'}</span>
-                ${vaNumber ? `<button onclick="copyVA('${vaNumber}')" id="btnCopyVA"
-                  style="flex-shrink:0;background:var(--brand-bg);color:var(--brand);border:0;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer">
-                  Salin</button>` : ''}
-              </div>
-            </div>
-            <div class="info-row" style="border-top:1px dashed var(--line2);margin-top:6px;padding-top:10px">
-              <span class="label" style="font-weight:700">Total Transfer</span>
-              <span class="val" style="font-size:18px;font-weight:800;color:var(--brand)">${formatRupiah(o.total)}</span>
-            </div>
-            <div style="margin-top:12px;font-size:12px;color:var(--muted);line-height:1.6;background:var(--bg);padding:10px;border-radius:8px">
-              <div style="display:flex;gap:8px;align-items:flex-start"><i data-lucide="clipboard-type" style="width:16px;height:16px;flex-shrink:0;margin-top:2px"></i> <span><b>Cara bayar:</b> ${bankInstructions[vaBank] || `m-Banking ${vaBank} → Virtual Account`}
-            </span></div>
           </div>
-          <div style="margin:0 12px 10px;padding:10px 14px;background:var(--brand-bg);border-radius:10px;font-size:12px;line-height:1.6;color:var(--ink2)">
-            <div style="display:flex;gap:8px;align-items:flex-start"><i data-lucide="alert-triangle" style="width:16px;height:16px;flex-shrink:0;margin-top:2px"></i> <span>Transfer <b>tepat ${formatRupiah(o.total)}</b> — nominal harus sama persis
-          </span></div>
+          <div style="margin:0 12px 10px;padding:10px 14px;background:#fffbeb;border-radius:10px;font-size:12px;line-height:1.6;color:#92660c">
+            <div style="display:flex;gap:8px;align-items:flex-start"><i data-lucide="alert-triangle" style="width:16px;height:16px;flex-shrink:0;margin-top:2px"></i> <span>Transfer <b>tepat ${formatRupiah(o.total)}</b> — nominal harus sama persis</span></div>
+          </div>
+          <div style="margin:0 12px 10px;font-size:12px;color:var(--muted);line-height:1.6;background:var(--bg);padding:10px 14px;border-radius:10px">
+            <div style="display:flex;gap:8px;align-items:flex-start"><i data-lucide="clipboard-type" style="width:16px;height:16px;flex-shrink:0;margin-top:2px"></i> <span><b>Cara bayar:</b> ${bankInstructions[vaBank] || `m-Banking ${vaBank} → Virtual Account`}</span></div>
+          </div>
           <div style="margin:0 12px 10px">
-            <div style="font-size:12px;color:var(--muted);margin-bottom:6px" id="countdown">Menghitung waktu…</div>
             <button id="btnCekStatus" class="btn-add-big" onclick="doCekStatus()"
-              style="background:var(--brand-bg);color:var(--brand);font-weight:700">
-              Sudah Transfer? Cek Status
+              style="display:flex;align-items:center;justify-content:center;gap:7px;background:var(--brand-bg);color:var(--brand);font-weight:700">
+              <i data-lucide="refresh-cw" style="width:16px;height:16px"></i> Sudah Transfer? Cek Status
             </button>
           </div>`;
       }
@@ -347,8 +389,7 @@ function renderStatus(o) {
         paymentContent = `
           <div class="info-card" style="text-align:center">
             <div style="font-size:48px;margin-bottom:8px">${EWALLET_ICONS[channel] ?? '<i data-lucide="credit-card" style="width:16px;height:16px;vertical-align:text-bottom;display:inline-block"></i>'}</div>
-            <div style="font-size:22px;font-weight:800;color:var(--brand);margin-bottom:4px">${formatRupiah(o.total)}</div>
-            <div style="font-size:12px;color:var(--muted);margin-bottom:16px" id="countdown">Menghitung waktu…</div>
+            <div style="font-size:22px;font-weight:800;color:var(--brand);margin-bottom:16px">${formatRupiah(o.total)}</div>
             ${ewalletLink
               ? `<a href="${ewalletLink}" class="btn-add-big" style="display:block;text-decoration:none;text-align:center;margin-bottom:10px">
                    Buka ${channel} untuk Bayar
@@ -362,7 +403,7 @@ function renderStatus(o) {
           </div>`;
       }
 
-      extraHtml = paymentContent + `
+      extraHtml = payHeaderHtml + paymentContent + `
         <div style="margin:0 12px 12px;padding:10px 14px;background:#e0f2fe;border-radius:10px;font-size:12px;line-height:1.5;color:#075985">
           <div style="display:flex;gap:8px;align-items:flex-start"><i data-lucide="lock" style="width:16px;height:16px;flex-shrink:0;margin-top:2px"></i> <span><b>Jangan tutup tab ini</b> sampai status berubah jadi "Pembayaran Dikonfirmasi"
         </div>`;
@@ -539,7 +580,7 @@ function renderStatus(o) {
     <div style="height:32px"></div>`;
 
   document.getElementById('pageContent').innerHTML = heroHtml + extraHtml + infoHtml;
-  if (window.lucide) { lucide.createIcons(); }
+  if (window.lucide) { window.lucide.createIcons(); }
 
   // Post-render hooks per status
   if (o.status === 'ready') {
@@ -573,20 +614,49 @@ function renderStatus(o) {
   }
 }
 
+// ─── Format nomor VA jadi grup 4 digit (tampilan saja) ───────────────────────
+function groupVA(num) {
+  return String(num).replace(/(\d{4})(?=\d)/g, '$1 ');
+}
+
 // ─── Salin nomor VA ke clipboard ──────────────────────────────────────────────
+// Tampilkan state "Tersalin!" pakai innerHTML + re-render ikon Lucide.
+function showCopied() {
+  const btn = document.getElementById('btnCopyVA');
+  if (!btn) return;
+  btn.innerHTML = '<i data-lucide="check" style="width:17px;height:17px"></i> Tersalin!';
+  btn.style.background = '#16a34a';
+  if (window.lucide) window.lucide.createIcons();
+  setTimeout(() => {
+    btn.innerHTML = '<i data-lucide="copy" style="width:17px;height:17px"></i> Salin nomor VA';
+    btn.style.background = 'var(--brand)';
+    if (window.lucide) window.lucide.createIcons();
+  }, 2000);
+}
+
+// Fallback untuk browser lama / konteks non-HTTPS (Clipboard API tidak tersedia)
+function fallbackCopy(text) {
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.top = '-9999px';
+    ta.setAttribute('readonly', '');
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    if (ok) { showCopied(); return; }
+  } catch (e) { /* lanjut ke toast */ }
+  showToast('Salin manual: ' + text);
+}
+
 function copyVA(vaNumber) {
-  navigator.clipboard.writeText(vaNumber).then(() => {
-    const btn = document.getElementById('btnCopyVA');
-    if (!btn) return;
-    btn.textContent = '<i data-lucide="check-circle-2" style="width:14px;height:14px;color:var(--green);vertical-align:text-bottom;display:inline-block"></i> Disalin!';
-    btn.style.background = '#f0fdf4';
-    btn.style.color = '#16a34a';
-    setTimeout(() => {
-      btn.textContent = 'Salin';
-      btn.style.background = 'var(--brand-bg)';
-      btn.style.color = 'var(--brand)';
-    }, 2000);
-  }).catch(() => showToast('Salin manual: ' + vaNumber));
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(vaNumber).then(showCopied).catch(() => fallbackCopy(vaNumber));
+  } else {
+    fallbackCopy(vaNumber);
+  }
 }
 
 // loadSignedProofUrl tidak lagi dipakai — upload bukti transfer diganti QRIS
@@ -612,12 +682,13 @@ function renderOrderQR(orderNum) {
 // ─── Countdown timer ──────────────────────────────────────────────────────────
 function startCountdownUI(expiresAt) {
   function tick() {
-    const el = document.getElementById('countdown');
+    const el    = document.getElementById('countdown');
+    const badge = document.getElementById('payCountdown');
     if (!el) return;
     const ms = new Date(expiresAt) - Date.now();
     if (ms <= 0) {
-      el.textContent = '⌛ Waktu habis';
-      el.style.color = 'var(--brand)';
+      el.textContent = 'Waktu pembayaran habis';
+      if (badge) badge.classList.add('urgent');
       // Update UI ke expired tanpa tunggu realtime
       setTimeout(() => {
         if (order && order.status === 'pending_payment') {
@@ -627,10 +698,18 @@ function startCountdownUI(expiresAt) {
       }, 1500);
       return;
     }
-    const m = Math.floor(ms / 60000);
-    const s = Math.floor((ms % 60000) / 1000);
-    el.textContent = `⏱ Berakhir dalam ${m}:${String(s).padStart(2, '0')}`;
-    if (ms < 60000) el.style.color = 'var(--brand)';
+    // Format ramah: tampilkan jam jika > 60 menit, agar tidak muncul "1439:36"
+    const totalSec = Math.floor(ms / 1000);
+    const h = Math.floor(totalSec / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const s = totalSec % 60;
+    let txt;
+    if (h > 0)      txt = `Berakhir dalam ${h} jam ${String(m).padStart(2, '0')} menit`;
+    else if (m > 0) txt = `Berakhir dalam ${m}:${String(s).padStart(2, '0')} menit`;
+    else            txt = `Berakhir dalam ${s} detik`;
+    el.textContent = txt;
+    // Mendekati kedaluwarsa (< 5 menit) → tandai merah & berkedip
+    if (badge) badge.classList.toggle('urgent', ms < 5 * 60000);
     countdownTimer = setTimeout(tick, 1000);
   }
   tick();

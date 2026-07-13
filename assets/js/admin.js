@@ -4,32 +4,63 @@
 // ─── State ────────────────────────────────────────────────────────────────────
 let adminUser = null; // { id, email, full_name, role, outlet_id, is_active }
 
+// Pre-apply visibility synchronously from cache to avoid UI flash/jumping
+const cachedRole = localStorage.getItem('suka_admin_role');
+if (cachedRole === 'super_admin') {
+  document.body.classList.add('is-super-admin');
+}
+
+// Mencegah kedipan (flicker) menu super admin saat pertama kali load
+(function() {
+  if (typeof document !== 'undefined' && document.head) {
+    const style = document.createElement('style');
+    style.textContent = `
+      .admin-only { display: none !important; }
+      body.is-super-admin .admin-only.flex { display: flex !important; }
+      body.is-super-admin .admin-only:not(.flex) { display: block !important; }
+    `;
+    document.head.appendChild(style);
+  }
+})();
+
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
 async function requireAuth() {
-  const { data: { user } } = await window.db.auth.getUser();
-  if (!user) {
+  try {
+    if (!window.db) {
+      throw new Error('Supabase client belum siap (window.db undefined). Periksa koneksi internet dan pastikan CDN terload.');
+    }
+    const { data: { user }, error: authErr } = await window.db.auth.getUser();
+    if (authErr || !user) {
+      window.location.replace('login.html');
+      return null;
+    }
+
+    const { data: profile, error } = await window.db
+      .from('admin_users')
+      .select('id, full_name, role, outlet_id, is_active')
+      .eq('id', user.id)
+      .single();
+
+    if (error || !profile || !profile.is_active) {
+      localStorage.removeItem('suka_admin_role');
+      await window.db.auth.signOut();
+      window.location.replace('login.html');
+      return null;
+    }
+
+    localStorage.setItem('suka_admin_role', profile.role);
+    adminUser = { ...profile, email: user.email };
+    _applyRoleVisibility();
+    _renderAdminMeta();
+    startOrderNotifications(adminUser); // mulai notif realtime di semua halaman
+    return adminUser;
+  } catch (err) {
+    console.error("Auth Error:", err);
+    alert("Sesi bermasalah atau koneksi terputus. Silakan login kembali.");
     window.location.replace('login.html');
     return null;
   }
-
-  const { data: profile, error } = await window.db
-    .from('admin_users')
-    .select('id, full_name, role, outlet_id, is_active')
-    .eq('id', user.id)
-    .single();
-
-  if (error || !profile || !profile.is_active) {
-    await window.db.auth.signOut();
-    window.location.replace('login.html');
-    return null;
-  }
-
-  adminUser = { ...profile, email: user.email };
-  _applyRoleVisibility();
-  _renderAdminMeta();
-  startOrderNotifications(adminUser); // mulai notif realtime di semua halaman
-  return adminUser;
 }
 
 async function requireSuperAdmin() {
@@ -43,6 +74,7 @@ async function requireSuperAdmin() {
 }
 
 async function adminSignOut() {
+  localStorage.removeItem('suka_admin_role');
   await window.db.auth.signOut();
   window.location.replace('login.html');
 }
@@ -51,24 +83,58 @@ async function adminSignOut() {
 
 function _applyRoleVisibility() {
   if (!adminUser) return;
-  if (adminUser.role !== 'super_admin') {
+  if (adminUser.role === 'super_admin') {
+    document.body.classList.add('is-super-admin');
+    
+    // Force override to ensure elements show up (handles edge cases/caching)
+    let style = document.getElementById('force-admin-visibility');
+    if (!style) {
+      style = document.createElement('style');
+      style.id = 'force-admin-visibility';
+      style.textContent = `
+        body.is-super-admin .admin-only.flex {
+          display: flex !important;
+        }
+        body.is-super-admin .admin-only:not(.flex) {
+          display: inline-block !important;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+    
+    document.querySelectorAll('.admin-only').forEach(el => {
+      if (el.style.display === 'none') el.style.display = '';
+    });
+  } else {
+    document.body.classList.remove('is-super-admin');
     document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
   }
 }
 
 function _renderAdminMeta() {
   const nameEl = document.getElementById('adminName');
+  const nameElMobile = document.getElementById('adminNameMobile');
   const roleEl = document.getElementById('adminRole');
-  if (nameEl) nameEl.textContent = adminUser.full_name || adminUser.email;
+  const roleElMobile = document.getElementById('adminRoleMobile');
+  
+  const name = adminUser.full_name || adminUser.email;
+  const role = adminUser.role === 'super_admin' ? 'Super Admin' : 'Staff Outlet';
+  
+  if (nameEl) nameEl.textContent = name;
+  if (nameElMobile) nameElMobile.textContent = name;
+  
   if (roleEl) {
-    roleEl.textContent = adminUser.role === 'super_admin' ? 'Super Admin' : 'Staff Outlet';
-    roleEl.style.color = adminUser.role === 'super_admin' ? 'var(--brand)' : 'var(--blue)';
+    roleEl.textContent = role;
   }
+  if (roleElMobile) {
+    roleElMobile.textContent = role;
+  }
+  
   // Sidebar name/role (tablet & desktop)
   const sidebarName = document.getElementById('sidebarName');
   const sidebarRole = document.getElementById('sidebarRole');
-  if (sidebarName) sidebarName.textContent = adminUser.full_name || adminUser.email;
-  if (sidebarRole) sidebarRole.textContent = adminUser.role === 'super_admin' ? 'Super Admin' : 'Staff Outlet';
+  if (sidebarName) sidebarName.textContent = name;
+  if (sidebarRole) sidebarRole.textContent = role;
 }
 
 // ─── Format ───────────────────────────────────────────────────────────────────
@@ -119,15 +185,22 @@ const STATUS_COLORS = {
 };
 
 const STATUS_NEXT_ACTION = {
-  paid:      { label: '👨‍🍳 Proses', next: 'preparing' },
-  preparing: { label: '✅ Siap Diambil', next: 'ready' },
-  ready:     { label: '🎉 Selesai', next: 'done' },
+  paid:      { label: '<i data-lucide="chef-hat" class="w-4 h-4 inline"></i> Proses', next: 'preparing' },
+  preparing: { label: '<i data-lucide="check-circle" class="w-4 h-4 inline"></i> Siap Diambil', next: 'ready' },
+  ready:     { label: '<i data-lucide="party-popper" class="w-4 h-4 inline"></i> Selesai', next: 'done' },
 };
 
 function statusBadge(status) {
-  const label = STATUS_LABELS[status] || status;
-  const color = STATUS_COLORS[status] || '#9ca3af';
-  return `<span style="background:${color}20;color:${color};font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap">${label}</span>`;
+  const map = {
+    'unpaid': { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'Belum Bayar' },
+    'paid': { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Dibayar' },
+    'preparing': { bg: 'bg-purple-100', text: 'text-purple-700', label: 'Disiapkan' },
+    'ready': { bg: 'bg-green-100', text: 'text-green-700', label: 'Siap Ambil' },
+    'done': { bg: 'bg-gray-100', text: 'text-gray-600', label: 'Selesai' },
+    'cancelled': { bg: 'bg-red-100', text: 'text-red-700', label: 'Batal' }
+  };
+  const m = map[status] || map.unpaid;
+  return `<span class="px-2 py-1 rounded-full text-[10px] font-bold ${m.bg} ${m.text}">${m.label}</span>`;
 }
 
 // ─── Notification sound ───────────────────────────────────────────────────────
@@ -362,4 +435,8 @@ function setActiveNav() {
   });
 }
 
-document.addEventListener('DOMContentLoaded', setActiveNav);
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', setActiveNav);
+} else {
+  setActiveNav();
+}

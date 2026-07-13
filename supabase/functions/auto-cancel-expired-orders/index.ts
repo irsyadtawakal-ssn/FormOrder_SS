@@ -82,7 +82,6 @@ Deno.serve(async (req: Request) => {
         `Pesanan *${order.order_number}* di ${outletName} sudah kedaluwarsa karena pembayaran tidak ` +
         `diselesaikan tepat waktu.\n\n` +
         `Silakan pesan ulang jika masih berminat. Terima kasih 🙏`;
-
       await fetch("https://api.fonnte.com/send", {
         method:  "POST",
         headers: { "Authorization": FONNTE_TOKEN, "Content-Type": "application/json" },

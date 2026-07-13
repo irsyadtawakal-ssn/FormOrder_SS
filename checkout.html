@@ -7,11 +7,10 @@
 <title>Order Sukashawarma</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="assets/css/style.css?v=9" />
 <link rel="manifest" href="/manifest.json" />
 <meta name="theme-color" content="#f29744" />
-<script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
 <div class="phone">
@@ -64,7 +63,7 @@
 <div class="toast" id="toast"></div>
 
 <!-- Scripts -->
-<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script src="assets/js/supabase.js"></script>
@@ -85,7 +84,8 @@ const PAYMENT_CHANNELS = [
     { id: 'MANDIRI', label: 'Mandiri', icon: '<i data-lucide="building-2"></i>', desc: 'Virtual Account Mandiri • Biaya admin Rp 4.000' },
     { id: 'BJB',     label: 'BJB',     icon: '<i data-lucide="building-2"></i>', desc: 'Virtual Account BJB • Biaya admin Rp 4.000' },
     { id: 'BSI',     label: 'BSI',     icon: '<i data-lucide="building-2"></i>', desc: 'Virtual Account BSI • Biaya admin Rp 4.000' },
-    { id: 'CIMB',    label: 'CIMB',    icon: '<i data-lucide="building-2"></i>', desc: 'Virtual Account CIMB • Biaya admin Rp 4.000' },
+    // CIMB disembunyikan — Xendit menolak channel VA-nya (HTTP 502); aktifkan VA CIMB
+    // di Dashboard Xendit dulu, lalu tambahkan kembali baris CIMB di sini.
   ]},
 ];
 
@@ -322,52 +322,91 @@ async function doCheckout() {
 let previewDiscount = 0;
 let previewPromoName = '';
 
-async function fetchPromoPreview(subtotal) {
+async function fetchPromoPreview(subtotal, cart) {
   if (!window.db) return;
   const nowIso = new Date().toISOString();
   try {
     const { data } = await window.db
       .from('promos')
-      .select('id, name, discount_type, discount_value, max_discount, min_purchase')
+      .select('id, name, discount_type, discount_value, max_discount, min_purchase, applies_to, item_ids')
       .eq('is_active', true)
-      .eq('applies_to', 'all')
       .lte('min_purchase', subtotal)
       .or(`start_at.is.null,start_at.lte."${nowIso}"`)
       .or(`end_at.is.null,end_at.gte."${nowIso}"`)
-      .order('priority', { ascending: false })
-      .order('discount_value', { ascending: false })
-      .limit(1);
-    const p = data?.[0];
-    if (!p) return;
-    if (p.discount_type === 'percent') {
-      previewDiscount = Math.round(subtotal * Number(p.discount_value) / 100);
-      if (p.max_discount != null) previewDiscount = Math.min(previewDiscount, Number(p.max_discount));
-    } else {
-      previewDiscount = Math.min(Number(p.discount_value), subtotal);
+      .order('priority', { ascending: false });
+
+    if (!data || !data.length) return;
+
+    let bestDiscount = 0;
+    let bestPromoName = '';
+
+    for (const p of data) {
+      let applicableSubtotal = subtotal;
+
+      if (p.applies_to === 'item' && p.item_ids && p.item_ids.length > 0) {
+        applicableSubtotal = cart.reduce((sum, item) => {
+          if (p.item_ids.includes(item.menuItemId)) {
+            return sum + (item.unitPrice * item.qty);
+          }
+          return sum;
+        }, 0);
+      }
+
+      if (applicableSubtotal <= 0) continue;
+
+      let discount = 0;
+      if (p.discount_type === 'percent') {
+        discount = Math.round(applicableSubtotal * Number(p.discount_value) / 100);
+        if (p.max_discount != null) discount = Math.min(discount, Number(p.max_discount));
+      } else {
+        discount = Math.min(Number(p.discount_value), applicableSubtotal);
+      }
+      discount = Math.max(0, discount);
+
+      // If we find the first one that gives a discount, we can take it since it's ordered by priority
+      // However, ordering by discount_value is lost since we do client-side calculation.
+      // Let's just pick the one with max discount among the highest priority tier,
+      // or simply the highest discount overall. Let's just track bestDiscount.
+      if (discount > bestDiscount) {
+        bestDiscount = discount;
+        bestPromoName = p.name;
+      }
     }
-    previewDiscount = Math.max(0, previewDiscount);
-    previewPromoName = p.name;
+
+    previewDiscount = bestDiscount;
+    previewPromoName = bestPromoName;
   } catch { /* promo preview gagal, lanjut tanpa diskon */ }
 }
 
 // ─── Init — baca sessionStorage dan render halaman ───────────────────────────
-const raw = sessionStorage.getItem('suka_checkout');
 let checkoutData = null;
-try { checkoutData = raw ? JSON.parse(raw) : null; } catch { checkoutData = null; }
 
-if (!checkoutData || !checkoutData.cart || !checkoutData.cart.length) {
-  document.getElementById('pageContent').innerHTML = `
-    <div class="error-box" style="margin:24px 16px">
-      <p>Data pesanan tidak ditemukan.<br/>Silakan kembali dan coba lagi.</p>
-      <button class="btn-retry" onclick="window.location.href='index.html'">Ke Halaman Utama</button>
-    </div>`;
-  if (window.lucide) { lucide.createIcons(); }
+function initCheckout() {
+  const raw = sessionStorage.getItem('suka_checkout');
+  try { checkoutData = raw ? JSON.parse(raw) : null; } catch { checkoutData = null; }
+
+  if (!checkoutData || !checkoutData.cart || !checkoutData.cart.length) {
+    document.getElementById('pageContent').innerHTML = `
+      <div class="error-box" style="margin:24px 16px">
+        <p>Data pesanan tidak ditemukan.<br/>Silakan kembali dan coba lagi.</p>
+        <button class="btn-retry" onclick="window.location.href='index.html'">Ke Halaman Utama</button>
+      </div>`;
+    if (window.lucide) { window.lucide.createIcons(); }
+  } else {
+    const subtotal = getCartTotal(checkoutData.cart);
+    fetchPromoPreview(subtotal, checkoutData.cart).then(() => {
+      renderPage();
+      if (typeof sukaPixelTrack === 'function') {
+        sukaPixelTrack('InitiateCheckout', { value: subtotal - previewDiscount, currency: 'IDR' });
+      }
+    });
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initCheckout);
 } else {
-  const subtotal = getCartTotal(checkoutData.cart);
-  fetchPromoPreview(subtotal).then(() => {
-    renderPage();
-    sukaPixelTrack('InitiateCheckout', { value: subtotal - previewDiscount, currency: 'IDR' });
-  });
+  initCheckout();
 }
 </script>
 <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>

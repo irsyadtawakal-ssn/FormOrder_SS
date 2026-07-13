@@ -1,7 +1,7 @@
-// SUKA Shawarma — app.js
+﻿// SUKA Shawarma ÔÇö app.js
 // Logika checkout, pemanggilan Edge Functions, payment redirect
 
-// ─── Panggil Edge Function via Supabase SDK ───────────────────────────────────
+// ÔöÇÔöÇÔöÇ Panggil Edge Function via Supabase SDK ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 // Menggunakan window.db.functions.invoke agar auth header otomatis terpasang
 
 async function callEdgeFunction(name, body) {
@@ -20,7 +20,7 @@ async function callEdgeFunction(name, body) {
 }
 
 
-// ─── Submit order via Xendit QRIS ────────────────────────────────────────────
+// ÔöÇÔöÇÔöÇ Submit order via Xendit QRIS ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 // Mengembalikan: { order_number, order_id, qris_string, payment_request_id, expires_at, total, subtotal, service_fee }
 
 async function submitXenditPayment(checkoutData) {
@@ -45,7 +45,7 @@ async function submitXenditPayment(checkoutData) {
   });
 }
 
-// ─── Cek status order — panggil check-xendit-status ──────────────────────────
+// ÔöÇÔöÇÔöÇ Cek status order ÔÇö panggil check-xendit-status ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
 // Mengembalikan: { success, status, synced }
 
 async function checkOrderStatus(orderNumber) {

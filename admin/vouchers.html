@@ -1,95 +1,123 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="id">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Voucher — SUKA Admin</title>
-<link rel="stylesheet" href="../assets/css/style.css?v=7" />
-<link rel="stylesheet" href="../assets/css/admin-desktop.css?v=7" />
 <link rel="manifest" href="/manifest.json" />
 <meta name="theme-color" content="#f29744" />
+<script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="../assets/css/admin-ui.css?v=2" />
+<style type="text/tailwindcss">
+  @theme {
+    --color-brand: #f29744;
+    --color-brand-bg: #fff7ed;
+    --color-brand-dark: #ee8a2c;
+  }
+</style>
 </head>
-<body>
-<div class="phone">
+<body class="bg-gray-50 text-gray-900 font-sans antialiased">
+<div class="flex h-screen overflow-hidden">
 
   <!-- Sidebar -->
-  <aside class="admin-sidebar" style="display:none">
-    <div class="admin-sidebar-logo">🌯 SUKA Admin</div>
-    <div class="admin-sidebar-user">
-      <div class="name" id="sidebarName">—</div>
-      <div class="role" id="sidebarRole">—</div>
+  <aside class="hidden md:flex flex-col w-64 bg-brand h-full shadow-lg z-20 relative">
+    <div class="p-6 flex items-center gap-3">
+      <i data-lucide="utensils" class="text-white w-6 h-6"></i>
+      <span class="font-extrabold text-xl text-white">SUKA Admin</span>
     </div>
-        <nav class="admin-sidebar-nav">
-      <a href="/admin/index.html"><span>🏠</span><span>Dashboard</span></a>
-      <a href="/admin/orders.html"><span>📋</span><span>Pesanan</span></a>
-      <a href="/admin/menu.html"><span>🌯</span><span>Menu</span></a>
-      <a href="/admin/reports.html"><span>📊</span><span>Laporan</span></a>
-      <a href="/admin/customers.html" class="admin-only"><span>🧑‍🤝‍🧑</span><span>Pelanggan</span></a>
-      <!-- LOYALTY FROZEN: <a href="/admin/vouchers.html" class="admin-only"><span>🎟️</span><span>Voucher</span></a> -->
-      <a href="/admin/promos.html" class="admin-only"><span>🏷️</span><span>Promo</span></a>
-      <a href="/admin/outlets.html" class="admin-only"><span>📍</span><span>Outlet</span></a>
-      <a href="/admin/users.html" class="admin-only"><span>👥</span><span>Pengguna</span></a>
-      <a href="/admin/monitoring.html" class="admin-only"><span>🔍</span><span>Monitoring</span></a>
-      <a href="/admin/settings.html" class="admin-only"><span>⚙️</span><span>Pengaturan</span></a>
+    <div class="px-6 py-4 flex flex-col gap-1 bg-brand-dark/20 border-t border-b border-brand-dark/30">
+      <span class="text-sm font-bold text-white" id="sidebarName">—</span>
+      <span class="text-xs font-medium text-orange-200" id="sidebarRole">—</span>
+    </div>
+    <nav class="flex-1 overflow-y-auto py-4 flex flex-col gap-1 px-3">
+      <a href="/" target="_blank" rel="noopener" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition-colors text-white hover:bg-brand-dark"><i data-lucide="external-link" class="w-5 h-5"></i><span>Buka Website Order</span></a>
+      <a href="/admin/index.html" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition-colors text-white hover:bg-brand-dark"><i data-lucide="layout-dashboard" class="w-5 h-5"></i><span>Dashboard</span></a>
+      <a href="/admin/orders.html" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition-colors text-white hover:bg-brand-dark"><i data-lucide="clipboard-list" class="w-5 h-5"></i><span>Pesanan</span></a>
+      <a href="/admin/menu.html" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition-colors text-white hover:bg-brand-dark"><i data-lucide="utensils" class="w-5 h-5"></i><span>Menu</span></a>
+      <a href="/admin/reports.html" class="flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition-colors text-white hover:bg-brand-dark"><i data-lucide="bar-chart-2" class="w-5 h-5"></i><span>Laporan</span></a>
+      <a href="/admin/customers.html" class="admin-only flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition-colors text-white hover:bg-brand-dark"><i data-lucide="users" class="w-5 h-5"></i><span>Pelanggan</span></a>
+      <a href="/admin/promos.html" class="admin-only flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition-colors text-white hover:bg-brand-dark"><i data-lucide="tag" class="w-5 h-5"></i><span>Promo</span></a>
+      <a href="/admin/outlets.html" class="admin-only flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition-colors text-white hover:bg-brand-dark"><i data-lucide="map-pin" class="w-5 h-5"></i><span>Outlet</span></a>
+      <a href="/admin/users.html" class="admin-only flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition-colors text-white hover:bg-brand-dark"><i data-lucide="user-cog" class="w-5 h-5"></i><span>Pengguna</span></a>
+      <a href="/admin/monitoring.html" class="admin-only flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition-colors text-white hover:bg-brand-dark"><i data-lucide="activity" class="w-5 h-5"></i><span>Monitoring</span></a>
+      <a href="/admin/settings.html" class="admin-only flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold transition-colors text-white hover:bg-brand-dark"><i data-lucide="settings" class="w-5 h-5"></i><span>Pengaturan</span></a>
     </nav>
-    <div class="admin-sidebar-footer">
-      <button onclick="adminSignOut()">🚪 Keluar</button>
+    <div class="p-4 border-t border-brand-dark/30">
+      <button onclick="adminSignOut()" class="flex items-center justify-center gap-2 text-white bg-brand-dark hover:bg-orange-900 py-2.5 px-4 rounded-xl w-full transition-colors font-bold shadow-sm border border-brand-dark/50">
+        <i data-lucide="log-out" class="w-5 h-5"></i> Keluar
+      </button>
     </div>
   </aside>
 
-  <!-- Topbar -->
-  <div class="topbar">
-    <span class="topbar-title">🎟️ Voucher</span>
-    <span id="adminName" style="font-size:12px;color:var(--muted)"></span>
+  <!-- Main Content -->
+  <div class="flex-1 flex flex-col h-full overflow-hidden relative">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm z-10">
+      <div class="flex items-center gap-3">
+        <img src="../assets/img/logo.png" alt="SUKA" class="h-8 w-auto md:hidden" onerror="this.style.display='none'">
+        <div class="hidden md:flex items-center gap-2 font-bold text-gray-800 text-lg">
+          <i data-lucide="ticket" class="w-5 h-5 text-brand"></i> Voucher
+        </div>
+        <span class="md:hidden font-bold text-gray-800 flex items-center gap-2"><i data-lucide="ticket" class="w-5 h-5 text-brand"></i> Voucher</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span id="adminName" class="hidden md:block text-xs text-gray-500"></span>
+        <button onclick="adminSignOut()" class="md:hidden flex items-center gap-1 text-xs font-bold text-red-600 bg-red-50 px-3 py-1.5 rounded-full">
+          <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Scrollable Content Area -->
+    <main class="flex-1 overflow-y-auto p-4 md:p-8 pb-24 md:pb-8 bg-brand-bg/50">
+      <div class="admin-content max-w-5xl mx-auto">
+
+        <!-- Search + filter -->
+        <div class="search-wrap" style="margin-bottom:8px">
+          <input type="search" id="searchInput" placeholder="Cari kode / WA / nama…" oninput="renderTable()" />
+        </div>
+
+        <!-- Status chips -->
+        <div class="chips" style="padding-bottom:8px">
+          <button class="chip active" data-filter="all"    onclick="setFilter('all')">Semua</button>
+          <button class="chip"        data-filter="active" onclick="setFilter('active')">Aktif</button>
+          <button class="chip"        data-filter="used"   onclick="setFilter('used')">Dipakai</button>
+        </div>
+
+        <!-- Summary bar -->
+        <div id="summaryBar" style="padding:4px 0 8px;font-size:12px;color:var(--muted)">—</div>
+
+        <!-- Table -->
+        <div class="report-table-wrap" style="overflow-x:auto">
+          <table class="report-table" id="voucherTable">
+            <thead>
+              <tr>
+                <th style="text-align:left">Kode</th>
+                <th style="text-align:left">Pelanggan</th>
+                <th style="text-align:center">Milestone</th>
+                <th style="text-align:center">Status</th>
+              </tr>
+            </thead>
+            <tbody id="voucherBody">
+              <tr><td colspan="4" class="report-empty">Memuat…</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </main>
   </div>
 
-  <div class="admin-content">
-
-    <!-- Search + filter -->
-    <div style="padding:8px 12px 4px;display:flex;gap:8px;align-items:center">
-      <input type="search" id="searchInput" class="form-input" placeholder="Cari kode / WA / nama…"
-             style="flex:1;font-size:13px" oninput="renderTable()" />
-    </div>
-
-    <!-- Status chips -->
-    <div class="chips" style="padding-bottom:4px">
-      <button class="chip active" data-filter="all"    onclick="setFilter('all')">Semua</button>
-      <button class="chip"        data-filter="active" onclick="setFilter('active')">Aktif</button>
-      <button class="chip"        data-filter="used"   onclick="setFilter('used')">Dipakai</button>
-    </div>
-
-    <!-- Summary bar -->
-    <div id="summaryBar" style="padding:4px 12px 8px;font-size:12px;color:var(--muted)">—</div>
-
-    <!-- Table -->
-    <div style="overflow-x:auto;padding-bottom:80px">
-      <table class="report-table" id="voucherTable">
-        <thead>
-          <tr>
-            <th style="text-align:left">Kode</th>
-            <th style="text-align:left">Pelanggan</th>
-            <th style="text-align:center">Milestone</th>
-            <th style="text-align:center">Status</th>
-          </tr>
-        </thead>
-        <tbody id="voucherBody">
-          <tr><td colspan="4" class="report-empty">Memuat…</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-  </div><!-- /admin-content -->
-
-  <!-- Bottom nav -->
-    <nav class="admin-nav">
-    <a href="/admin/index.html"><span>🏠</span><span>Dashboard</span></a>
-    <a href="/admin/orders.html"><span>📋</span><span>Pesanan</span></a>
-    <a href="/admin/menu.html"><span>🌯</span><span>Menu</span></a>
-    <a href="/admin/reports.html"><span>📊</span><span>Laporan</span></a>
-    <a href="/admin/monitoring.html" class="admin-only"><span>🔍</span><span>Monitor</span></a>
-    <a href="/admin/settings.html" class="admin-only"><span>⚙️</span><span>Pengaturan</span></a>
+  <!-- Mobile Bottom Nav -->
+  <nav class="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 flex items-center justify-around pb-safe pt-1 z-20 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+    <a href="/admin/index.html" class="flex flex-col items-center gap-1 py-2 px-2 text-gray-500 hover:text-brand"><i data-lucide="layout-dashboard" class="w-5 h-5"></i><span class="text-[10px] font-medium">Dashboard</span></a>
+    <a href="/admin/orders.html" class="flex flex-col items-center gap-1 py-2 px-2 text-gray-500 hover:text-brand"><i data-lucide="clipboard-list" class="w-5 h-5"></i><span class="text-[10px] font-medium">Pesanan</span></a>
+    <a href="/admin/menu.html" class="flex flex-col items-center gap-1 py-2 px-2 text-gray-500 hover:text-brand"><i data-lucide="utensils" class="w-5 h-5"></i><span class="text-[10px] font-medium">Menu</span></a>
+    <a href="/admin/reports.html" class="flex flex-col items-center gap-1 py-2 px-2 text-gray-500 hover:text-brand"><i data-lucide="bar-chart-2" class="w-5 h-5"></i><span class="text-[10px] font-medium">Laporan</span></a>
+    <a href="/admin/settings.html" class="admin-only flex flex-col items-center gap-1 py-2 px-2 text-gray-500 hover:text-brand"><i data-lucide="settings" class="w-5 h-5"></i><span class="text-[10px] font-medium">Settings</span></a>
   </nav>
-
 </div>
 <div class="toast" id="toast"></div>
 <div id="adminModal" class="admin-modal-overlay" style="display:none"></div>
@@ -98,7 +126,7 @@
 <script src="../config.js"></script>
 <script src="../assets/js/supabase.js"></script>
 <script src="../assets/js/utils.js"></script>
-<script src="../assets/js/admin.js"></script>
+<script src="../assets/js/admin.js?v=2"></script>
 <script>
 // ─── State ────────────────────────────────────────────────────────────────────
 let allVouchers   = [];
@@ -217,14 +245,9 @@ async function showVoucherDetail(voucherId) {
 
   const markUsedBtn = !v.is_used ? `
     <button class="btn btn-primary" style="width:100%;margin-top:16px"
-            onclick="markVoucherUsed('${v.id}')">✅ Tandai Sudah Dipakai</button>` : '';
+            onclick="markVoucherUsed('${v.id}')"><i data-lucide="check-circle" class="w-4 h-4"></i> Tandai Sudah Dipakai</button>` : '';
 
-  openAdminModal(`
-    <div class="modal-header">
-      <span>🎟️ Detail Voucher</span>
-      <button onclick="closeAdminModal()" class="btn-icon">✕</button>
-    </div>
-    <div class="modal-body">
+  openModal('Detail Voucher', `
       <div style="text-align:center;margin-bottom:16px">
         <div style="font-size:28px;font-weight:800;font-family:monospace;letter-spacing:3px;color:var(--brand)">${v.code}</div>
         <div style="margin-top:8px">${statusBadge}</div>
@@ -256,8 +279,8 @@ async function showVoucherDetail(voucherId) {
         </div>` : ''}
       </div>
       ${markUsedBtn}
-    </div>
   `);
+  if (window.lucide) window.lucide.createIcons();
 }
 
 // ─── Tandai voucher dipakai ───────────────────────────────────────────────────
@@ -270,9 +293,15 @@ async function markVoucherUsed(voucherId) {
   if (error) { showToast('Gagal update voucher'); return; }
 
   showToast('✅ Voucher ditandai sudah dipakai');
-  closeAdminModal();
+  closeModal();
   await loadVouchers();
 }
 </script>
+<script>
+  // Render icon shell statis (Lucide tidak auto-run di UMD)
+  (function(){ var f=function(){ if(window.lucide) window.lucide.createIcons(); };
+    document.addEventListener('DOMContentLoaded', f); window.addEventListener('load', f); })();
+</script>
+<script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
 </body>
 </html>

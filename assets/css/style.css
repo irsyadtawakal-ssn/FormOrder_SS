@@ -1,40 +1,39 @@
 /* SUKA Shawarma — Design System */
-@import url("https://fonts.googleapis.com/css2?family=Lilita+One&family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap");
-
 /* ─── Variables ─────────────────────────────────────────────────────────────── */
 :root {
-  /* Redesigned SUKA palette — Stitch Design System */
-  --bg: #fdf7f0; /* Warm cream background */
+  /* Redesigned SUKA palette — Suka Kitchen System (Stitch MCP) */
+  --bg: #fff8f1; /* Warm cream background */
   --card: #ffffff; /* Pure white card surface */
-  --ink: #3e2723; /* Suka Dark / Black (on-surface) */
+  --ink: #1e1b15; /* Suka Dark / Black (on-surface) */
   --ink2: #544437; /* Secondary body text (on-surface-variant) */
-  --muted: #5f5e5e; /* Suka neutral gray (secondary) */
-  --faint: #877365; /* Suka neutral dim (outline) */
-  --line: #e2dfde; /* Soft divider (secondary-container) */
-  --line2: #d9c2b2; /* Soft border (outline-variant) */
+  --muted: #877365; /* Suka neutral gray (outline) */
+  --faint: #d9c2b2; /* Suka neutral dim (outline-variant) */
+  --line: #f5ede3; /* Soft divider (surface-container) */
+  --line2: #efe7dd; /* Soft border (surface-container-high) */
 
   --brand: #f29744; /* Suka Orange (primary-container) */
   --brand-dk: #ee8a2c; /* Hover / pressed */
   --brand-bg: #fff1e0; /* Tint background */
-  --accent: #e2dfde; /* Secondary container background */
+  --accent: #f5ede3; /* Secondary container background */
   --accent-ink: #904d00; /* Suka Brown / Primary */
 
-  --green: #0a7d2c;
-  --green-bg: #f0fdf4;
+  --green: #006e24; /* Tertiary */
+  --green-bg: #77dc7e; /* Tertiary Fixed Dim */
   --orange: #f29744;
   --blue: #2563eb;
 
-  --radius: 16px; /* Stitch rounded-lg for card/modal containers */
-  --radius-sm: 12px; /* Stitch rounded-md for smaller elements */
+  --radius: 12px; /* Stitch rounded-md for card/modal containers */
+  --radius-sm: 8px; /* Stitch rounded-sm for smaller elements */
   --radius-xs: 8px; /* Stitch rounded-sm/default for buttons/inputs */
-  --shadow: 0 4px 12px rgba(144, 77, 0, 0.08); /* 10% primary-tinted ambient shadow */
-  --shadow-lg: 0 8px 24px rgba(144, 77, 0, 0.14);
+  --shadow: 0 4px 12px rgba(112, 22, 4, 0.08); /* 8% brown-tinted ambient shadow */
+  --shadow-lg: 0 8px 30px rgba(112, 22, 4, 0.18);
+  --shadow-brand: 0 6px 20px rgba(242, 151, 68, 0.30);
   --container: 480px;
 
   --font:
-    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", sans-serif;
-  --font-display: "Outfit", "Lilita One", system-ui, sans-serif;
+  --font-display: "Space Mono", ui-monospace, "Courier New", monospace;
 }
 
 /* ─── Reset & base ──────────────────────────────────────────────────────────── */
@@ -71,6 +70,8 @@ img {
 }
 
 /* Headings and Display typography (Stitch Design System) */
+/* Lilita One HANYA untuk judul & branding (teks pendek). Nama menu, harga, label,
+   angka, dan tab pakai font tubuh (Plus Jakarta Sans) agar lebih ringan & mudah dibaca. */
 h1,
 h2,
 h3,
@@ -82,23 +83,12 @@ h6,
 .outlet-sel-name,
 .outlet-drop-name,
 .outlet-hdr-name,
-.deal-name,
-.deal-price,
 .deal-section-title,
 .sheet-title,
-.variant-label,
 .how-to-title,
-.how-to-num,
-.order-number-big,
 .qris-title,
-.qris-amount,
 .status-title,
-.btn-add-big,
-.btn-add,
-.btn-outline,
-.cart-total,
-.cart-cta,
-.tab {
+.cart-cta {
   font-family: var(--font-display);
 }
 
@@ -424,6 +414,7 @@ h6,
   border: 1px solid #7c6252;
   border-radius: 999px;
   font-size: 13px;
+  font-weight: 600;
   background: transparent;
   cursor: pointer;
   white-space: nowrap;
@@ -1511,34 +1502,54 @@ h6,
   position: relative;
 }
 .how-to-steps {
-  padding: 16px;
+  padding: 24px 20px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 24px;
+  position: relative;
+}
+.how-to-steps::before {
+  content: '';
+  position: absolute;
+  left: 33px; /* 20px + 13px */
+  top: 40px;
+  bottom: 40px;
+  width: 2px;
+  background: rgba(242, 151, 68, 0.25);
+  z-index: 0;
 }
 .how-to-step {
   display: flex;
-  gap: 14px;
+  gap: 16px;
   align-items: flex-start;
+  position: relative;
+  z-index: 1;
 }
 .how-to-num {
   min-width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: var(--brand);
-  color: #fff;
+  background: #fff;
+  border: 2px solid var(--brand);
+  color: var(--brand);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 800;
   flex-shrink: 0;
-  margin-top: 1px;
+  margin-top: 2px;
+  box-shadow: 0 0 0 6px #fff;
+}
+.how-to-step:last-child .how-to-num {
+  background: var(--brand);
+  color: #fff;
 }
 .how-to-title {
-  font-weight: 700;
-  font-size: 14px;
-  margin-bottom: 2px;
+  font-weight: 800;
+  font-size: 15px;
+  margin-bottom: 4px;
+  color: #1f2937;
 }
 .how-to-desc {
   font-size: 13px;
@@ -1632,7 +1643,8 @@ h6,
   letter-spacing: 0.5px;
   line-height: 1.1;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  font-family: var(--font-display);
+  /* Judul banner sengaja TETAP Lilita One — jangan ikut --font-display */
+  font-family: "Lilita One", system-ui, sans-serif;
 }
 .hero-banner-tagline,
 .hero-header-tagline {
@@ -1642,6 +1654,8 @@ h6,
   letter-spacing: 1px;
   text-transform: uppercase;
   margin-top: 4px;
+  /* Tagline banner sengaja TETAP Lilita One — samakan dengan judul banner */
+  font-family: "Lilita One", system-ui, sans-serif;
 }
 
 /* ─── Outlet header – menu page (TikTok-style) ──────────────────────────────── */
@@ -1719,39 +1733,49 @@ h6,
   padding: 14px 16px;
 }
 .deal-section-title {
-  display: none;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 4px;
+  padding-left: 4px;
+  letter-spacing: -0.3px;
+  text-transform: capitalize;
 }
 .deal-card {
   display: flex;
   flex-direction: row;
   align-items: stretch;
-  background: var(--card);
-  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-  border: none;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.8);
   cursor: pointer;
-  transition:
-    transform 0.15s ease,
-    box-shadow 0.15s ease;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1), background 0.4s;
   position: relative;
   min-height: 120px;
+  margin-bottom: 12px;
 }
 .deal-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.9);
 }
 .deal-card:active {
-  transform: scale(0.98);
-  box-shadow: none;
+  transform: scale(0.97);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.03);
 }
 .deal-card.unavailable {
   opacity: 0.5;
   cursor: not-allowed;
+  filter: grayscale(100%);
 }
 .deal-img-wrap {
   position: relative;
   width: 130px;
+  padding: 10px;
   flex-shrink: 0;
 }
 .deal-img {
@@ -1763,7 +1787,8 @@ h6,
   justify-content: center;
   font-size: 32px;
   overflow: hidden;
-  border-radius: 0;
+  border-radius: 14px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
 }
 .deal-img img {
   width: 100%;
@@ -1771,40 +1796,85 @@ h6,
   object-fit: cover;
   display: block;
 }
-.deal-img-badge {
+.deal-badge-stack {
   position: absolute;
   top: 8px;
   left: 8px;
-  background: var(--brand);
-  color: #fff;
+  right: 8px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+.deal-img-badge {
+  position: static;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: var(--brand);
   font-size: 9px;
   font-weight: 800;
-  padding: 2px 6px;
-  border-radius: 4px;
-  letter-spacing: 0.3px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  letter-spacing: 0.5px;
+  box-shadow: -2px 2px 6px rgba(0, 0, 0, 0.08);
   font-family: var(--font-display);
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 2px;
 }
+
 .deal-img-badge.sold-out {
-  background: rgba(0, 0, 0, 0.6);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  right: auto;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  font-size: 11px;
+  border-radius: 8px;
+  z-index: 3;
+}
+.promo-badge {
+  position: static;
+  background: #00B14F; /* GrabFood Green */
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 4px 8px;
+  border-radius: 8px;
+  box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.15);
+  letter-spacing: 0.5px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .deal-body {
-  padding: 12px;
+  padding: 16px 16px 16px 4px;
   display: flex;
   flex-direction: column;
   flex: 1;
-  gap: 4px;
+  gap: 6px;
 }
 .deal-name {
-  font-weight: 700;
-  font-size: 14px;
+  font-weight: 600;
+  font-size: 15px;
   color: var(--ink);
-  line-height: 1.3;
+  line-height: 1.25;
+  letter-spacing: -0.3px;
 }
 .deal-desc {
-  font-size: 11px;
-  color: var(--muted);
+  font-size: 12px;
+  color: #6b7280;
   line-height: 1.4;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -1816,19 +1886,26 @@ h6,
   justify-content: space-between;
   margin-top: auto;
   gap: 6px;
-  padding-top: 4px;
+}
+.deal-price-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
 }
 .deal-price {
-  font-size: 15px;
-  font-weight: 800;
-  color: var(--brand);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
   line-height: 1.1;
+  letter-spacing: -0.5px;
 }
 .deal-price-meta {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 2px;
+  min-width: 0; /* Allow flex children to truncate */
 }
 .deal-compare {
   font-size: 10px;
@@ -1838,35 +1915,41 @@ h6,
 .deal-discount {
   font-size: 9px;
   font-weight: 700;
-  color: var(--brand);
-  background: var(--brand-bg);
-  padding: 1px 4px;
-  border-radius: 3px;
+  color: #fff;
+  background: #E3000F; /* Red for discount to stand out against the green badge */
+  padding: 2px 6px;
+  border-radius: 4px;
+  box-shadow: 0 2px 6px rgba(227, 0, 15, 0.3);
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-block;
 }
 .deal-add-btn {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: var(--brand);
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #f97316, #ea580c);
   color: #fff;
   border: none;
-  font-size: 20px;
-  font-weight: 400;
+  font-size: 18px;
+  font-weight: 500;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   flex-shrink: 0;
-  line-height: 1;
-  transition:
-    background 0.15s,
-    transform 0.1s;
+  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.3);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .deal-add-btn:hover {
-  background: var(--brand-dk);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 16px rgba(234, 88, 12, 0.4);
 }
 .deal-add-btn:active {
-  transform: scale(0.9);
+  transform: scale(0.95);
+  box-shadow: 0 2px 6px rgba(234, 88, 12, 0.2);
 }
 
 /* ─── Responsive: pastikan tampilan tetap bagus di desktop ───────────────────── */
@@ -2493,4 +2576,121 @@ select.form-input {
   font-size: 12px;
   padding: 6px 0;
   margin: 0;
+}
+
+/* ─── Premium UI Overrides (Suka Kitchen System) ──────────────────────────── */
+button, .btn-primary, .btn-secondary, .cart-cta, .btn-add, .btn-add-big, .cart-item-btn {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+button:active, .btn-primary:active, .cart-cta:active {
+  transform: scale(0.96);
+}
+
+button:hover, .btn-primary:hover, .cart-cta:hover {
+  filter: brightness(1.05);
+  box-shadow: 0 4px 12px rgba(112, 22, 4, 0.1);
+}
+
+.stat-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid var(--line);
+  background: var(--card);
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--brand);
+}
+
+.admin-order-row, .card {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid var(--line);
+}
+
+.admin-order-row:hover, .card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+  border-color: var(--brand);
+}
+
+input, select, textarea {
+  transition: all 0.2s ease-in-out;
+}
+
+input:focus, select:focus, textarea:focus {
+  box-shadow: 0 0 0 3px rgba(242, 151, 68, 0.15); /* Orange glow */
+  border-color: var(--brand) !important;
+}
+
+.topbar {
+  box-shadow: 0 2px 10px rgba(112, 22, 4, 0.04);
+}
+
+.admin-nav {
+  box-shadow: 0 -4px 16px rgba(112, 22, 4, 0.06);
+}
+
+.toast {
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--line);
+}
+
+/* --- Animasi Masuk Keranjang Premium --- */
+.flying-wrapper {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  /* Animasi linear untuk sumbu X agar kecepatan pergerakan mendatar stabil */
+  transition: transform 0.8s linear;
+  will-change: transform;
+}
+
+.flying-inner {
+  display: block;
+  border-radius: 50%; /* Ubah menjadi lingkaran penuh agar rapi saat terbang */
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+  /* Rahasia Pop-Out dan Parabolic Arc:
+     Sumbu Y dan Scale menggunakan cubic-bezier dengan sumbu control awal bernilai negatif (-0.5).
+     Ini memaksa gambar membesar/melompat ke arah berlawanan di awal, sebelum akhirnya
+     terlempar jatuh ke arah keranjang (scale 0.1).
+  */
+  transition: transform 0.8s cubic-bezier(0.4, -0.5, 0.8, 1), opacity 0.8s ease-in;
+  will-change: transform, opacity;
+}
+
+/* Animasi Pantulan (Jelly Pop) pada Ikon Angka Keranjang */
+.badge-pop {
+  animation: jellyPop 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+@keyframes jellyPop {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.4); }
+  50% { transform: scale(0.85); }
+  75% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+@keyframes cartBump {
+  0% { transform: translateX(-50%) scale(1); }
+  50% { transform: translateX(-50%) scale(1.08); }
+  100% { transform: translateX(-50%) scale(1); }
+}
+
+@keyframes floatCart {
+  0% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-4px); }
+  100% { transform: translateX(-50%) translateY(0); }
+}
+
+.cart-bar:not(.hidden) {
+  animation: floatCart 3s ease-in-out infinite;
+}
+
+.cart-bar.bump {
+  animation: cartBump 0.3s cubic-bezier(0.25, 1, 0.5, 1);
 }

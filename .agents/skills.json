@@ -1,0 +1,61 @@
+{
+  "entries": [
+    {
+      "path": "../antigravity-awesome-skills/plugins/antigravity-awesome-skills/skills"
+    },
+    {
+      "path": "../antigravity-awesome-skills/plugins/antigravity-awesome-skills-claude/skills"
+    },
+    {
+      "path": "../antigravity-awesome-skills/plugins/antigravity-bundle-aas-agent-mcp-builder/skills"
+    },
+    {
+      "path": "../antigravity-awesome-skills/plugins/antigravity-bundle-aas-automation-builder/skills"
+    },
+    {
+      "path": "../antigravity-awesome-skills/plugins/antigravity-bundle-aas-data-analytics/skills"
+    },
+    {
+      "path": "../antigravity-awesome-skills/plugins/antigravity-bundle-aas-devops-cloud/skills"
+    },
+    {
+      "path": "../antigravity-awesome-skills/plugins/antigravity-bundle-aas-documents-presentations/skills"
+    },
+    {
+      "path": "../antigravity-awesome-skills/plugins/antigravity-bundle-aas-marketing-seo-growth/skills"
+    },
+    {
+      "path": "../antigravity-awesome-skills/plugins/antigravity-bundle-aas-mobile-app-builder/skills"
+    },
+    {
+      "path": "../antigravity-awesome-skills/plugins/antigravity-bundle-aas-observability-ir/skills"
+    },
+    {
+      "path": "../antigravity-awesome-skills/plugins/antigravity-bundle-aas-oss-maintainer/skills"
+    },
+    {
+      "path": "../antigravity-awesome-skills/plugins/antigravity-bundle-aas-product-design-studio/skills"
+    },
+    {
+      "path": "../antigravity-awesome-skills/plugins/antigravity-bundle-aas-python-api-builder/skills"
+    },
+    {
+      "path": "../antigravity-awesome-skills/plugins/antigravity-bundle-aas-qa-test-automation/skills"
+    },
+    {
+      "path": "../antigravity-awesome-skills/plugins/antigravity-bundle-aas-secure-app-builder/skills"
+    },
+    {
+      "path": "../antigravity-awesome-skills/plugins/antigravity-bundle-aas-security-engineer/skills"
+    },
+    {
+      "path": "../antigravity-awesome-skills/plugins/antigravity-bundle-aas-web-app-builder/skills"
+    },
+    {
+      "path": "../antigravity-awesome-skills/plugins/antigravity-bundle-agent-architect/skills"
+    },
+    {
+      "path": "../antigravity-awesome-skills/plugins/antigravity-bundle-apple-platform-design/skills"
+    }
+  ]
+}
