@@ -452,6 +452,7 @@ async function clearPixelToken() {
 
   document.getElementById('pixelToken').value = '';
   renderPage();
+  generateQrPreview();
   adminToast('✅ Token dihapus');
 }
 
