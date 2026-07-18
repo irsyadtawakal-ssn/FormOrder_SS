@@ -491,7 +491,6 @@ serve(async (req: Request) => {
     va_bank: null,
     ewallet_deeplink: null,
     expires_at: expiredAt.toISOString(),
-    sales_source: "online",
   };
 
   // ─── INSERT order dengan retry anti-tabrakan ──────────────────────────────

@@ -14,8 +14,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Space+Mono:wght@400;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="preload" href="assets/css/style.css?v=9" as="style" />
-    <link rel="stylesheet" href="assets/css/style.css?v=9" />
+    <link rel="preload" href="assets/css/style.css?v=10" as="style" />
+    <link rel="stylesheet" href="assets/css/style.css?v=10" />
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#f29744" />
     
@@ -30,6 +30,111 @@
     <script src="assets/js/index.js" defer></script>
   </head>
   <body>
+<!-- Maintenance Overlay -->
+<style>
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes pulseSoft {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+  #maintenanceOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    background: linear-gradient(135deg, var(--bg, #fff8f1) 0%, #ffe4cc 100%);
+    display: none; /* Ubah ke 'flex' untuk mengaktifkan maintenance mode */
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+  .maintenance-card {
+    background: #ffffff;
+    border-radius: 24px;
+    padding: 40px 32px;
+    text-align: center;
+    max-width: 400px;
+    width: 100%;
+    box-shadow: 0 20px 40px rgba(242, 151, 68, 0.15), 0 1px 3px rgba(0,0,0,0.05);
+    animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-sizing: border-box;
+  }
+  .maintenance-icon-wrapper {
+    width: 88px;
+    height: 88px;
+    background: var(--brand-bg, #fff1e0);
+    color: var(--brand, #f29744);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+    animation: pulseSoft 3s ease-in-out infinite;
+    box-shadow: 0 0 0 12px rgba(255, 241, 224, 0.5);
+  }
+  .maintenance-card h1 {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 800;
+    font-size: 26px;
+    color: var(--ink, #1e1b15);
+    margin: 0 0 12px 0;
+    letter-spacing: -0.5px;
+  }
+  .maintenance-card p {
+    font-size: 15px;
+    color: var(--ink2, #544437);
+    line-height: 1.6;
+    margin: 0 0 32px 0;
+  }
+  .maintenance-wa-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: #25D366;
+    color: white;
+    padding: 16px 32px;
+    border-radius: 99px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 16px;
+    width: 100%;
+    box-sizing: border-box;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 8px 24px rgba(37, 211, 102, 0.25);
+  }
+  .maintenance-wa-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(37, 211, 102, 0.35);
+    background: #22c35e;
+  }
+  .maintenance-wa-btn svg {
+    width: 22px;
+    height: 22px;
+  }
+</style>
+<div id="maintenanceOverlay">
+  <div class="maintenance-card">
+    <div class="maintenance-icon-wrapper">
+      <svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+    </div>
+    <h1>Pemeliharaan Sistem</h1>
+    <p>
+      Sistem pemesanan online kami sedang dalam perbaikan untuk memberikan layanan yang lebih baik. Untuk saat ini, Anda bisa langsung memesan melalui WhatsApp.
+    </p>
+    <a href="https://wa.me/6285283524708" class="maintenance-wa-btn">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      Pesan via WhatsApp
+    </a>
+  </div>
+</div>
     <div class="phone">
       <!-- Hero header — ganti dengan gambar custom jika ada -->
       <div class="hero-header" id="heroHeader">
