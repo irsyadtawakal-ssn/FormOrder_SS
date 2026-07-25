@@ -59,6 +59,7 @@
               "id,slug,name,address,city,maps_url,open_hour,close_hour,is_active",
             )
             .eq("is_active", true)
+            .eq("type", "outlet")
             .order("name"),
         ];
 
