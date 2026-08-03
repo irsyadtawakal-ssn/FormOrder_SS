@@ -99,6 +99,7 @@ Deno.serve(async (req: Request) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "Authorization": `Bearer ${SHARED_SECRET}`,
         "x-internal-token": SHARED_SECRET,
       },
       body: JSON.stringify(payload),
@@ -108,7 +109,7 @@ Deno.serve(async (req: Request) => {
 
     if (!res.ok) {
       console.error("POS Kasir menolak push order:", res.status, resBody);
-      return Response.json({ error: "POS Kasir menolak order" }, { status: 502, headers: CORS });
+      return Response.json({ error: "POS Kasir menolak order", status: res.status, details: resBody }, { status: 502, headers: CORS });
     }
 
     console.info("Order berhasil dipush ke POS Kasir:", order.id, resBody);

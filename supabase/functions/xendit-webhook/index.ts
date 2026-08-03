@@ -371,17 +371,22 @@ serve(async (req: Request) => {
     body: JSON.stringify({ order_id: order.id }),
   }).catch((err) => console.error("Gagal trigger on-order-done:", err));
 
-  // ─── Trigger push-order-to-kasir: dorong order ke POS Kasir (fire-and-forget) ──
-  // Jalur server-to-server, tidak bergantung pada tab /kasir terbuka/reload
-  // (berbeda dari OnlineOrderSync yang berjalan di browser POS Kasir).
-  fetch(`${supabaseUrl}/functions/v1/push-order-to-kasir`, {
+  // ─── Trigger pull-online di POS Kasir (fire-and-forget) ────────────────────
+  // Meminta POS Kasir untuk menarik data pesanan ini secara langsung (realtime)
+  // tanpa menunggu cron job 30 detik.
+  const POS_KASIR_API_URL = Deno.env.get("POS_KASIR_API_URL") ?? "https://pos.sukashawarma.com";
+  let targetUrl = POS_KASIR_API_URL;
+  if (!targetUrl.endsWith('/api/orders/pull-online')) {
+    targetUrl = targetUrl.replace(/\/$/, '') + '/api/orders/pull-online';
+  }
+
+  fetch(targetUrl, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${serviceKey}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ order_id: order.id }),
-  }).catch((err) => console.error("Gagal trigger push-order-to-kasir:", err));
+    body: JSON.stringify({ external_order_id: order.id }),
+  }).catch((err) => console.error("Gagal trigger pull-online di POS Kasir:", err));
 
   return jsonOk({ success: true, message: "Order diupdate ke paid" });
 });
