@@ -1,0 +1,10 @@
+version: '3.8'
+
+services:
+  web-order-online:
+    # Membangun image dari Dockerfile di folder ini
+    build: .
+    container_name: order-online-web
+    ports:
+      - "8080:80" # Akses dari luar (ganti 8080 dengan port yang diinginkan jika perlu)
+    restart: always
