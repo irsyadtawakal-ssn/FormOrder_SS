@@ -2,12 +2,7 @@
 // Dimuat setelah: supabase CDN script + config.js
 
 (function () {
-  if (!window.SUKA_CONFIG) {
-    console.error('[SUKA] config.js tidak ditemukan. Salin config.example.js ke config.js dan isi kredensial.');
-    document.body.insertAdjacentHTML('afterbegin',
-      '<div style="background:#fef2f2;color:#dc2626;padding:16px;text-align:center;font-weight:bold;border-bottom:2px solid #fca5a5">⚠️ config.js tidak ditemukan</div>');
-    return;
-  }
+
 
   if (!window.supabase || !window.supabase.createClient) {
     console.error('[SUKA] Supabase CDN belum dimuat! Pastikan script supabase CDN ada sebelum supabase.js');
@@ -19,9 +14,12 @@
   try {
     const { createClient } = window.supabase;
 
+    const supabaseUrl = 'https://qntuhtkujpwudcpudwbj.supabase.co';
+    const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFudHVodGt1anB3dWRjcHVkd2JqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNTMyNjcsImV4cCI6MjA5NDgyOTI2N30.X2pjS2ont0ekVVc71HLacM2I49aLeypLRRgoPQV6OTw';
+
     window.db = createClient(
-      window.SUKA_CONFIG.supabaseUrl,
-      window.SUKA_CONFIG.supabaseAnonKey,
+      supabaseUrl,
+      supabaseAnonKey,
       {
         auth: {
           persistSession:   true,
