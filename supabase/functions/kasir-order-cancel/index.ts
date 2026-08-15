@@ -48,14 +48,30 @@ Deno.serve(async (req: Request) => {
     return Response.json({ error: "Forbidden" }, { status: 403, headers: CORS });
   }
 
-  let body: { external_order_id: string };
+  let body: { external_order_id?: string; pos_order_id?: string };
   try {
     body = await req.json();
   } catch {
     return Response.json({ error: "Body tidak valid" }, { status: 400, headers: CORS });
   }
 
-  const { external_order_id } = body;
+  let { external_order_id } = body;
+  if (!external_order_id && body.pos_order_id) {
+    // Jalur native: cuma punya id order di project POS sendiri — cari sendiri
+    // di sini lewat kolom yang sudah ditulis pull-online-order, sama seperti
+    // kasir-order-done.
+    const POS_URL = Deno.env.get("POS_SUPABASE_URL");
+    const POS_SERVICE_KEY = Deno.env.get("POS_SUPABASE_SERVICE_ROLE_KEY");
+    if (POS_URL && POS_SERVICE_KEY) {
+      const posDb = createClient(POS_URL, POS_SERVICE_KEY);
+      const { data: posOrder } = await posDb
+        .from("orders")
+        .select("external_order_id")
+        .eq("id", body.pos_order_id)
+        .maybeSingle();
+      external_order_id = posOrder?.external_order_id ?? undefined;
+    }
+  }
   if (!external_order_id) {
     return Response.json({ error: "external_order_id wajib" }, { status: 400, headers: CORS });
   }
