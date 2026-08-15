@@ -23,14 +23,28 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
 
   const SHARED_SECRET = Deno.env.get("KASIR_TO_ORDER_SECRET");
-  if (!SHARED_SECRET) {
-    console.error("KASIR_TO_ORDER_SECRET belum dikonfigurasi di Supabase Secrets");
-    return Response.json({ error: "Internal error" }, { status: 500, headers: CORS });
+  const internalToken = req.headers.get("x-internal-token") ?? "";
+  const authorizedViaSecret = !!SHARED_SECRET && !!internalToken && timingSafeEqual(internalToken, SHARED_SECRET);
+
+  let authorizedViaStaffJwt = false;
+  if (!authorizedViaSecret) {
+    // Jalur baru: POS native mengirim access token kasir sendiri (bukan secret
+    // baru) — diverifikasi balik ke project POS lewat /auth/v1/user, supaya
+    // native tidak perlu membawa KASIR_TO_ORDER_SECRET yang tidak aman
+    // disimpan di APK yang disebar lewat WhatsApp (bisa di-decompile).
+    const bearer = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
+    const POS_URL = Deno.env.get("POS_SUPABASE_URL");
+    const POS_ANON_KEY = Deno.env.get("POS_SUPABASE_ANON_KEY");
+    if (bearer && POS_URL && POS_ANON_KEY) {
+      const userRes = await fetch(`${POS_URL}/auth/v1/user`, {
+        headers: { Authorization: `Bearer ${bearer}`, apikey: POS_ANON_KEY },
+      });
+      authorizedViaStaffJwt = userRes.ok;
+    }
   }
 
-  const incomingToken = req.headers.get("x-internal-token") ?? "";
-  if (!incomingToken || !timingSafeEqual(incomingToken, SHARED_SECRET)) {
-    console.error("Token POS Kasir tidak valid");
+  if (!authorizedViaSecret && !authorizedViaStaffJwt) {
+    console.error("Token POS Kasir/native tidak valid");
     return Response.json({ error: "Forbidden" }, { status: 403, headers: CORS });
   }
 
