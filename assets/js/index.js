@@ -920,6 +920,37 @@
           formatRupiah(subtotal);
       }
 
+      function togglePickupDropdown(event) {
+        event.stopPropagation();
+        const select = document.getElementById("pickupSelect");
+        const trigger = document.getElementById("pickupSelectTrigger");
+        const isOpen = select.classList.toggle("open");
+        trigger.setAttribute("aria-expanded", String(isOpen));
+      }
+
+      function closePickupDropdown() {
+        const select = document.getElementById("pickupSelect");
+        const trigger = document.getElementById("pickupSelectTrigger");
+        if (!select || !trigger) return;
+        select.classList.remove("open");
+        trigger.setAttribute("aria-expanded", "false");
+      }
+
+      function selectPickupTime(value, event) {
+        event.stopPropagation();
+        const input = document.getElementById("fTime");
+        const display = document.getElementById("pickupSelectValue");
+        input.value = value;
+        display.textContent = value || "— Pilih waktu ambil —";
+        document.querySelectorAll(".pickup-option").forEach((option) => {
+          const selected = option.textContent.trim() === value;
+          option.classList.toggle("selected", selected);
+          option.setAttribute("aria-selected", String(selected));
+        });
+        closePickupDropdown();
+        document.getElementById("pickupSelect").closest(".field").classList.remove("has-error");
+      }
+
       function removeCartItem(idx) {
         cart.splice(idx, 1);
         setCart(outletSlug, cart);
@@ -1005,6 +1036,7 @@
       }
 
       function closeAllSheets() {
+        closePickupDropdown();
         ["itemSheet", "cartSheet"].forEach((id) => {
           const el = document.getElementById(id);
           el.classList.remove("show");
@@ -1027,6 +1059,11 @@
 
       if ("serviceWorker" in navigator)
         navigator.serviceWorker.register("/sw.js");
+
+      document.addEventListener("click", closePickupDropdown);
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") closePickupDropdown();
+      });
     
 
       if (window.lucide) {

@@ -427,26 +427,40 @@
         </div>
         <div class="field">
           <label>Waktu Ambil <span style="color: var(--brand)">*</span></label>
-          <select id="fTime" class="form-input" style="font-size: 16px">
-            <option value="">— Pilih waktu ambil —</option>
-            <option>14:00</option>
-            <option>14:30</option>
-            <option>15:00</option>
-            <option>15:30</option>
-            <option>16:00</option>
-            <option>16:30</option>
-            <option>17:00</option>
-            <option>17:30</option>
-            <option>18:00</option>
-            <option>18:30</option>
-            <option>19:00</option>
-            <option>19:30</option>
-            <option>20:00</option>
-            <option>20:30</option>
-            <option>21:00</option>
-            <option>21:30</option>
-            <option>21:45</option>
-          </select>
+          <div class="pickup-select" id="pickupSelect">
+            <input type="hidden" id="fTime" value="" />
+            <button
+              type="button"
+              class="pickup-select-trigger"
+              id="pickupSelectTrigger"
+              aria-haspopup="listbox"
+              aria-expanded="false"
+              onclick="togglePickupDropdown(event)"
+            >
+              <span id="pickupSelectValue">— Pilih waktu ambil —</span>
+              <i data-lucide="chevron-down" aria-hidden="true"></i>
+            </button>
+            <div class="pickup-select-menu" id="pickupSelectMenu" role="listbox" aria-label="Pilihan waktu ambil">
+              <button type="button" role="option" class="pickup-option" onclick="selectPickupTime('', event)">— Pilih waktu ambil —</button>
+              <button type="button" role="option" class="pickup-option" onclick="selectPickupTime('14:00', event)">14:00</button>
+              <button type="button" role="option" class="pickup-option" onclick="selectPickupTime('14:30', event)">14:30</button>
+              <button type="button" role="option" class="pickup-option" onclick="selectPickupTime('15:00', event)">15:00</button>
+              <button type="button" role="option" class="pickup-option" onclick="selectPickupTime('15:30', event)">15:30</button>
+              <button type="button" role="option" class="pickup-option" onclick="selectPickupTime('16:00', event)">16:00</button>
+              <button type="button" role="option" class="pickup-option" onclick="selectPickupTime('16:30', event)">16:30</button>
+              <button type="button" role="option" class="pickup-option" onclick="selectPickupTime('17:00', event)">17:00</button>
+              <button type="button" role="option" class="pickup-option" onclick="selectPickupTime('17:30', event)">17:30</button>
+              <button type="button" role="option" class="pickup-option" onclick="selectPickupTime('18:00', event)">18:00</button>
+              <button type="button" role="option" class="pickup-option" onclick="selectPickupTime('18:30', event)">18:30</button>
+              <button type="button" role="option" class="pickup-option" onclick="selectPickupTime('19:00', event)">19:00</button>
+              <button type="button" role="option" class="pickup-option" onclick="selectPickupTime('19:30', event)">19:30</button>
+              <button type="button" role="option" class="pickup-option" onclick="selectPickupTime('20:00', event)">20:00</button>
+              <button type="button" role="option" class="pickup-option" onclick="selectPickupTime('20:30', event)">20:30</button>
+              <button type="button" role="option" class="pickup-option" onclick="selectPickupTime('21:00', event)">21:00</button>
+              <button type="button" role="option" class="pickup-option" onclick="selectPickupTime('21:30', event)">21:30</button>
+              <button type="button" role="option" class="pickup-option" onclick="selectPickupTime('21:45', event)">21:45</button>
+            </div>
+          </div>
           <div class="err-msg">Waktu ambil wajib dipilih</div>
         </div>
         <div class="field">
