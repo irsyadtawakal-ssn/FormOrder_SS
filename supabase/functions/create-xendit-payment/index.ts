@@ -211,6 +211,15 @@ serve(async (req: Request) => {
   if (!customer_wa || !pickup_time) {
     return json({ error: "Data pemesan tidak lengkap" }, 400);
   }
+  const pickupTime = String(pickup_time).trim();
+  const pickupMatch = /^(\d{2}):(\d{2})$/.exec(pickupTime);
+  if (!pickupMatch) {
+    return json({ error: "Waktu ambil tidak valid" }, 400);
+  }
+  const pickupMinutes = Number(pickupMatch[1]) * 60 + Number(pickupMatch[2]);
+  if (pickupMinutes < 14 * 60 || pickupMinutes > 21 * 60 + 45) {
+    return json({ error: "Waktu ambil hanya tersedia pukul 14:00–21:45" }, 400);
+  }
 
   // Normalisasi nomor WA → format 628xxx
   const waRaw = String(customer_wa).replace(/\D/g, "");
@@ -473,7 +482,7 @@ serve(async (req: Request) => {
     outlet_id: outlet.id,
     customer_name: customer_name.trim(),
     customer_wa: waNorm,
-    pickup_time: String(pickup_time).trim(),
+    pickup_time: pickupTime,
     notes: notes ? String(notes).trim() : null,
     subtotal,
     discount,

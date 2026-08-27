@@ -937,7 +937,16 @@
         [
           { id: "fName", validate: (v) => v.trim().length >= 2 },
           { id: "fWA", validate: (v) => validateWA(v) },
-          { id: "fTime", validate: (v) => v.trim().length > 0 },
+          {
+            id: "fTime",
+            validate: (v) => {
+              const value = v.trim();
+              if (!/^\d{2}:\d{2}$/.test(value)) return false;
+              const [hours, minutes] = value.split(":").map(Number);
+              const totalMinutes = hours * 60 + minutes;
+              return totalMinutes >= 14 * 60 && totalMinutes <= 21 * 60 + 45;
+            },
+          },
         ].forEach((f) => {
           const input = document.getElementById(f.id);
           const wrap = input.closest(".field");
