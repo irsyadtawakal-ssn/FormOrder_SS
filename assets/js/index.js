@@ -248,7 +248,7 @@
         if (!isViewOnly) {
           const { data: outletData, error: outletErr } = await window.db
             .from("outlets")
-            .select("id,slug,name,address,open_hour,close_hour,type,is_active")
+            .select("id,slug,name,address,open_hour,close_hour,type,is_active,pos_outlet_id")
             .eq("slug", outletSlug)
             .single();
 
@@ -297,7 +297,20 @@
         }
 
         const categories = catRes.data || [];
-        const items = itemRes.data || [];
+
+        // Menu bisa dibatasi ke outlet tertentu dari Admin Dashboard
+        // (menu_items.available_outlets berisi ID outlet milik admin-dashboard).
+        // NULL/kosong = tayang di semua outlet. Tanpa outlet terpilih (mode katalog),
+        // semua menu tetap ditampilkan seperti sebelumnya.
+        const outletKeys = outlet
+          ? [outlet.pos_outlet_id, outlet.id].filter(Boolean)
+          : [];
+        const items = (itemRes.data || []).filter((item) => {
+          const only = item.available_outlets;
+          if (!Array.isArray(only) || only.length === 0) return true;
+          if (outletKeys.length === 0) return true;
+          return outletKeys.some((key) => only.includes(key));
+        });
         const variants = varRes.data || [];
         const options = optRes.data || [];
         const promos = promoRes.data || [];
