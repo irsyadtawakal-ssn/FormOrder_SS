@@ -109,21 +109,48 @@ Deno.serve(async (req: Request) => {
     }
   }
 
-  // 4. Insert order + items
+  // 4. Format pickup_time & notes untuk POS database
+  let posPickupTime: string | null = null;
+  if (order.pickup_time && order.pickup_time !== "-") {
+    const trimmed = order.pickup_time.trim();
+    if (/^\d{1,2}:\d{2}$/.test(trimmed)) {
+      const nowWib = new Date(Date.now() + 7 * 60 * 60 * 1000);
+      const yyyy = nowWib.getUTCFullYear();
+      const mm = String(nowWib.getUTCMonth() + 1).padStart(2, "0");
+      const dd = String(nowWib.getUTCDate()).padStart(2, "0");
+      const [h, m] = trimmed.split(":").map((v: string) => v.padStart(2, "0"));
+      posPickupTime = `${yyyy}-${mm}-${dd}T${h}:${m}:00+07:00`;
+    } else {
+      posPickupTime = trimmed;
+    }
+  }
+
+  let posNotes = order.notes || null;
+  if (!posNotes || !posNotes.includes("-- INFO PEMESAN ONLINE --")) {
+    const infoHeader = [
+      `-- INFO PEMESAN ONLINE --`,
+      `Nama: ${order.customer_name}`,
+      `Telp: ${order.customer_wa || "-"}`,
+      `Pembayaran: QRIS`,
+      `Ambil: ${order.pickup_time || "-"}`
+    ].join("\n");
+    posNotes = posNotes ? `${infoHeader}\n\n-- CATATAN PELANGGAN --\n${posNotes}` : infoHeader;
+  }
+
   const { data: newOrder, error: insertErr } = await posDb
     .from("orders")
     .insert({
       outlet_id: posOutletId,
       customer_name: order.customer_name,
       customer_phone: order.customer_wa,
-      notes: order.notes || null,
+      notes: posNotes,
       payment_method: "qris",
       total_amount: order.total,
       status: "preparing",
       source: "online",
       sales_source: "online",
       external_order_id: order.id,
-      pickup_time: order.pickup_time || null,
+      pickup_time: posPickupTime,
     })
     .select("id, order_number")
     .single();

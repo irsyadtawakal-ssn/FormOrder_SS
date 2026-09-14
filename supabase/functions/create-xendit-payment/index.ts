@@ -463,12 +463,13 @@ serve(async (req: Request) => {
   // COUNT rapuh: kalau ada order yang dihapus, count meleset & nomor bisa tabrakan
   // dengan order lama (UNIQUE violation → "Gagal membuat order"). MAX selalu ambil
   // urutan tertinggi yang ada, jadi tahan terhadap penghapusan.
+  const outletId = outlet!.id;
   const numPrefix = `${outletCode}-${dd}${mo}${yy}-`;
   async function nextSeq(): Promise<number> {
     const { data: rows } = await supabase
       .from("orders")
       .select("order_number")
-      .eq("outlet_id", outlet.id)
+      .eq("outlet_id", outletId)
       .like("order_number", `${numPrefix}%`)
       .order("order_number", { ascending: false })
       .limit(1);
@@ -479,7 +480,7 @@ serve(async (req: Request) => {
 
   // Field order yang tetap sama di setiap percobaan (order_number diisi di loop)
   const orderRow = {
-    outlet_id: outlet.id,
+    outlet_id: outletId,
     customer_name: customer_name.trim(),
     customer_wa: waNorm,
     pickup_time: pickupTime,

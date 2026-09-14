@@ -27,14 +27,18 @@ Deno.serve(async (req: Request) => {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
+  // Grace period 2 menit: beri jeda aman bagi transaksi yang sedang diselesaikan
+  // customer di perbankan / webhook Xendit yang sedang dalam transit
+  const GRACE_PERIOD_MS = 2 * 60 * 1000;
+  const cutoffTime = new Date(Date.now() - GRACE_PERIOD_MS).toISOString();
   const now = new Date().toISOString();
 
-  // Ambil order yang sudah expired (pending_payment & melewati expires_at)
+  // Ambil order yang sudah melewati expires_at + grace period
   const { data: expiredOrders, error: fetchErr } = await db
     .from("orders")
     .select("id, order_number, customer_name, customer_wa, outlets(name)")
     .eq("status", "pending_payment")
-    .lt("expires_at", now);
+    .lt("expires_at", cutoffTime);
 
   if (fetchErr) {
     console.error("Gagal ambil expired orders:", fetchErr.message);
@@ -54,28 +58,37 @@ Deno.serve(async (req: Request) => {
 
   const ids = expiredOrders.map((o) => o.id);
 
-  // Tandai semua sebagai expired sekaligus
-  const { error: updateErr } = await db
+  // Tandai sebagai expired HANYA jika status saat ini masih 'pending_payment'.
+  // Guard .eq("status", "pending_payment") dan .select("id") mencegah race condition
+  // jika xendit-webhook baru saja mengubah order menjadi 'paid' tepat sebelum update ini dijalankan!
+  const { data: cancelledRows, error: updateErr } = await db
     .from("orders")
     .update({
       status:        "expired",
       cancelled_at:  now,
       cancel_reason: "Batas waktu pembayaran habis (otomatis)",
     })
-    .in("id", ids);
+    .in("id", ids)
+    .eq("status", "pending_payment")
+    .select("id");
 
   if (updateErr) {
     console.error("Gagal update expired orders:", updateErr.message);
     return Response.json({ error: updateErr.message }, { status: 500, headers: CORS });
   }
 
-  console.log(`auto-expire: ${expiredOrders.length} order → expired`, ids);
+  const cancelledIdSet = new Set((cancelledRows ?? []).map((r: { id: string }) => r.id));
+  console.log(`auto-expire: ${cancelledIdSet.size} dari ${expiredOrders.length} order → expired`, Array.from(cancelledIdSet));
 
-  // Kirim WA ke customer — best-effort, tidak gagalkan response
-  if (FONNTE_TOKEN) {
+  // Kirim WA ke customer HANYA untuk order yang benar-benar berhasil diubah menjadi 'expired'
+  // (Order yang sudah menjadi 'paid' tidak boleh dikirimi pesan kedaluwarsa!)
+  if (FONNTE_TOKEN && cancelledIdSet.size > 0) {
     for (const order of expiredOrders) {
-      if (!order.customer_wa) continue;
-      const outletName = (order.outlets as { name: string } | null)?.name ?? "outlet";
+      if (!cancelledIdSet.has(order.id) || !order.customer_wa) continue;
+      const outletsData = order.outlets as unknown;
+      const outletName = (Array.isArray(outletsData)
+        ? (outletsData[0] as { name?: string })?.name
+        : (outletsData as { name?: string })?.name) ?? "outlet";
       const pesan =
         `⏰ *Waktu Pembayaran Habis*\n\n` +
         `Halo ${order.customer_name},\n` +

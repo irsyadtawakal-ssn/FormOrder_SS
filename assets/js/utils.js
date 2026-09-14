@@ -89,16 +89,75 @@ function summarizeSelections(selections) {
 
 // ─── Outlet open/closed ───────────────────────────────────────────────────────
 
+function getWibTime() {
+  const now = new Date();
+  try {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Asia/Jakarta",
+      hour: "numeric",
+      minute: "numeric",
+      hour12: false,
+    }).formatToParts(now);
+    const h = Number(parts.find((p) => p.type === "hour")?.value ?? now.getHours());
+    const m = Number(parts.find((p) => p.type === "minute")?.value ?? now.getMinutes());
+    return { h, m, totalMinutes: h * 60 + m };
+  } catch {
+    const h = now.getHours();
+    const m = now.getMinutes();
+    return { h, m, totalMinutes: h * 60 + m };
+  }
+}
+
 function isOutletOpen(openHour, closeHour) {
   if (!openHour || !closeHour) return true;
-  const now      = new Date();
-  const nowMin   = now.getHours() * 60 + now.getMinutes();
+  const { totalMinutes: nowMin } = getWibTime();
   const [oh, om] = openHour.split(':').map(Number);
   const [ch, cm] = closeHour.split(':').map(Number);
   const openMin  = oh * 60 + om;
   const closeMin = ch * 60 + cm;
   if (openMin <= closeMin) return nowMin >= openMin && nowMin < closeMin;
   return nowMin >= openMin || nowMin < closeMin; // melewati tengah malam
+}
+
+function getOutletOperatingStatus(openHour, closeHour) {
+  if (!openHour || !closeHour) {
+    return { isOpen: true, statusText: "Buka", label: "" };
+  }
+  const { totalMinutes: nowMin } = getWibTime();
+  const [oh, om] = openHour.split(':').map(Number);
+  const [ch, cm] = closeHour.split(':').map(Number);
+  const openMin  = oh * 60 + om;
+  const closeMin = ch * 60 + cm;
+
+  const openFormattedColon = `${String(oh).padStart(2, "0")}:${String(om).padStart(2, "0")}`;
+
+  let isOpen = false;
+  let isBeforeOpen = false;
+
+  if (openMin <= closeMin) {
+    isOpen = nowMin >= openMin && nowMin < closeMin;
+    isBeforeOpen = nowMin < openMin;
+  } else {
+    isOpen = nowMin >= openMin || nowMin < closeMin;
+    isBeforeOpen = nowMin < openMin && nowMin >= closeMin;
+  }
+
+  if (isOpen) {
+    return {
+      isOpen: true,
+      statusText: "Buka",
+      openTime: openFormattedColon,
+      label: `Buka sampai ${formatHour(closeHour)}`,
+    };
+  }
+
+  return {
+    isOpen: false,
+    isBeforeOpen: isBeforeOpen,
+    openTime: openFormattedColon,
+    statusText: "Belum Buka",
+    label: `belum buka, tunggu jam ${openFormattedColon}`,
+  };
 }
 
 function formatHour(timeStr) {

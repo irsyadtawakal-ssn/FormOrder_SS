@@ -241,6 +241,50 @@
         await loadMenu();
       }
 
+      function updateOutletStatusUI() {
+        const banner = document.getElementById("outletStatusBanner");
+        if (!banner) return;
+        if (!outlet || !outlet.open_hour || !outlet.close_hour || outlet.slug === "outlet-tes") {
+          banner.innerHTML = "";
+          return;
+        }
+        const status = getOutletOperatingStatus(outlet.open_hour, outlet.close_hour);
+        if (!status.isOpen) {
+          banner.innerHTML = `
+            <div class="outlet-closed-banner">
+              <div class="closed-dot"></div>
+              <div style="flex:1">
+                <div class="closed-title">Outlet Belum Buka</div>
+                <div class="closed-desc">Pemesanan dibuka pukul <b>${status.openTime} WIB</b>. Menu saat ini hanya dapat dilihat.</div>
+              </div>
+            </div>`;
+        } else {
+          banner.innerHTML = "";
+        }
+      }
+
+      function populatePickupTimes(openHour, closeHour) {
+        const menu = document.getElementById("pickupSelectMenu");
+        if (!menu) return;
+        const openStr = openHour ? String(openHour).slice(0, 5) : "14:00";
+        const closeStr = closeHour ? String(closeHour).slice(0, 5) : "22:00";
+        const [oh, om] = openStr.split(":").map(Number);
+        const [ch, cm] = closeStr.split(":").map(Number);
+
+        let cur = oh * 60 + om;
+        const end = Math.max(cur, ch * 60 + cm - 15);
+
+        let optionsHtml = `<button type="button" role="option" class="pickup-option" onclick="selectPickupTime('', event)">— Pilih waktu ambil —</button>`;
+        while (cur <= end) {
+          const h = String(Math.floor(cur / 60)).padStart(2, "0");
+          const m = String(cur % 60).padStart(2, "0");
+          const timeVal = `${h}:${m}`;
+          optionsHtml += `<button type="button" role="option" class="pickup-option" onclick="selectPickupTime('${timeVal}', event)">${timeVal}</button>`;
+          cur += 30;
+        }
+        menu.innerHTML = optionsHtml;
+      }
+
       // ─── Load menu ────────────────────────────────────────────────────────────────
       async function loadMenu(isViewOnly = false) {
         showMenuSkeleton();
@@ -266,10 +310,15 @@
           document.getElementById("outletSelName").textContent = outlet.name;
           const addrEl = document.getElementById("outletSelAddr");
           if (addrEl) addrEl.textContent = outlet.address || "";
+          updateOutletStatusUI();
+          populatePickupTimes(outlet.open_hour, outlet.close_hour);
         } else {
+          outlet = null;
           document.getElementById("outletSelName").textContent = "Pilih Lokasi Outlet";
           const addrEl = document.getElementById("outletSelAddr");
           if (addrEl) addrEl.textContent = "Buka daftar outlet untuk memilih";
+          updateOutletStatusUI();
+          populatePickupTimes(null, null);
         }
 
         const promises = [
@@ -567,6 +616,11 @@
           return;
         }
 
+        const outletStatus = (outlet && outlet.open_hour && outlet.close_hour && outlet.slug !== "outlet-tes")
+          ? getOutletOperatingStatus(outlet.open_hour, outlet.close_hour)
+          : { isOpen: true, statusText: "Buka", label: "" };
+        const isStoreOpen = outletStatus.isOpen;
+
         document.getElementById("menuContent").innerHTML = sections
           .map(
             (cat) => `
@@ -583,11 +637,25 @@
                   100,
               )
             : 0;
-          const clickFn = item.isViewOnly
-            ? `showToast('Pilih outlet terlebih dahulu untuk memesan'); toggleOutletDropdown(true);`
-            : (item.isAvailable ? `openItemSheet('${item.id}')` : "");
+
+          let clickFn = "";
+          if (item.isViewOnly) {
+            clickFn = `showToast('Pilih outlet terlebih dahulu untuk memesan'); toggleOutletDropdown(true);`;
+          } else if (!isStoreOpen) {
+            clickFn = `showToast('Outlet ${escHtml(outlet?.name || "ini")} belum buka, tunggu jam ${outletStatus.openTime} WIB');`;
+          } else if (item.isAvailable) {
+            clickFn = `openItemSheet('${item.id}')`;
+          }
+
+          let cardClass = "deal-card";
+          if (!isStoreOpen) {
+            cardClass += " closed-outlet";
+          } else if (!item.isAvailable && !item.isViewOnly) {
+            cardClass += " unavailable";
+          }
+
           return `
-        <div class="deal-card ${!item.isAvailable && !item.isViewOnly ? "unavailable" : ""}" onclick="${clickFn}">
+        <div class="${cardClass}" onclick="${clickFn}">
           <div class="deal-img-wrap">
             <div class="deal-img">
               ${item.photo_url ? `<img src="${item.photo_url}" alt="${escHtml(item.name)}" loading="lazy" />` : '<i data-lucide="sandwich" style="width:40px;height:40px;color:var(--faint)"></i>'}
@@ -596,7 +664,9 @@
               ${hasDiscount ? `<span class="promo-badge">PROMO</span>` : ""}
               ${item.is_best_seller ? `<span class="deal-img-badge best-seller"><i data-lucide="star" style="width:10px;height:10px;fill:currentColor"></i> BEST SELLER</span>` : ""}
             </div>
-            ${!item.isAvailable && !item.isViewOnly ? `<span class="deal-img-badge sold-out">HABIS</span>` : ""}
+            ${!isStoreOpen
+              ? `<span class="deal-img-badge closed">BELUM BUKA</span>`
+              : (!item.isAvailable && !item.isViewOnly ? `<span class="deal-img-badge sold-out">HABIS</span>` : "")}
           </div>
           <div class="deal-body">
             <div class="deal-name">${escHtml(item.name)}</div>
@@ -615,9 +685,11 @@
               </div>
               ${item.isViewOnly
                 ? `<button class="deal-add-btn" style="background:var(--brand-bg);color:var(--brand);font-size:11px;padding:4px 10px;border-radius:999px;width:auto;flex-shrink:0" onclick="event.stopPropagation();${clickFn}">Pilih Outlet</button>`
-                : (item.isAvailable
-                    ? `<button class="deal-add-btn" onclick="event.stopPropagation();openItemSheet('${item.id}')">+</button>`
-                    : '')}
+                : (!isStoreOpen
+                    ? `<button class="deal-closed-btn" onclick="event.stopPropagation();${clickFn}">Tunggu jam ${outletStatus.openTime}</button>`
+                    : (item.isAvailable
+                        ? `<button class="deal-add-btn" onclick="event.stopPropagation();openItemSheet('${item.id}')">+</button>`
+                        : ''))}
             </div>
           </div>
         </div>`;
@@ -635,6 +707,14 @@
 
       // ─── Item sheet ───────────────────────────────────────────────────────────────
       function openItemSheet(itemId) {
+        if (outlet && outlet.open_hour && outlet.close_hour && outlet.slug !== "outlet-tes") {
+          const status = getOutletOperatingStatus(outlet.open_hour, outlet.close_hour);
+          if (!status.isOpen) {
+            showToast(`Outlet belum buka, pemesanan dibuka pukul ${status.openTime} WIB`);
+            return;
+          }
+        }
+
         for (const cat of menuData) {
           const found = cat.items.find((i) => i.id === itemId);
           if (found) {
@@ -835,6 +915,13 @@
       }
 
       function addToCart() {
+        if (outlet && outlet.open_hour && outlet.close_hour && outlet.slug !== "outlet-tes") {
+          const status = getOutletOperatingStatus(outlet.open_hour, outlet.close_hour);
+          if (!status.isOpen) {
+            showToast(`Outlet belum buka, pemesanan dibuka pukul ${status.openTime} WIB`);
+            return;
+          }
+        }
         if (!validateSelections()) {
           showToast("Pilih semua opsi yang wajib terlebih dahulu");
           return;
@@ -931,6 +1018,25 @@
         }
         document.getElementById("checkoutTotal").textContent =
           formatRupiah(subtotal);
+
+        const outletStatus = (outlet && outlet.open_hour && outlet.close_hour && outlet.slug !== "outlet-tes")
+          ? getOutletOperatingStatus(outlet.open_hour, outlet.close_hour)
+          : { isOpen: true, statusText: "Buka", label: "" };
+
+        const btnPay = document.getElementById("btnPay");
+        if (btnPay) {
+          if (!outletStatus.isOpen) {
+            btnPay.disabled = true;
+            btnPay.style.opacity = "0.5";
+            btnPay.style.cursor = "not-allowed";
+            btnPay.innerHTML = `<span>Tutup (Buka ${outletStatus.openTime})</span><span id="checkoutTotal">${formatRupiah(subtotal)}</span>`;
+          } else {
+            btnPay.disabled = false;
+            btnPay.style.opacity = "";
+            btnPay.style.cursor = "";
+            btnPay.innerHTML = `<span>Konfirmasi Pesanan</span><span id="checkoutTotal">${formatRupiah(subtotal)}</span>`;
+          }
+        }
       }
 
       function togglePickupDropdown(event) {
@@ -977,6 +1083,14 @@
 
       // ─── Submit order ─────────────────────────────────────────────────────────────
       function submitOrder() {
+        if (outlet && outlet.open_hour && outlet.close_hour && outlet.slug !== "outlet-tes") {
+          const status = getOutletOperatingStatus(outlet.open_hour, outlet.close_hour);
+          if (!status.isOpen) {
+            showToast(`Outlet belum buka, pemesanan dibuka pukul ${status.openTime} WIB`);
+            return;
+          }
+        }
+
         let valid = true;
         [
           { id: "fName", validate: (v) => v.trim().length >= 2 },
@@ -986,9 +1100,19 @@
             validate: (v) => {
               const value = v.trim();
               if (!/^\d{2}:\d{2}$/.test(value)) return false;
+              if (outlet?.slug === "outlet-tes") return true;
               const [hours, minutes] = value.split(":").map(Number);
               const totalMinutes = hours * 60 + minutes;
-              return totalMinutes >= 14 * 60 && totalMinutes <= 21 * 60 + 45;
+
+              let minMinutes = 14 * 60;
+              let maxMinutes = 21 * 60 + 45;
+              if (outlet?.open_hour && outlet?.close_hour) {
+                const [oh, om] = String(outlet.open_hour).slice(0, 5).split(":").map(Number);
+                const [ch, cm] = String(outlet.close_hour).slice(0, 5).split(":").map(Number);
+                minMinutes = oh * 60 + om;
+                maxMinutes = Math.max(minMinutes, ch * 60 + cm - 15);
+              }
+              return totalMinutes >= minMinutes && totalMinutes <= maxMinutes;
             },
           },
         ].forEach((f) => {

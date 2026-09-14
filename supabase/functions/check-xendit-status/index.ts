@@ -79,24 +79,12 @@ serve(async (req: Request) => {
   }
 
   // Kalau order sudah final, kembalikan status DB tanpa tanya Xendit
-  const finalStatuses = ["paid", "preparing", "ready", "done", "cancelled", "expired"];
+  // Catatan: 'expired' sengaja tidak dimasukkan ke finalStatuses agar jika customer
+  // baru saja membayar sebelum/tepat saat cron menandai expired, polling ini tetap
+  // bisa memvalidasi ke Xendit dan me-revive status order menjadi 'paid'!
+  const finalStatuses = ["paid", "preparing", "ready", "done", "cancelled"];
   if (finalStatuses.includes(order.status)) {
     return json({ success: true, status: order.status, synced: false });
-  }
-
-  // ─── Cek waktu kadaluarsa lokal ───────────────────────────────────────────
-  if (order.status === "pending_payment" && new Date(order.expires_at) < new Date()) {
-    await supabase
-      .from("orders")
-      .update({
-        status: "expired",
-        cancel_reason: "Pembayaran expired (timeout lokal)",
-        cancelled_at: new Date().toISOString(),
-      })
-      .eq("id", order.id)
-      .eq("status", "pending_payment");
-
-    return json({ success: true, status: "expired", synced: true });
   }
 
   // ─── Butuh payment_request_id Xendit untuk cek ke API ────────────────────
@@ -182,17 +170,21 @@ serve(async (req: Request) => {
       });
     }
 
-    // Update ke paid — guard cegah race condition dengan webhook
-    const { error: updateErr } = await supabase
+    // Update ke paid — guard .in("status", ["pending_payment", "expired"])
+    // memungkinkan order yang sempat di-expire oleh cron di-revive ke 'paid' jika customer sudah bayar!
+    const { data: updatedRows, error: updateErr } = await supabase
       .from("orders")
       .update({
         status: "paid",
         paid_at: new Date().toISOString(),
+        cancelled_at: null,
+        cancel_reason: null,
       })
       .eq("id", order.id)
-      .eq("status", "pending_payment");
+      .in("status", ["pending_payment", "expired"])
+      .select("id");
 
-    if (!updateErr) {
+    if (!updateErr && updatedRows && updatedRows.length > 0) {
       // Increment promo usage count (atomik via RPC) — sama seperti xendit-webhook
       if ((order as Record<string, unknown>).promo_id) {
         const promoId = (order as Record<string, unknown>).promo_id as string;
@@ -213,9 +205,10 @@ serve(async (req: Request) => {
         }
       }
 
-      // Trigger WA notif (fire-and-forget) — mungkin belum dikirim oleh webhook
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
       const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+      // Trigger WA notif (fire-and-forget) — mungkin belum dikirim oleh webhook
       fetch(`${supabaseUrl}/functions/v1/send-wa-notifications`, {
         method: "POST",
         headers: {
@@ -236,9 +229,6 @@ serve(async (req: Request) => {
       }).catch((err) => console.error("Gagal trigger on-order-done:", err));
 
       // Trigger push-order-to-kasir: dorong order ke POS Kasir (fire-and-forget)
-      // Jalur ini wajib ada di sini juga karena check-xendit-status adalah
-      // entry point KEDUA yang bisa menandai order 'paid' (selain xendit-webhook),
-      // jadi tidak bisa mengandalkan trigger yang hanya dipasang di xendit-webhook.
       fetch(`${supabaseUrl}/functions/v1/push-order-to-kasir`, {
         method: "POST",
         headers: {
@@ -247,6 +237,16 @@ serve(async (req: Request) => {
         },
         body: JSON.stringify({ order_id: order.id }),
       }).catch((err) => console.error("Gagal trigger push-order-to-kasir:", err));
+
+      // Trigger pull-online-order langsung (independen dari web POS)
+      fetch(`${supabaseUrl}/functions/v1/pull-online-order`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${serviceKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ external_order_id: order.id }),
+      }).catch((err) => console.error("Gagal trigger pull-online-order:", err));
     }
 
     return json({ success: true, status: "paid", synced: true });
@@ -264,6 +264,20 @@ serve(async (req: Request) => {
       .eq("status", "pending_payment");
 
     return json({ success: true, status: "cancelled", synced: true });
+  }
+
+  if (xenditStatus === "EXPIRED") {
+    await supabase
+      .from("orders")
+      .update({
+        status: "expired",
+        cancel_reason: "Pembayaran kedaluwarsa (Xendit)",
+        cancelled_at: new Date().toISOString(),
+      })
+      .eq("id", order.id)
+      .eq("status", "pending_payment");
+
+    return json({ success: true, status: "expired", synced: true });
   }
 
   // Status lain (PENDING, REQUIRES_ACTION, dll) — kembalikan status DB

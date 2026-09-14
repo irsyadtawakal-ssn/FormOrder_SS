@@ -256,8 +256,11 @@ serve(async (req: Request) => {
     return jsonOk({ success: true, message: "Sudah diproses sebelumnya (idempoten)" });
   }
 
-  // Guard: jangan proses order yang bukan pending_payment
-  if (order.status !== "pending_payment") {
+  // Guard: jangan proses order yang bukan pending_payment ATAU expired
+  // Catatan: Jika order baru saja di-expire oleh cron auto-cancel tetapi Xendit
+  // mengirim konfirmasi bahwa pembayaran berhasil, uang customer SUDAH terpotong!
+  // Order harus tetap di-revive ke 'paid' agar pesanan masuk ke kasir & tidak merugikan customer.
+  if (order.status !== "pending_payment" && order.status !== "expired") {
     console.warn("Order status tidak valid untuk diupdate ke paid:", {
       order_number: order.order_number,
       current_status: order.status,
@@ -283,18 +286,20 @@ serve(async (req: Request) => {
   }
 
   // ─── UPDATE order status → paid ──────────────────────────────────────────
-  // Guard .eq("status", "pending_payment") cegah race condition jika webhook duplikat
+  // Guard .in("status", ["pending_payment", "expired"]) cegah race condition jika webhook duplikat
   // .select("id") dipakai untuk deteksi apakah UPDATE benar-benar mengenai baris
   const { data: updatedOrder, error: updateErr } = await supabase
     .from("orders")
     .update({
       status: "paid",
       paid_at: new Date().toISOString(),
+      cancelled_at: null,
+      cancel_reason: null,
       // Simpan payment_id Xendit untuk audit/idempotency
       tripay_reference: paymentId || (order as Record<string, unknown>).tripay_reference,
     })
     .eq("id", order.id)
-    .eq("status", "pending_payment")
+    .in("status", ["pending_payment", "expired"])
     .select("id");
 
   if (updateErr) {
@@ -387,6 +392,16 @@ serve(async (req: Request) => {
     },
     body: JSON.stringify({ external_order_id: order.id }),
   }).catch((err) => console.error("Gagal trigger pull-online di POS Kasir:", err));
+
+  // Trigger Edge Function pull-online-order langsung (independen dari web POS)
+  fetch(`${supabaseUrl}/functions/v1/pull-online-order`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${serviceKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ external_order_id: order.id }),
+  }).catch((err) => console.error("Gagal trigger pull-online-order:", err));
 
   return jsonOk({ success: true, message: "Order diupdate ke paid" });
 });
