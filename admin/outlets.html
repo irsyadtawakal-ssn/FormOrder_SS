@@ -266,12 +266,12 @@ function openOutletForm(outletId) {
       <div class="form-group">
         <label class="form-label">Jam Buka</label>
         <input id="oOpen" class="form-input" type="time"
-               value="${o?.open_hour?.slice(0, 5) || ''}" />
+               value="${o?.open_hour ? o.open_hour.slice(0, 5) : '14:00'}" />
       </div>
       <div class="form-group">
         <label class="form-label">Jam Tutup</label>
         <input id="oClose" class="form-input" type="time"
-               value="${o?.close_hour?.slice(0, 5) || ''}" />
+               value="${o?.close_hour ? o.close_hour.slice(0, 5) : '22:00'}" />
       </div>
     </div>
     <div class="form-group">
@@ -300,8 +300,8 @@ async function saveOutlet(outletId) {
   const lat    = parseFloat(document.getElementById('oLat').value)  || null;
   const lng    = parseFloat(document.getElementById('oLng').value)  || null;
   const wa     = document.getElementById('oWa').value.trim()        || null;
-  const open   = document.getElementById('oOpen').value             || null;
-  const close  = document.getElementById('oClose').value            || null;
+  const open   = document.getElementById('oOpen').value  || '14:00';
+  const close  = document.getElementById('oClose').value || '22:00';
   const type   = document.getElementById('oType').value;
   const active = document.getElementById('oActive').checked;
 
