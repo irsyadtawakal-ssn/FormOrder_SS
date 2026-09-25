@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#f29744" />
 <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
-<link rel="stylesheet" href="../assets/css/admin-ui.css?v=2" />
+<link rel="stylesheet" href="../assets/css/admin-ui.css?v=3" />
 <style type="text/tailwindcss">
   @theme {
     --color-brand: #f29744;
@@ -94,11 +94,10 @@
     <!-- Outlet filter — hanya super_admin -->
     <div id="outletFilterWrap" style="display:none" class="shrink-0 w-full md:w-48">
       <div class="relative">
-        <i data-lucide="map-pin" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"></i>
-        <select id="outletFilter" class="w-full bg-white border border-gray-200 text-gray-700 rounded-xl px-9 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand appearance-none" onchange="loadOrders()">
+        <i data-lucide="map-pin" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none z-10"></i>
+        <select id="outletFilter" class="w-full bg-white border border-gray-200 text-gray-700 rounded-xl pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand focus:border-brand" onchange="loadOrders()">
           <option value="">Semua Outlet</option>
         </select>
-        <i data-lucide="chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"></i>
       </div>
     </div>
   </div>
@@ -137,7 +136,7 @@
 <script src="../config.js"></script>
 <script src="../assets/js/supabase.js"></script>
 <script src="../assets/js/utils.js"></script>
-<script src="../assets/js/admin.js?v=2"></script>
+<script src="../assets/js/admin.js?v=3"></script>
 <script>
 // ─── State ────────────────────────────────────────────────────────────────────
 let allOrders     = [];

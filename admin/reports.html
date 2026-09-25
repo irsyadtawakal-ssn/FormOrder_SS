@@ -8,19 +8,13 @@
 <meta name="theme-color" content="#f29744" />
 <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
-<link rel="stylesheet" href="../assets/css/admin-ui.css?v=2" />
+<link rel="stylesheet" href="../assets/css/admin-ui.css?v=3" />
 <style type="text/tailwindcss">
   @theme {
     --color-brand: #f29744;
     --color-brand-bg: #fff7ed;
     --color-brand-dark: #ee8a2c;
   }
-  .ts-control { border-radius: 0.75rem !important; border-color: #f3f4f6 !important; background-color: #f9fafb !important; padding: 0.5rem 0.75rem !important; font-size: 0.875rem !important; font-weight: 600 !important; color: #374151 !important; box-shadow: none !important; }
-  .ts-wrapper { min-width: 240px; }
-  .ts-control.focus { border-color: #e16900 !important; box-shadow: 0 0 0 1px #e16900 !important; }
-  .ts-dropdown { border-radius: 0.75rem !important; border-color: #e5e7eb !important; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06) !important; margin-top: 0.25rem !important; font-size: 0.875rem !important; }
-  .ts-dropdown .option { padding: 0.5rem 0.75rem !important; color: #4b5563 !important; cursor: pointer; }
-  .ts-dropdown .option.active { background-color: #fff5ed !important; color: #e16900 !important; font-weight: 600; }
 </style>
 </head>
 <body class="bg-gray-50 text-gray-900 font-sans antialiased">
@@ -87,11 +81,11 @@
             <p class="text-sm text-gray-500">Pantau performa penjualan dan menu terlaris.</p>
           </div>
           <div class="flex gap-2 flex-wrap items-center bg-white p-2 rounded-2xl shadow-sm border border-gray-100" id="filterBar">
-            <select id="outletFilter" onchange="loadReport()" class="admin-only bg-gray-50 border border-transparent hover:border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold text-gray-700 outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all cursor-pointer" style="display:none">
+            <select id="outletFilter" onchange="loadReport()" class="admin-only min-w-[220px] bg-gray-50 border border-transparent hover:border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold text-gray-700 outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all cursor-pointer" style="display:none">
               <option value="">Semua Outlet</option>
             </select>
             <div class="h-8 w-px bg-gray-200 hidden md:block mx-1"></div>
-            <select id="rangePreset" onchange="onPresetChange()" class="bg-gray-50 border border-transparent hover:border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold text-gray-700 outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all cursor-pointer">
+            <select id="rangePreset" onchange="onPresetChange()" class="min-w-[170px] bg-gray-50 border border-transparent hover:border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold text-gray-700 outline-none focus:border-brand focus:ring-1 focus:ring-brand transition-all cursor-pointer">
               <option value="today">Hari Ini</option>
               <option value="yesterday">Kemarin</option>
               <option value="7d" selected>7 Hari Terakhir</option>
@@ -171,12 +165,10 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
-<link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 <script src="../config.js"></script>
 <script src="../assets/js/supabase.js"></script>
 <script src="../assets/js/utils.js"></script>
-<script src="../assets/js/admin.js?v=2"></script>
+<script src="../assets/js/admin.js?v=3"></script>
 <script src="../assets/js/reports.js"></script>
 <script>
   // Render icon shell statis (Lucide tidak auto-run di UMD)

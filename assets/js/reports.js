@@ -113,15 +113,6 @@ async function _populateOutletFilter() {
     opt.value = o.id; opt.textContent = o.name;
     sel.appendChild(opt);
   });
-
-  if (window.outletTsInstance) {
-    window.outletTsInstance.destroy();
-  }
-  window.outletTsInstance = new TomSelect('#outletFilter', {
-    create: false,
-    placeholder: 'Cari Outlet...',
-    sortField: { field: "text", direction: "asc" }
-  });
 }
 
 // Konversi timestamptz (UTC) dari Supabase ke tanggal & jam WIB (Asia/Jakarta)

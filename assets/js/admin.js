@@ -440,3 +440,293 @@ if (document.readyState === 'loading') {
 } else {
   setActiveNav();
 }
+
+// ─── Custom select (dropdown design system SUKA) ──────────────────────────────
+// Semua <select> di halaman admin otomatis diganti tampilannya dengan dropdown
+// custom. <select> asli tetap ada (disembunyikan) sebagai sumber nilai, jadi kode
+// lama yang membaca .value, mengisi <option>, atau memakai onchange tetap jalan.
+// Search bar otomatis muncul bila jumlah opsi lebih dari 5.
+// Opt-out: tambahkan atribut data-native pada <select>.
+
+const CSELECT_SEARCH_THRESHOLD = 5; // tampilkan search bila opsi > 5
+const _cselValueDesc = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
+const _cselIndexDesc = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'selectedIndex');
+let _cselOpen = null; // instance dropdown yang sedang terbuka
+
+const _CSEL_ICON_CHEVRON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
+const _CSEL_ICON_SEARCH = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>';
+const _CSEL_ICON_CHECK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+
+function _cselNorm(s) {
+  return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+}
+
+function enhanceSelect(sel) {
+  if (sel._csel || sel.multiple || sel.hasAttribute('data-native')) return;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'cselect';
+  const trigger = document.createElement('button');
+  trigger.type = 'button';
+  trigger.setAttribute('aria-haspopup', 'listbox');
+  trigger.setAttribute('aria-expanded', 'false');
+  trigger.innerHTML = `<span class="cselect-label"></span><span class="cselect-chevron">${_CSEL_ICON_CHEVRON}</span>`;
+  const label = trigger.firstElementChild;
+
+  sel.parentNode.insertBefore(wrap, sel);
+  wrap.appendChild(trigger);
+  wrap.appendChild(sel);
+  sel.tabIndex = -1;
+  sel.setAttribute('aria-hidden', 'true');
+
+  let panel = null, list = null, search = null, empty = null, activeEl = null;
+
+  const inst = { sel, wrap, trigger };
+  sel._csel = inst;
+
+  // Salin class & status dari <select> asli ke tombol trigger
+  function syncAttrs() {
+    const cls = (sel.getAttribute('class') || '').split(/\s+/).filter(c => c && c !== 'cselect-native');
+    // .admin-only mengatur display (pakai !important) — pasang di wrapper, bukan di trigger
+    const adminOnly = cls.includes('admin-only');
+    wrap.classList.toggle('admin-only', adminOnly);
+    const triggerCls = cls.filter(c => c !== 'admin-only');
+    trigger.className = [...triggerCls, 'cselect-trigger'].join(' ');
+    if (!triggerCls.length) trigger.classList.add('form-input');
+    if (!sel.classList.contains('cselect-native')) sel.classList.add('cselect-native');
+    trigger.disabled = sel.disabled;
+    wrap.style.display = (sel.hidden || sel.style.display === 'none') ? 'none' : '';
+    if (sel.disabled && _cselOpen === inst) close();
+  }
+
+  function renderLabel() {
+    const opt = sel.options[_cselIndexDesc.get.call(sel)];
+    label.textContent = opt ? opt.textContent : '';
+  }
+
+  function refresh() {
+    renderLabel();
+    if (_cselOpen === inst) buildList();
+  }
+
+  // Tangkap perubahan nilai secara programatik (sel.value = x / sel.selectedIndex = n)
+  Object.defineProperty(sel, 'value', {
+    configurable: true,
+    get() { return _cselValueDesc.get.call(this); },
+    set(v) { _cselValueDesc.set.call(this, v); renderLabel(); },
+  });
+  Object.defineProperty(sel, 'selectedIndex', {
+    configurable: true,
+    get() { return _cselIndexDesc.get.call(this); },
+    set(v) { _cselIndexDesc.set.call(this, v); renderLabel(); },
+  });
+
+  new MutationObserver(refresh).observe(sel, { childList: true, subtree: true, characterData: true });
+  new MutationObserver(syncAttrs).observe(sel, { attributes: true, attributeFilter: ['class', 'style', 'disabled', 'hidden'] });
+  sel.addEventListener('change', renderLabel);
+  sel.form?.addEventListener('reset', () => setTimeout(renderLabel));
+
+  function buildList() {
+    list.innerHTML = '';
+    const current = _cselIndexDesc.get.call(sel);
+    let lastGroup = null;
+    Array.from(sel.options).forEach((opt, i) => {
+      const grp = opt.parentElement.tagName === 'OPTGROUP' ? opt.parentElement : null;
+      if (grp && grp !== lastGroup) {
+        const h = document.createElement('div');
+        h.className = 'cselect-group';
+        h.textContent = grp.label;
+        list.appendChild(h);
+      }
+      lastGroup = grp;
+      if (opt.hidden) return;
+      const el = document.createElement('div');
+      el.className = 'cselect-option';
+      el.setAttribute('role', 'option');
+      el.dataset.i = i;
+      el._text = _cselNorm(opt.textContent);
+      if (opt.disabled || (grp && grp.disabled)) el.classList.add('is-disabled');
+      el.setAttribute('aria-selected', i === current ? 'true' : 'false');
+      el.innerHTML = `<span class="cselect-option-text"></span><span class="cselect-check">${_CSEL_ICON_CHECK}</span>`;
+      el.firstElementChild.textContent = opt.textContent;
+      list.appendChild(el);
+    });
+    applyFilter();
+  }
+
+  function visibleOptions() {
+    return Array.from(list.querySelectorAll('.cselect-option:not(.is-hidden):not(.is-disabled)'));
+  }
+
+  function setActive(el, scroll = true) {
+    activeEl?.classList.remove('is-active');
+    activeEl = el || null;
+    if (!activeEl) return;
+    activeEl.classList.add('is-active');
+    if (scroll) activeEl.scrollIntoView({ block: 'nearest' });
+  }
+
+  function applyFilter() {
+    const q = search ? _cselNorm(search.value) : '';
+    let any = false;
+    list.querySelectorAll('.cselect-option').forEach(el => {
+      const hit = !q || el._text.includes(q);
+      el.classList.toggle('is-hidden', !hit);
+      if (hit) any = true;
+    });
+    list.querySelectorAll('.cselect-group').forEach(h => h.classList.toggle('is-hidden', !!q));
+    empty.style.display = any ? 'none' : '';
+    const vis = visibleOptions();
+    const selected = vis.find(el => el.getAttribute('aria-selected') === 'true');
+    setActive(q ? vis[0] : (selected || vis[0]));
+  }
+
+  function position() {
+    if (!panel) return;
+    if (!wrap.isConnected) { close(); return; }
+    const r = trigger.getBoundingClientRect();
+    const vw = window.innerWidth, vh = window.innerHeight, gap = 6, margin = 8;
+    const width = Math.min(Math.max(r.width, 220), vw - margin * 2);
+    const left = Math.max(margin, Math.min(r.left, vw - width - margin));
+    const below = vh - r.bottom - gap - margin;
+    const above = r.top - gap - margin;
+    const wanted = Math.min(360, panel.scrollHeight);
+    const up = below < wanted && above > below;
+    panel.style.width = width + 'px';
+    panel.style.left = left + 'px';
+    panel.style.maxHeight = Math.max(140, Math.min(360, up ? above : below)) + 'px';
+    if (up) {
+      panel.style.top = '';
+      panel.style.bottom = (vh - r.top + gap) + 'px';
+    } else {
+      panel.style.bottom = '';
+      panel.style.top = (r.bottom + gap) + 'px';
+    }
+  }
+
+  function choose(el) {
+    if (!el || el.classList.contains('is-disabled')) return;
+    const i = Number(el.dataset.i);
+    const changed = _cselIndexDesc.get.call(sel) !== i;
+    _cselIndexDesc.set.call(sel, i);
+    renderLabel();
+    close();
+    trigger.focus();
+    if (changed) {
+      sel.dispatchEvent(new Event('input', { bubbles: true }));
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  }
+
+  function onKey(e) {
+    const vis = visibleOptions();
+    const idx = vis.indexOf(activeEl);
+    if (e.key === 'ArrowDown') { e.preventDefault(); setActive(vis[Math.min(idx + 1, vis.length - 1)] || vis[0]); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setActive(vis[Math.max(idx - 1, 0)]); }
+    else if (e.key === 'Enter') { e.preventDefault(); choose(activeEl); }
+    else if (e.key === 'Escape') { e.preventDefault(); close(); trigger.focus(); }
+    else if (e.key === 'Tab') { close(); }
+  }
+
+  function open(initialQuery = '') {
+    if (_cselOpen === inst || sel.disabled) return;
+    _cselOpen?.close();
+    _cselOpen = inst;
+
+    const withSearch = sel.options.length > CSELECT_SEARCH_THRESHOLD;
+    panel = document.createElement('div');
+    panel.className = 'cselect-panel';
+    panel.tabIndex = -1;
+    panel.innerHTML = (withSearch
+      ? `<div class="cselect-search">${_CSEL_ICON_SEARCH}<input type="text" placeholder="Cari..." autocomplete="off" spellcheck="false" /></div>`
+      : '') +
+      '<div class="cselect-list" role="listbox"></div><div class="cselect-empty" style="display:none">Tidak ditemukan</div>';
+    search = panel.querySelector('.cselect-search input');
+    list = panel.querySelector('.cselect-list');
+    empty = panel.querySelector('.cselect-empty');
+    if (search) {
+      search.value = initialQuery;
+      search.addEventListener('input', applyFilter);
+    }
+    panel.addEventListener('keydown', onKey);
+    panel.addEventListener('mousemove', e => {
+      const el = e.target.closest('.cselect-option');
+      if (el && el !== activeEl && !el.classList.contains('is-disabled')) setActive(el, false);
+    });
+    panel.addEventListener('click', e => choose(e.target.closest('.cselect-option')));
+
+    document.body.appendChild(panel);
+    buildList();
+    position();
+    activeEl?.scrollIntoView({ block: 'nearest' });
+
+    trigger.setAttribute('aria-expanded', 'true');
+    trigger.classList.add('is-open');
+
+    // Di perangkat sentuh jangan langsung munculkan keyboard kecuali user sudah mengetik
+    const finePointer = window.matchMedia('(pointer: fine)').matches;
+    if (search && (finePointer || initialQuery)) search.focus({ preventScroll: true });
+    else panel.focus({ preventScroll: true });
+  }
+
+  function close() {
+    if (_cselOpen !== inst) return;
+    _cselOpen = null;
+    panel?.remove();
+    panel = list = search = empty = activeEl = null;
+    trigger.setAttribute('aria-expanded', 'false');
+    trigger.classList.remove('is-open');
+  }
+
+  Object.assign(inst, { open, close, refresh, position, panelContains: n => !!panel && panel.contains(n) });
+
+  trigger.addEventListener('click', () => (_cselOpen === inst ? close() : open()));
+  trigger.addEventListener('keydown', e => {
+    if (['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(e.key)) {
+      e.preventDefault();
+      open();
+    } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey
+               && sel.options.length > CSELECT_SEARCH_THRESHOLD) {
+      // Mulai mengetik langsung membuka dropdown + mengisi search
+      e.preventDefault();
+      open(e.key);
+    }
+  });
+
+  syncAttrs();
+  renderLabel();
+  return inst;
+}
+
+function enhanceSelects(root = document) {
+  if (root.tagName === 'SELECT') { enhanceSelect(root); return; }
+  root.querySelectorAll?.('select').forEach(enhanceSelect);
+}
+
+function _initCustomSelects() {
+  enhanceSelects(document);
+
+  // Select yang dirender belakangan (modal, list dinamis) ikut di-enhance
+  new MutationObserver(muts => {
+    for (const m of muts) {
+      m.addedNodes.forEach(n => { if (n.nodeType === 1) enhanceSelects(n); });
+    }
+    if (_cselOpen && !_cselOpen.wrap.isConnected) _cselOpen.close();
+  }).observe(document.body, { childList: true, subtree: true });
+
+  document.addEventListener('pointerdown', e => {
+    if (_cselOpen && !_cselOpen.wrap.contains(e.target) && !_cselOpen.panelContains(e.target)) {
+      _cselOpen.close();
+    }
+  }, true);
+  window.addEventListener('scroll', e => {
+    if (_cselOpen && !_cselOpen.panelContains(e.target)) _cselOpen.position();
+  }, true);
+  window.addEventListener('resize', () => _cselOpen?.position());
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', _initCustomSelects);
+} else {
+  _initCustomSelects();
+}
