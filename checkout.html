@@ -479,21 +479,34 @@ async function fetchPromoPreview(subtotal, cart) {
   if (!window.db) return;
   const nowIso = new Date().toISOString();
   try {
-    const { data } = await window.db
-      .from('promos')
-      .select('id, name, discount_type, discount_value, max_discount, min_purchase, applies_to, item_ids')
-      .eq('is_active', true)
-      .lte('min_purchase', subtotal)
-      .or(`start_at.is.null,start_at.lte."${nowIso}"`)
-      .or(`end_at.is.null,end_at.gte."${nowIso}"`)
-      .order('priority', { ascending: false });
+    const outletId = checkoutData?.outletId;
+    const [{ data }, { data: outletRow }] = await Promise.all([
+      window.db
+        .from('promos')
+        .select('id, name, discount_type, discount_value, max_discount, min_purchase, applies_to, item_ids, outlet_ids')
+        .eq('is_active', true)
+        .lte('min_purchase', subtotal)
+        .or(`start_at.is.null,start_at.lte."${nowIso}"`)
+        .or(`end_at.is.null,end_at.gte."${nowIso}"`)
+        .order('priority', { ascending: false }),
+      outletId
+        ? window.db.from('outlets').select('pos_outlet_id').eq('id', outletId).maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]);
 
     if (!data || !data.length) return;
+
+    // promos.outlet_ids = ID outlet Admin Dashboard (outlets.pos_outlet_id); kosong = semua outlet.
+    // Harus sama dengan aturan di create-xendit-payment agar preview = harga yang ditagih.
+    const outletKeys = [outletRow?.pos_outlet_id, outletId].filter(Boolean);
 
     let bestDiscount = 0;
     let bestPromoName = '';
 
     for (const p of data) {
+      if (Array.isArray(p.outlet_ids) && p.outlet_ids.length > 0 &&
+          !outletKeys.some(k => p.outlet_ids.includes(k))) continue;
+
       let applicableSubtotal = subtotal;
 
       if (p.applies_to === 'item' && p.item_ids && p.item_ids.length > 0) {

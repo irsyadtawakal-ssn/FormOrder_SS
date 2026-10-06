@@ -248,7 +248,7 @@ serve(async (req: Request) => {
   // ─── Validasi outlet ─────────────────────────────────────────────────────
   const { data: outlet } = await supabase
     .from("outlets")
-    .select("id, name, address, phone_wa, is_active")
+    .select("id, name, address, phone_wa, is_active, pos_outlet_id")
     .eq("slug", outlet_slug)
     .maybeSingle();
 
@@ -377,12 +377,16 @@ serve(async (req: Request) => {
   const nowIso = new Date().toISOString();
   const { data: promoRows } = await supabase
     .from("promos")
-    .select("id, name, discount_type, discount_value, max_discount, min_purchase, usage_limit, usage_count, applies_to, item_ids")
+    .select("id, name, discount_type, discount_value, max_discount, min_purchase, usage_limit, usage_count, applies_to, item_ids, outlet_ids")
     .eq("is_active", true)
     .lte("min_purchase", subtotal)
     .or(`start_at.is.null,start_at.lte."${nowIso}"`)
     .or(`end_at.is.null,end_at.gte."${nowIso}"`)
     .order("priority", { ascending: false });
+
+  // promos.outlet_ids berisi ID outlet Admin Dashboard (= outlets.pos_outlet_id).
+  // NULL/kosong = berlaku di semua outlet.
+  const outletKeys = [outlet!.pos_outlet_id, outlet!.id].filter(Boolean) as string[];
 
   if (promoRows && promoRows.length > 0) {
     let bestDiscount = 0;
@@ -390,6 +394,14 @@ serve(async (req: Request) => {
 
     for (const p of promoRows) {
       if (p.usage_limit != null && p.usage_count >= p.usage_limit) {
+        continue;
+      }
+
+      // Promo khusus outlet tertentu — lewati jika outlet ini tidak termasuk
+      if (
+        Array.isArray(p.outlet_ids) && p.outlet_ids.length > 0 &&
+        !outletKeys.some((k) => p.outlet_ids.includes(k))
+      ) {
         continue;
       }
       

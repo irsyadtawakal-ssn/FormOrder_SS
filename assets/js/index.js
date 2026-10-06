@@ -362,7 +362,14 @@
         });
         const variants = varRes.data || [];
         const options = optRes.data || [];
-        const promos = promoRes.data || [];
+        // Promo bisa dibatasi ke outlet tertentu (promos.outlet_ids = ID outlet Admin
+        // Dashboard). NULL/kosong = semua outlet. Tanpa outlet terpilih, promo khusus
+        // outlet tidak ditampilkan.
+        const promos = (promoRes.data || []).filter((p) => {
+          const only = p.outlet_ids;
+          if (!Array.isArray(only) || only.length === 0) return true;
+          return outletKeys.some((key) => only.includes(key));
+        });
         const overrides = overrideRes ? overrideRes.data || [] : [];
 
         const overrideMap = {};
