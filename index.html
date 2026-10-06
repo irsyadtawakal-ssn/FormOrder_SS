@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content"
     />
     <title>Order Sukashawarma</title>
     <meta
@@ -14,8 +14,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Space+Mono:wght@400;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="preload" href="assets/css/style.css?v=10" as="style" />
-    <link rel="stylesheet" href="assets/css/style.css?v=10" />
+    <link rel="preload" href="assets/css/style.css?v=11" as="style" />
+    <link rel="stylesheet" href="assets/css/style.css?v=11" />
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#f29744" />
     
@@ -379,7 +379,7 @@
       <div class="sheet-handle"></div>
       <div class="sheet-header">
         <h2 class="sheet-title" id="sheetItemName">—</h2>
-        <button class="sheet-close" onclick="closeAllSheets()">×</button>
+        <button class="sheet-close" onclick="closeAllSheets()" aria-label="Tutup">×</button>
       </div>
       <div class="sheet-body" id="sheetItemBody"></div>
       <div class="sheet-footer">
@@ -395,7 +395,7 @@
       <div class="sheet-handle"></div>
       <div class="sheet-header">
         <h2 class="sheet-title">Keranjang</h2>
-        <button class="sheet-close" onclick="closeAllSheets()">×</button>
+        <button class="sheet-close" onclick="closeAllSheets()" aria-label="Tutup">×</button>
       </div>
       <div class="sheet-body">
         <div class="stepper">
@@ -411,6 +411,7 @@
             type="text"
             placeholder="Contoh: Budi Santoso"
             autocomplete="name"
+            enterkeyhint="next"
           />
           <div class="err-msg">Nama wajib diisi</div>
         </div>
@@ -424,6 +425,7 @@
             placeholder="08xx xxxx xxxx"
             inputmode="numeric"
             autocomplete="tel"
+            enterkeyhint="next"
           />
           <div class="hint">Format: 08xxx atau 628xxx</div>
           <div class="err-msg">Nomor WA tidak valid</div>

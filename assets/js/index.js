@@ -986,6 +986,7 @@
           return;
         }
         renderCartSheet();
+        setupCartFormKeys();
         showSheet("cartSheet");
       }
 
@@ -1144,17 +1145,93 @@
       }
 
       // ─── Sheet helpers ────────────────────────────────────────────────────────────
+      // Sheet mengikuti area layar yang benar-benar terlihat (di atas keyboard HP).
+      // Tanpa ini sheet terdorong naik keluar layar dan isinya tidak bisa di-scroll.
       function adjustSheetForKeyboard() {
         const sheets = document.querySelectorAll(".sheet.show");
         if (!sheets.length) return;
-        const keyboardH =
-          window.innerHeight -
-          window.visualViewport.height -
-          window.visualViewport.offsetTop;
+        const vv = window.visualViewport;
+        const keyboardH = Math.max(
+          0,
+          window.innerHeight - vv.height - vv.offsetTop,
+        );
+        const kbOpen = keyboardH > 80;
         sheets.forEach((el) => {
-          el.style.bottom = Math.max(0, keyboardH) + "px";
+          el.style.bottom = keyboardH + "px";
+          // Sisakan sedikit jarak atas agar sheet tetap terasa sebagai bottom sheet
+          el.style.setProperty(
+            "--sheet-max",
+            Math.round(vv.height * (kbOpen ? 0.98 : 0.92)) + "px",
+          );
+          el.classList.toggle("kb-open", kbOpen);
         });
+        if (kbOpen) revealFocusedField();
       }
+
+      // Scroll field yang sedang diisi ke posisi terlihat di dalam .sheet-body
+      let revealTimer = null;
+      function revealFocusedField() {
+        clearTimeout(revealTimer);
+        // Tunggu animasi keyboard selesai sebelum mengukur posisi
+        revealTimer = setTimeout(
+          () => scrollIntoSheetBody(document.activeElement),
+          120,
+        );
+      }
+
+      // Hanya menggeser .sheet-body (scrollIntoView ikut menggeser halaman di belakang sheet)
+      function scrollIntoSheetBody(el) {
+        const body = el?.closest?.(".sheet.show .sheet-body");
+        if (!body) return;
+        const target = el.closest(".field") || el;
+        const b = body.getBoundingClientRect();
+        const t = target.getBoundingClientRect();
+        const margin = 12;
+        if (t.bottom > b.bottom - margin) {
+          body.scrollBy({ top: t.bottom - b.bottom + margin, behavior: "smooth" });
+        } else if (t.top < b.top + margin) {
+          body.scrollBy({ top: t.top - b.top - margin, behavior: "smooth" });
+        }
+      }
+
+      // Enter di keyboard HP = pindah ke field berikutnya (tidak perlu tap & scroll manual)
+      function setupCartFormKeys() {
+        const name = document.getElementById("fName");
+        const wa = document.getElementById("fWA");
+        if (!name || !wa || name.dataset.keysBound) return;
+        name.dataset.keysBound = "1";
+        name.addEventListener("keydown", (e) => {
+          if (e.key !== "Enter") return;
+          e.preventDefault();
+          wa.focus();
+        });
+        wa.addEventListener("keydown", (e) => {
+          if (e.key !== "Enter") return;
+          e.preventDefault();
+          wa.blur();
+          // Lanjut ke Waktu Ambil: tutup keyboard lalu buka pilihan jam
+          const pickup = document.getElementById("pickupSelect");
+          setTimeout(() => {
+            scrollIntoSheetBody(pickup);
+            if (!document.getElementById("fTime").value) {
+              pickup.classList.add("open");
+              document
+                .getElementById("pickupSelectTrigger")
+                .setAttribute("aria-expanded", "true");
+            }
+          }, 250);
+        });
+        // Hapus tanda error begitu user mulai mengetik ulang
+        [name, wa].forEach((el) =>
+          el.addEventListener("input", () =>
+            el.closest(".field").classList.remove("has-error"),
+          ),
+        );
+      }
+
+      document.addEventListener("focusin", (e) => {
+        if (e.target.closest?.(".sheet.show .sheet-body")) revealFocusedField();
+      });
 
       function showSheet(id) {
         document.getElementById("scrim").classList.add("show");
@@ -1176,8 +1253,9 @@
         closePickupDropdown();
         ["itemSheet", "cartSheet"].forEach((id) => {
           const el = document.getElementById(id);
-          el.classList.remove("show");
+          el.classList.remove("show", "kb-open");
           el.style.bottom = "";
+          el.style.removeProperty("--sheet-max");
         });
         document.getElementById("scrim").classList.remove("show");
         document.body.style.overflow = "";

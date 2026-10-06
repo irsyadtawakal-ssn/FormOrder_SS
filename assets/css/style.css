@@ -618,8 +618,11 @@ h6,
   border-radius: 20px 20px 0 0;
   z-index: 50;
   transition: transform 0.26s cubic-bezier(0.4, 0, 0.2, 1);
+  /* --sheet-max diisi JS dari visualViewport saat keyboard HP muncul */
   max-height: 92vh;
-  overflow-y: auto;
+  max-height: var(--sheet-max, 92dvh);
+  /* Hanya .sheet-body yang scroll — header & tombol bayar tetap terlihat */
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
@@ -633,16 +636,18 @@ h6,
   background: var(--line2);
   margin: 10px auto 4px;
 }
+.sheet-handle,
+.sheet-header,
+.sheet-footer {
+  flex-shrink: 0;
+}
 .sheet-header {
   padding: 4px 16px 14px;
   border-bottom: 1px solid var(--line);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  position: sticky;
-  top: 0;
   background: var(--card);
-  z-index: 2;
 }
 .sheet-title {
   margin: 0;
@@ -656,18 +661,42 @@ h6,
   border: 0;
   background: none;
   line-height: 1;
-  padding: 0 4px;
+  /* Area sentuh minimal 44px */
+  min-width: 44px;
+  min-height: 44px;
+  margin-right: -10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .sheet-body {
   padding: 14px 16px;
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  /* Cegah scroll "bocor" ke halaman di belakang sheet */
+  overscroll-behavior: contain;
+  /* Ruang ekstra agar field terakhir bisa di-scroll ke atas keyboard */
+  scroll-padding-bottom: 24px;
 }
 .sheet-footer {
-  position: sticky;
-  bottom: 0;
   background: var(--card);
   padding: 12px 16px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
   border-top: 1px solid var(--line);
+}
+/* Saat keyboard terbuka: sembunyikan elemen dekoratif agar ruang form maksimal */
+.sheet.kb-open .sheet-handle,
+.sheet.kb-open .stepper {
+  display: none;
+}
+.sheet.kb-open .sheet-header {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+.sheet.kb-open .sheet-footer {
+  padding-bottom: 10px;
 }
 
 /* ─── Item sheet internals ───────────────────────────────────────────────────── */
@@ -1099,18 +1128,297 @@ h6,
 }
 
 /* ─── Payment method picker ──────────────────────────────────────────────────── */
+.pay-group-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 12px 0 6px;
+}
+.pay-method-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 .pay-method-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 56px;
+  padding: 10px 12px;
+  border: 2px solid var(--line2);
+  border-radius: 12px;
+  background: var(--card);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
   transition:
     border-color 0.15s,
-    background 0.15s;
+    background 0.15s,
+    box-shadow 0.15s,
+    transform 0.1s;
 }
+.pay-method-text {
+  flex: 1;
+  min-width: 0;
+}
+.pay-method-name {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink);
+}
+.pay-method-desc {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 1px;
+}
+/* Radio bulat — kosong saat belum dipilih */
+.pay-method-radio {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 2px solid #d6cbbd;
+  background: var(--card);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+.pay-method-radio svg {
+  width: 14px;
+  height: 14px;
+  opacity: 0;
+  transform: scale(0.5);
+  transition:
+    opacity 0.15s,
+    transform 0.15s;
+}
+/* Hover hanya untuk perangkat dengan mouse — di HP tidak "nyangkut" */
+@media (hover: hover) {
+  .pay-method-item:not(.selected):hover {
+    border-color: #f6c08e;
+    background: #fffaf4;
+  }
+  .pay-method-item:not(.selected):hover .pay-method-radio {
+    border-color: var(--brand);
+  }
+}
+/* Umpan balik sentuh di HP */
+.pay-method-item:active {
+  transform: scale(0.985);
+}
+.pay-method-item:focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: 2px;
+}
+/* State terpilih — harus jelas sekilas pandang */
 .pay-method-item.selected {
-  border-color: var(--brand) !important;
-  background: var(--brand-bg) !important;
+  border-color: var(--brand);
+  background: var(--brand-bg);
+  box-shadow: 0 0 0 3px rgba(242, 151, 68, 0.22);
 }
-.pay-method-item.selected div:last-child {
-  border-color: var(--brand) !important;
-  background: var(--brand) !important;
+.pay-method-item.selected .pay-method-name {
+  /* Oranye gelap — kontras cukup di atas --brand-bg */
+  color: #9a4a06;
+}
+.pay-method-item.selected .pay-method-desc {
+  color: var(--ink2);
+}
+.pay-method-item.selected .pay-method-radio {
+  background: var(--brand);
+  border-color: var(--brand);
+}
+.pay-method-item.selected .pay-method-radio svg {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* ─── Footer bayar (checkout) — titik fokus utama halaman ─────────────────────── */
+.pay-footer {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: var(--container);
+  z-index: 30;
+  padding: 10px 16px calc(14px + env(safe-area-inset-bottom, 0px));
+  border-top: 0;
+  border-radius: 18px 18px 0 0;
+  /* Bayangan ke atas: footer "mengapung" di atas konten */
+  box-shadow: 0 -10px 30px rgba(30, 27, 21, 0.12);
+}
+.pay-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--ink2);
+  margin-bottom: 8px;
+}
+.pay-summary-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 0 3px rgba(0, 110, 36, 0.15);
+  flex-shrink: 0;
+}
+.pay-summary-text {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pay-summary-text b {
+  color: var(--ink);
+}
+#paySummaryFee {
+  color: var(--muted);
+}
+.pay-summary-change {
+  border: 0;
+  background: none;
+  color: #9a4a06;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  padding: 6px 2px;
+  cursor: pointer;
+}
+.pay-summary-change:hover {
+  box-shadow: none;
+  filter: none;
+}
+/* Tombol bayar: lebih besar, gradien lebih pekat, glow brand */
+.btn-add-big.btn-pay-cta {
+  min-height: 56px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #f5a14f 0%, #e2700f 100%);
+  box-shadow:
+    0 8px 20px rgba(226, 112, 15, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  text-shadow: 0 1px 1px rgba(120, 50, 0, 0.25);
+  letter-spacing: 0.2px;
+}
+.btn-add-big.btn-pay-cta:hover {
+  filter: brightness(1.04);
+  box-shadow:
+    0 10px 24px rgba(226, 112, 15, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+.btn-add-big.btn-pay-cta:active {
+  background: linear-gradient(135deg, #ec8e35 0%, #cf6208 100%);
+  transform: scale(0.98);
+}
+.btn-add-big.btn-pay-cta:focus-visible {
+  outline: 3px solid #9a4a06;
+  outline-offset: 3px;
+}
+.btn-add-big.btn-pay-cta:disabled {
+  filter: grayscale(0.4);
+  box-shadow: none;
+}
+.pay-cta-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pay-cta-arrow {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+/* Kilau yang menyapu tombol — menarik mata tanpa mengganggu */
+.btn-pay-cta::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 45%;
+  height: 100%;
+  background: linear-gradient(
+    100deg,
+    transparent,
+    rgba(255, 255, 255, 0.45),
+    transparent
+  );
+  transform: skewX(-20deg);
+  pointer-events: none;
+  opacity: 0;
+}
+/* Diputar setiap user memilih metode pembayaran */
+.pay-footer.nudge .btn-pay-cta {
+  animation: payNudge 0.9s cubic-bezier(0.3, 0.7, 0.4, 1);
+}
+.pay-footer.nudge .btn-pay-cta::after {
+  animation: payShine 0.9s ease-out 0.15s;
+}
+.pay-footer.nudge .pay-cta-arrow {
+  animation: payArrow 0.9s ease-in-out 0.1s;
+}
+.pay-footer.nudge .pay-summary {
+  animation: paySummaryFlash 0.9s ease-out;
+}
+@keyframes payNudge {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 8px 20px rgba(226, 112, 15, 0.38), 0 0 0 0 rgba(242, 151, 68, 0.55);
+  }
+  30% {
+    transform: scale(1.035);
+  }
+  60% {
+    transform: scale(0.99);
+    box-shadow: 0 8px 20px rgba(226, 112, 15, 0.38), 0 0 0 12px rgba(242, 151, 68, 0);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes payShine {
+  0% {
+    left: -60%;
+    opacity: 1;
+  }
+  100% {
+    left: 130%;
+    opacity: 1;
+  }
+}
+@keyframes payArrow {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  40% {
+    transform: translateX(5px);
+  }
+}
+@keyframes paySummaryFlash {
+  0% {
+    color: #9a4a06;
+  }
+  100% {
+    color: var(--ink2);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pay-footer.nudge .btn-pay-cta,
+  .pay-footer.nudge .btn-pay-cta::after,
+  .pay-footer.nudge .pay-cta-arrow,
+  .pay-footer.nudge .pay-summary {
+    animation: none;
+  }
 }
 
 /* ─── Hint banner ─────────────────────────────────────────────────────────────── */
