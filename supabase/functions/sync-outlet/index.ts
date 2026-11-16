@@ -52,11 +52,17 @@ serve(async (req) => {
         .eq('pos_outlet_id', outlet.id)
         .maybeSingle()
 
-      const payload = {
+      const resolvedStatus =
+        outlet.status === 'active' || outlet.status === 'pending' || outlet.status === 'inactive'
+          ? outlet.status
+          : (outlet.is_active ? 'active' : 'inactive')
+
+      const payload: Record<string, unknown> = {
         name: outlet.name,
         address: outlet.address || '-',
         phone_wa: outlet.phone || '-',
-        is_active: outlet.is_active,
+        status: resolvedStatus,
+        is_active: resolvedStatus === 'active',
         type: outlet.type || 'owned',
         open_hour: outlet.open_hour ? outlet.open_hour.substring(0, 5) + ':00' : '14:00:00',
         close_hour: outlet.close_hour ? outlet.close_hour.substring(0, 5) + ':00' : '22:00:00',

@@ -128,13 +128,19 @@ async function loadUsers() {
 
 async function loadOutlets() {
   const { data } = await window.db
-    .from('outlets').select('id, name').eq('is_active', true).order('name');
+    .from('outlets')
+    .select('id, name, status, is_active')
+    .order('name');
   allOutlets = data || [];
 }
 
 function outletName(outletId) {
   if (!outletId) return '—';
-  return (allOutlets.find(o => o.id === outletId) || {}).name || '—';
+  const found = allOutlets.find(o => o.id === outletId);
+  if (!found) return '—';
+  if (found.status === 'pending') return `${found.name} (Pending)`;
+  if (!found.is_active) return `${found.name} (Nonaktif)`;
+  return found.name;
 }
 
 function renderUsers() {

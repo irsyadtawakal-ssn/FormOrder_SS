@@ -122,7 +122,7 @@ let allOutlets = [];
 async function loadOutlets() {
   const { data } = await window.db
     .from('outlets')
-    .select('*')
+    .select('id, slug, name, address, lat, lng, phone_wa, type, status, is_active, open_hour, close_hour')
     .order('name');
   allOutlets = data || [];
   renderOutlets();
@@ -156,19 +156,28 @@ function outletRow(o) {
     ? `${o.open_hour.slice(0, 5)}–${o.close_hour.slice(0, 5)}`
     : 'Jam belum diset';
 
-  return `<div class="admin-order-row" style="opacity:${o.is_active ? 1 : 0.55}">
+  const statusTag = o.status === 'pending'
+    ? `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;background:#fef3c7;color:#92400e;border:1px solid #fde68a">Pending</span>`
+    : o.is_active
+      ? `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;background:#ecfdf5;color:#047857;border:1px solid #a7f3d0">Aktif</span>`
+      : `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;background:#f3f4f6;color:#4b5563;border:1px solid #e5e7eb">Nonaktif</span>`;
+
+  return `<div class="admin-order-row" style="opacity:${o.is_active ? 1 : 0.7}">
     <div style="display:flex;gap:12px;align-items:flex-start">
       <div style="width:48px;height:48px;border-radius:12px;flex-shrink:0;
-                  background:linear-gradient(135deg,#ffd166,#ff8c42);
+                  background:#f29744;
                   display:flex;align-items:center;justify-content:center;color:#fff">
         <i data-lucide="store" class="w-6 h-6"></i>
       </div>
       <div style="flex:1;min-width:0">
-        <div style="font-weight:700;font-size:14px">${escHtml(o.name)}</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="font-weight:700;font-size:14px">${escHtml(o.name)}</span>
+          ${statusTag}
+        </div>
         <div style="font-size:12px;color:var(--ui-muted);margin-bottom:4px">${escHtml(o.address)}</div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
           <span class="${o.type === 'owned' ? 'badge-owned' : 'badge-partner'} badge">
-            ${o.type === 'owned' ? 'Owned' : 'Partner'}
+            ${o.type === 'owned' ? 'Internal' : 'Mitra'}
           </span>
           <span style="font-size:11px;color:var(--ui-muted);display:inline-flex;align-items:center;gap:3px"><i data-lucide="clock" class="w-3 h-3"></i> ${hours}</span>
           ${o.phone_wa ? `<span style="font-size:11px;color:var(--ui-muted);display:inline-flex;align-items:center;gap:3px"><i data-lucide="phone" class="w-3 h-3"></i> ${escHtml(o.phone_wa)}</span>` : ''}
@@ -197,12 +206,16 @@ function outletRow(o) {
 
 // ─── Toggle aktif ─────────────────────────────────────────────────────────────
 async function toggleOutlet(outletId, active) {
+  const nextStatus = active ? 'active' : 'inactive';
   const { error } = await window.db
-    .from('outlets').update({ is_active: active }).eq('id', outletId);
-  if (error) { adminToast('❌ ' + error.message); return; }
+    .from('outlets').update({ is_active: active, status: nextStatus }).eq('id', outletId);
+  if (error) { adminToast('Gagal: ' + error.message); return; }
   const idx = allOutlets.findIndex(o => o.id === outletId);
-  if (idx >= 0) allOutlets[idx].is_active = active;
-  adminToast(active ? '✅ Outlet diaktifkan' : '⏸ Outlet dinonaktifkan');
+  if (idx >= 0) {
+    allOutlets[idx].is_active = active;
+    allOutlets[idx].status = nextStatus;
+  }
+  adminToast(active ? 'Outlet diaktifkan' : 'Outlet dinonaktifkan');
   renderOutlets();
 }
 
@@ -305,29 +318,35 @@ async function saveOutlet(outletId) {
   const type   = document.getElementById('oType').value;
   const active = document.getElementById('oActive').checked;
 
-  if (!name)  { adminToast('❌ Nama wajib diisi'); return; }
-  if (!addr)  { adminToast('❌ Alamat wajib diisi'); return; }
-  if (!slug)  { adminToast('❌ Slug wajib diisi'); return; }
+  if (!name)  { adminToast('Nama wajib diisi'); return; }
+  if (!addr)  { adminToast('Alamat wajib diisi'); return; }
+  if (!slug)  { adminToast('Slug wajib diisi'); return; }
+
+  const prevOutlet = outletId ? allOutlets.find(x => x.id === outletId) : null;
+  const statusVal = active ? 'active' : (prevOutlet?.status === 'pending' ? 'pending' : 'inactive');
 
   const payload = {
     name, slug, address: addr, lat, lng,
     phone_wa: wa, open_hour: open, close_hour: close,
-    type, is_active: active,
+    type, is_active: active, status: statusVal,
     updated_at: new Date().toISOString(),
   };
 
   if (outletId) {
     const { error } = await window.db.from('outlets').update(payload).eq('id', outletId);
-    if (error) { adminToast('❌ ' + error.message); return; }
+    if (error) { adminToast('Gagal: ' + error.message); return; }
     const idx = allOutlets.findIndex(o => o.id === outletId);
     if (idx >= 0) allOutlets[idx] = { ...allOutlets[idx], ...payload };
-    adminToast('✅ Outlet diperbarui');
+    adminToast('Outlet diperbarui');
   } else {
     const { data, error } = await window.db
-      .from('outlets').insert(payload).select().single();
-    if (error) { adminToast('❌ ' + error.message); return; }
+      .from('outlets')
+      .insert(payload)
+      .select('id, slug, name, address, lat, lng, phone_wa, type, status, is_active, open_hour, close_hour')
+      .single();
+    if (error) { adminToast('Gagal: ' + error.message); return; }
     allOutlets.push(data);
-    adminToast('✅ Outlet ditambahkan');
+    adminToast('Outlet ditambahkan');
   }
 
   closeModal();
