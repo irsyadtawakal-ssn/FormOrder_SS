@@ -16,10 +16,21 @@ Deno.serve(async (req: Request) => {
   const SERVICE_KEY  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const FONNTE_TOKEN = Deno.env.get("FONNTE_TOKEN");
 
-  // Hanya service role yang boleh memanggil fungsi ini
+  // Hanya service role yang boleh memanggil fungsi ini.
+  // Diterima: (a) persis env SUPABASE_SERVICE_ROLE_KEY, atau (b) JWT ber-role
+  // 'service_role'. (b) aman HANYA karena fungsi ini di-deploy dengan
+  // verify_jwt = true — tanda tangan JWT sudah diverifikasi gateway sebelum
+  // kode jalan. Dibutuhkan karena env di runtime bisa berformat kunci baru
+  // (bukan JWT legacy) sehingga tak pernah sama dengan kunci yang dikirim cron.
   const authHeader = req.headers.get("authorization") ?? "";
   const token      = authHeader.replace(/^Bearer\s+/i, "").trim();
-  if (token !== SERVICE_KEY) {
+  let peranJwt = "";
+  try {
+    const bagian = token.split(".")[1] ?? "";
+    const b64 = bagian.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(bagian.length / 4) * 4, "=");
+    peranJwt = String(JSON.parse(atob(b64)).role ?? "");
+  } catch { /* bukan JWT */ }
+  if (token !== SERVICE_KEY && peranJwt !== "service_role") {
     return Response.json({ error: "Unauthorized" }, { status: 401, headers: CORS });
   }
 
@@ -36,7 +47,7 @@ Deno.serve(async (req: Request) => {
   // Ambil order yang sudah melewati expires_at + grace period
   const { data: expiredOrders, error: fetchErr } = await db
     .from("orders")
-    .select("id, order_number, customer_name, customer_wa, outlets(name)")
+    .select("id, order_number, customer_name, customer_wa, tripay_reference, expires_at, outlets(name)")
     .eq("status", "pending_payment")
     .lt("expires_at", cutoffTime);
 
@@ -56,7 +67,67 @@ Deno.serve(async (req: Request) => {
     return Response.json({ ok: true, expired_count: 0 }, { headers: CORS });
   }
 
-  const ids = expiredOrders.map((o) => o.id);
+  // ─── Tanya Xendit dulu sebelum menandai expired ─────────────────────────
+  // Insiden Okt–Nov 2026: pelanggan sudah bayar QRIS, menutup halaman sebelum
+  // polling sempat jalan, webhook tak sampai → cron ini menandai 'expired' dan
+  // mengirim WA "kedaluwarsa" padahal uang sudah masuk Xendit.
+  //  - Xendit SUCCEEDED  → JANGAN expire; serahkan ke check-xendit-status yang
+  //                        sudah punya alur pemulihan lengkap (paid, WA, POS, promo).
+  //  - Xendit tak bisa ditanya (error/jaringan) → tunda ke putaran berikutnya,
+  //                        kecuali sudah lewat BATAS_TUNDA_MS (expire seperti biasa).
+  //  - Status lain (PENDING, EXPIRED, FAILED, dll) → expire seperti biasa.
+  //    Kalau pelanggan ternyata bayar belakangan, xendit-webhook me-revive order.
+  const xenditSecretKey = Deno.env.get("XENDIT_SECRET_KEY");
+  const BATAS_TUNDA_MS = 60 * 60 * 1000;
+  const ditunda = new Set<string>();
+
+  if (xenditSecretKey) {
+    const xenditAuth = "Basic " + btoa(xenditSecretKey + ":");
+    for (const o of expiredOrders) {
+      const ref = String(o.tripay_reference ?? "");
+      if (!ref.startsWith("pr-")) continue; // belum ada payment request / simulasi
+      const lewatLama = Date.now() - new Date(o.expires_at).getTime() > BATAS_TUNDA_MS;
+      try {
+        const res = await fetch(`https://api.xendit.co/payment_requests/${ref}`, {
+          headers: { Authorization: xenditAuth },
+        });
+        if (!res.ok) {
+          console.warn("Cek Xendit gagal:", o.order_number, res.status);
+          if (!lewatLama) ditunda.add(o.id);
+          continue;
+        }
+        const pr = await res.json() as Record<string, unknown>;
+        const st = String(pr.status ?? "").toUpperCase();
+        if (st === "SUCCEEDED") {
+          ditunda.add(o.id);
+          console.info("Xendit SUCCEEDED — order dipulihkan, tidak di-expire:", o.order_number);
+          const r = await fetch(`${SUPABASE_URL}/functions/v1/check-xendit-status`, {
+            method: "POST",
+            // Teruskan JWT pemanggil (sudah diverifikasi gateway) — env SERVICE_KEY bisa
+            // berformat kunci baru yang ditolak gateway fungsi ber-verify_jwt.
+            headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ order_number: o.order_number }),
+          }).catch((err) => { console.error("Gagal memanggil check-xendit-status:", err); return null; });
+          if (r) console.info("check-xendit-status:", o.order_number, r.status, await r.text());
+        }
+      } catch (err) {
+        console.warn("Xendit tidak terjangkau:", o.order_number, err);
+        if (!lewatLama) ditunda.add(o.id);
+      }
+    }
+  }
+
+  const ids = expiredOrders.filter((o) => !ditunda.has(o.id)).map((o) => o.id);
+  if (ids.length === 0) {
+    // Semua kandidat ditunda — heartbeat tetap dicatat agar monitor tak mengira cron mati
+    try {
+      await db.from("cron_heartbeat").upsert(
+        { job_name: "auto-cancel-expired-orders", last_run: new Date().toISOString() },
+        { onConflict: "job_name" },
+      );
+    } catch { /* abaikan agar tidak gagalkan cron */ }
+    return Response.json({ ok: true, expired_count: 0, ditunda: ditunda.size }, { headers: CORS });
+  }
 
   // Tandai sebagai expired HANYA jika status saat ini masih 'pending_payment'.
   // Guard .eq("status", "pending_payment") dan .select("id") mencegah race condition
@@ -113,7 +184,8 @@ Deno.serve(async (req: Request) => {
 
   return Response.json({
     ok:             true,
-    expired_count:  expiredOrders.length,
-    expired_orders: expiredOrders.map((o) => o.order_number),
+    expired_count:  cancelledIdSet.size,
+    expired_orders: expiredOrders.filter((o) => cancelledIdSet.has(o.id)).map((o) => o.order_number),
+    ditunda:        ditunda.size,
   }, { headers: CORS });
 });

@@ -17,3 +17,11 @@ verify_jwt = false
 
 [functions.sync-status-to-pos]
 verify_jwt = false
+
+# xendit-webhook dipanggil oleh server Xendit, yang TIDAK mengirim header
+# Authorization. Keaslian kiriman dicek di dalam kode lewat x-callback-token.
+# Kalau verify_jwt aktif, gateway menolak SEMUA kiriman Xendit dengan 401
+# (UNAUTHORIZED_NO_AUTH_HEADER) sebelum kode jalan — itu yang terjadi Juni–Nov
+# 2026: pesanan yang dibayar lalu halamannya ditutup pelanggan ditandai expired.
+[functions.xendit-webhook]
+verify_jwt = false
