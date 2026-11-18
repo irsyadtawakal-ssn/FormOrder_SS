@@ -296,9 +296,12 @@
             .eq("slug", outletSlug)
             .single();
 
-          if (outletErr || !outletData) {
-            document.getElementById("menuContent").innerHTML =
-              `<div class="error-box"><p>Outlet tidak ditemukan.</p></div>`;
+          // Outlet nonaktif (mis. Gudang SS Online) diperlakukan sama dengan tidak ada:
+          // server (create-xendit-payment) juga menolaknya, jadi jangan biarkan pelanggan memilih menu.
+          if (outletErr || !outletData || outletData.is_active === false) {
+            document.getElementById("menuContent").innerHTML = outletData && outletData.is_active === false
+              ? `<div class="error-box"><p>Outlet ini sedang tidak menerima pesanan. Silakan pilih outlet lain.</p></div>`
+              : `<div class="error-box"><p>Outlet tidak ditemukan.</p></div>`;
             if (window.lucide) {
               lucide.createIcons();
             }
