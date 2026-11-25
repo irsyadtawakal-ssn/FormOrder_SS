@@ -683,8 +683,12 @@ async function uploadLogoPhoto(input) {
   const { data: publicUrlData } = window.db.storage.from('menu_assets').getPublicUrl(path);
   const url = publicUrlData.publicUrl;
 
+  const nowIso = new Date().toISOString();
   const { error: saveErr } = await window.db.from('app_settings')
-    .upsert({ key: 'hero_logo_url', value: url, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+    .upsert([
+      { key: 'hero_logo_url', value: url, updated_at: nowIso },
+      { key: 'brand_logo', value: url, updated_at: nowIso },
+    ], { onConflict: 'key' });
 
   if (saveErr) {
     statusEl.textContent = '❌ Gagal menyimpan URL: ' + saveErr.message;

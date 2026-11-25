@@ -35,19 +35,42 @@
         }
 
         // Load hero banner and logo early
+        const cachedBrandLogo = localStorage.getItem("suka_brand_logo");
+        const cachedBrandName = localStorage.getItem("suka_brand_name");
+        if (cachedBrandLogo) {
+          setHeroImage(document.getElementById("heroLogoImg"), cachedBrandLogo);
+        }
+        if (cachedBrandName) {
+          const brandTitle = document.querySelector(".hero-header-brand");
+          if (brandTitle) brandTitle.textContent = cachedBrandName;
+        }
+
         window.db
           .from("app_settings")
           .select("key, value")
-          .in("key", ["hero_banner_url", "hero_logo_url"])
+          .in("key", ["hero_banner_url", "hero_logo_url", "brand_name", "brand_logo"])
           .then(({ data }) => {
             if (data && data.length > 0) {
               const bannerData = data.find((d) => d.key === "hero_banner_url");
               if (bannerData?.value) {
                 setHeroImage(document.getElementById("heroBgImg"), bannerData.value);
               }
-              const logoData = data.find((d) => d.key === "hero_logo_url");
-              if (logoData?.value) {
-                setHeroImage(document.getElementById("heroLogoImg"), logoData.value);
+              const heroLogoRow = data.find((d) => d.key === "hero_logo_url");
+              const brandLogoRow = data.find((d) => d.key === "brand_logo");
+              const resolvedLogo =
+                heroLogoRow !== undefined ? heroLogoRow.value : brandLogoRow?.value;
+              if (resolvedLogo) {
+                setHeroImage(document.getElementById("heroLogoImg"), resolvedLogo);
+                localStorage.setItem("suka_brand_logo", resolvedLogo);
+              } else if (heroLogoRow !== undefined || brandLogoRow !== undefined) {
+                localStorage.removeItem("suka_brand_logo");
+                setHeroImage(document.getElementById("heroLogoImg"), "assets/img/logo.webp");
+              }
+              const brandData = data.find((d) => d.key === "brand_name");
+              if (brandData?.value) {
+                const brandTitle = document.querySelector(".hero-header-brand");
+                if (brandTitle) brandTitle.textContent = brandData.value;
+                localStorage.setItem("suka_brand_name", brandData.value);
               }
             }
           });

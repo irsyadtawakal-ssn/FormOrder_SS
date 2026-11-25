@@ -32,6 +32,60 @@
       }
     );
     console.log('[SUKA] Supabase client initialized OK');
+
+    // Synchronize global brand identity across pages
+    function applyGlobalBrand() {
+      try {
+        const brandName = localStorage.getItem('suka_brand_name');
+        const brandLogo = localStorage.getItem('suka_brand_logo');
+        if (brandName) {
+          document.querySelectorAll('.topbar-logo span, .hero-header-brand, .brand-name-text').forEach(el => {
+            el.textContent = brandName;
+          });
+        }
+        document.querySelectorAll('.topbar-logo img, #heroLogoImg, .brand-logo-img').forEach(el => {
+          if (!el.dataset.defaultSrc && el.getAttribute('src')) {
+            el.dataset.defaultSrc = el.getAttribute('src');
+          }
+          if (brandLogo) {
+            el.src = brandLogo;
+            el.style.display = 'inline-block';
+          } else if (el.dataset.defaultSrc) {
+            el.src = el.dataset.defaultSrc;
+            el.style.display = 'inline-block';
+          }
+        });
+      } catch (e) {
+        // ignore local storage errors
+      }
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', applyGlobalBrand);
+    } else {
+      applyGlobalBrand();
+    }
+
+    window.db
+      .from('app_settings')
+      .select('key, value')
+      .in('key', ['brand_name', 'brand_logo', 'hero_logo_url'])
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          const heroLogoRow = data.find(d => d.key === 'hero_logo_url');
+          const brandLogoRow = data.find(d => d.key === 'brand_logo');
+          const logo = heroLogoRow !== undefined ? heroLogoRow.value : brandLogoRow?.value;
+          const name = data.find(d => d.key === 'brand_name')?.value;
+          if (logo) {
+            localStorage.setItem('suka_brand_logo', logo);
+          } else if (heroLogoRow !== undefined || brandLogoRow !== undefined) {
+            localStorage.removeItem('suka_brand_logo');
+          }
+          if (name) localStorage.setItem('suka_brand_name', name);
+          applyGlobalBrand();
+        }
+      })
+      .catch(() => {});
   } catch (err) {
     console.error('[SUKA] Supabase createClient gagal:', err);
     document.body.insertAdjacentHTML('afterbegin',
